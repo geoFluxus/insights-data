@@ -41,8 +41,10 @@ if __name__ == '__main__':
     # get flows
     logging.info("INPUTS...")
     logging.info("Load flows...")
-    flows = get_flows()[:1000]
+    # flows = get_flows()
+    flows = pd.read_csv(f'./data/flows/ontvangst_{PROVINCE.lower()}.csv', low_memory=False)
     flows['Gewicht_TN'] = flows['Gewicht_KG'] / 10**3
+    logging.info(f"Total flows: {len(flows)}")
 
     # get areas
     logging.info("Load areas...\n")
