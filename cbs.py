@@ -1,13 +1,23 @@
 import pandas as pd
 import geopandas as gpd
 import numpy as np
+import json
+from shapely import wkt
 
-# # IMPORT ALL FLOWS
-# # import MRA ontvangst (2019) -> kg
-# ontvangst = pd.read_csv('./data/flows/ontvangst_mra_2019.csv', low_memory=False)
-# # import afgifte (2019) -> kg
-# afgifte = pd.read_csv('./data/flows/afgifte_2019_full.csv', low_memory=False)
-#
+# IMPORT ALL FLOWS
+# import MRA ontvangst (2019) -> kg
+ontvangst = pd.read_csv('./data/flows/ontvangst_mra_2019.csv', low_memory=False)
+# import afgifte (2019) -> kg
+afgifte = pd.read_csv('./data/flows/afgifte_2019_full.csv', low_memory=False)
+
+# process postocdes
+MRA_PC4 = pd.read_csv('./data/areas/AMA_postcode.csv', low_memory=False)['AMA_postcode'].to_list()
+MRA_PC4 = [str(code) for code in MRA_PC4]
+ontvangst.loc[ontvangst['Herkomst_Land'] == 'NEDERLAND', 'Herkomst_PC4'] = ontvangst['Herkomst_Postcode'].str[:4]
+ontvangst.loc[ontvangst['Verwerker_Land'] == 'NEDERLAND', 'Verwerker_PC4'] = ontvangst['Verwerker_Postcode'].str[:4]
+afgifte.loc[afgifte['EerstAfnemer_Land'] == 'NEDERLAND', 'EerstAfnemer_PC4'] = afgifte['EerstAfnemer_Postcode'].str[:4]
+afgifte.loc[ontvangst['Verwerker_Land'] == 'NEDERLAND', 'Verwerker_PC4'] = afgifte['Verwerker_Postcode'].str[:4]
+
 # # SANKEY
 # # import CBS stromen (MRA - 2019) -> million kg
 # path = './data/cbs/210311 Tabel regionale stromen 2019 levering met waarde.xlsx'
@@ -35,16 +45,7 @@ import numpy as np
 #     new_flows = new_flows['Gewicht_KG'].sum() / 10**9  # megatonnes
 #     print(f'{source} ({binnen[source_in]} MRA) -> {target} ({binnen[target_in]} MRA): {new_flows} Mtn')
 #     return new_flows
-#
-#
-# # process postocdes
-# MRA_PC4 = pd.read_csv('./data/areas/AMA_postcode.csv', low_memory=False)['AMA_postcode'].to_list()
-# MRA_PC4 = [str(code) for code in MRA_PC4]
-# ontvangst['Herkomst_PC4'] = ontvangst['Herkomst_Postcode'].str[:4]
-# ontvangst['Verwerker_PC4'] = ontvangst['Verwerker_Postcode'].str[:4]
-# afgifte['EerstAfnemer_PC4'] = afgifte['EerstAfnemer_Postcode'].str[:4]
-# afgifte['Verwerker_PC4'] = afgifte['Verwerker_Postcode'].str[:4]
-#
+
 # # ontvansgt: herkomst, binnen MRA -> verwerker, binnen MRA
 # compute_total(ontvangst, source='Herkomst', source_in=True, target='Verwerker', target_in=True)
 #
@@ -100,15 +101,177 @@ def merge_areas(flows, areas, column=None):
     return flows
 
 
-instroom = merge_areas(instroom, provincies, column='Provincie')
-instroom = merge_areas(instroom, continents, column='Continent')
-instroom.loc[instroom['Provincie'].notnull(), 'Centroid'] = instroom['Provincie']
-instroom.loc[instroom['Continent'].notnull(), 'Centroid'] = instroom['Continent']
-uitstroom = merge_areas(uitstroom, provincies, column='Provincie')
-uitstroom = merge_areas(uitstroom, continents, column='Continent')
-uitstroom.loc[uitstroom['Provincie'].notnull(), 'Centroid'] = uitstroom['Provincie']
-uitstroom.loc[instroom['Continent'].notnull(), 'Centroid'] = uitstroom['Continent']
+# prepare flows
+def prepare_flows(flows):
+    flows = merge_areas(flows, provincies, column='Provincie')
+    flows = merge_areas(flows, continents, column='Continent')
+    flows.loc[flows['Provincie'].notnull(), 'Centroid'] = flows['Provincie']
+    flows.loc[flows['Continent'].notnull(), 'Centroid'] = flows['Continent']
+    flows = flows[flows['Centroid'].notnull()]
+    columns = ['gebied', 'Centroid', 'Gewicht_totaal']
+    flows['Centroid'] = flows['Centroid'].apply(lambda x: wkt.dumps(x))
+    flows = flows[columns].groupby(columns[:-1]).sum().reset_index()
+    return flows
 
 
+instroom = prepare_flows(instroom)
+uitstroom = prepare_flows(uitstroom)
 
 
+def add_areas(flows, areas=None, role=None, admin_level=None):
+    """
+    Add administrative areas to roles
+    flows: flow dataframe -> DataFrame
+    areas: area polygons -> GeoDataFrame
+    role: role to assign areas -> string
+    admin_level: administrative level of areas -> string
+    """
+    columns = list(flows)
+
+    # join geolocation with area polygons
+    flows['wkt'] = gpd.GeoSeries.from_wkt(flows[f'{role}_Location'])
+    flows = gpd.GeoDataFrame(flows, geometry='wkt', crs='EPSG:4326')
+    flows = gpd.sjoin(flows, areas, how='left', op='within')
+
+    # keep only original dataframe columns & role area
+    flows[f'{admin_level}_Centroid'] = flows['Centroid']
+    flows[f'{admin_level}_Gebied'] = flows['name']
+    columns.append(f'{admin_level}_Centroid')
+    columns.append(f'{admin_level}_Gebied')
+    flows = flows[columns]
+
+    return flows
+
+
+def get_centroid(flows, role=None):
+    columns = list(flows.columns)
+    flows = add_areas(flows, role=role, areas=provincies, admin_level='Provincie')
+    flows = add_areas(flows, role=role, areas=continents, admin_level='Continent')
+    flows[f'{role}_Gebied'] = flows['Provincie_Gebied']
+    flows.loc[flows[f'{role}_Gebied'].isnull(), f'{role}_Gebied'] = flows['Continent_Gebied']
+    flows = flows[flows[f'{role}_Gebied'].notnull()]
+    columns.append(f'{role}_Gebied')
+    flows[f'{role}_Centroid'] = flows['Provincie_Centroid']
+    flows.loc[flows[f'{role}_Centroid'].isnull(), f'{role}_Centroid'] = flows['Continent_Centroid']
+    flows[f'{role}_Centroid'] = flows[f'{role}_Centroid'].apply(lambda x: wkt.dumps(x))
+    columns.append(f'{role}_Centroid')
+    flows = flows[columns]
+    return flows
+
+
+ontvangst = get_centroid(ontvangst, role='Herkomst')
+ontvangst = get_centroid(ontvangst, role='Verwerker')
+afgifte = get_centroid(afgifte, role='EerstAfnemer')
+afgifte = get_centroid(afgifte, role='Verwerker')
+
+
+data = []
+def get_flows(flows,
+              source_role=None,
+              target_role=None,
+              source_in=True,
+              target_in=True):
+    condition = (flows[f'{source_role}_PC4'].isin(MRA_PC4)) &\
+                (~flows[f'{target_role}_PC4'].isin(MRA_PC4))
+    grouped = flows[condition]
+    for role, is_in in zip([source_role, target_role],
+                           [source_in, target_in]):
+        if is_in:
+            grouped[f'{role}_Gebied'] = 'MRA'
+            grouped[f'{role}_Centroid'] = 'POINT(4.9, 52.366667)'
+    columns = [
+        f'{source_role}_Gebied',
+        f'{source_role}_Centroid',
+        f'{target_role}_Gebied',
+        f'{target_role}_Centroid',
+        'Gewicht_KG'
+    ]
+    grouped = grouped[columns].groupby(columns[:-1]).sum().reset_index()
+
+    MRA = {
+        'lon': 4.9,
+        'lat': 52.366667,
+        'name': 'MRA'
+    }
+    global data
+    source_binnen = 'binnen' if source_in else 'buiten'
+    target_binnen = 'binnen' if target_in else 'buiten'
+    type = f'{source_role} ({source_binnen} MRA) -> {target_role} ({target_binnen} MRA)'
+
+    for idx, row in grouped.iterrows():
+        flow = {
+            'type': type,
+            'amount': row['Gewicht_KG']
+        }
+
+        for item, role, is_in in zip(['source', 'target'],
+                                     [source_role, target_role],
+                                     [source_in, target_in]):
+            if is_in:
+                flow[item] = {
+                    'lon': 4.9,
+                    'lat': 52.366667,
+                    'name': 'MRA'
+                }
+            else:
+                geometry = wkt.loads(row[f'{role}_Centroid'])
+                flow[item] = {
+                    'lon': geometry.x,
+                    'lat': geometry.y,
+                    'name': row[f'{role}_Gebied']
+                }
+        data.append(flow)
+
+
+# ontvansgt: herkomst, binnen MRA -> verwerker, buiten MRA
+get_flows(ontvangst, source_role='Herkomst', source_in=True, target_role='Verwerker', target_in=False)
+# ontvansgt: herkomst, binnen MRA -> verwerker, binnen MRA
+get_flows(ontvangst, source_role='Herkomst', source_in=True, target_role='Verwerker', target_in=True)
+# ontvansgt: herkomst, buiten MRA -> verwerker, binnen MRA
+get_flows(ontvangst, source_role='Herkomst', source_in=False, target_role='Verwerker', target_in=True)
+
+# afgifte: eerstafnemer, binnen MRA -> verwerker, buiten MRA
+get_flows(afgifte, source_role='EerstAfnemer', source_in=True, target_role='Verwerker', target_in=False)
+# afgifte: eerstafnemer, binnen MRA -> verwerker, binnen MRA
+get_flows(afgifte, source_role='EerstAfnemer', source_in=True, target_role='Verwerker', target_in=True)
+# afgifte: eerstafnemer, buiten MRA -> verwerker, binnen MRA
+get_flows(afgifte, source_role='EerstAfnemer', source_in=False, target_role='Verwerker', target_in=True)
+
+# cbs
+for idx, row in instroom.iterrows():
+    geometry = wkt.loads(row['Centroid'])
+    flow = {
+        'type': f'Instroom',
+        'amount': row['Gewicht_totaal'],
+        'source': {
+            'lon': geometry.x,
+            'lat': geometry.y,
+            'name': row['gebied']
+        },
+        'target': {
+            'lon': 4.9,
+            'lat': 52.366667,
+            'name': 'MRA'
+        }
+    }
+    data.append(flow)
+for idx, row in uitstroom.iterrows():
+    geometry = wkt.loads(row['Centroid'])
+    flow = {
+        'type': f'Uitstroom',
+        'amount': row['Gewicht_totaal'],
+        'target': {
+            'lon': geometry.x,
+            'lat': geometry.y,
+            'name': row['gebied']
+        },
+        'source': {
+            'lon': 4.9,
+            'lat': 52.366667,
+            'name': 'MRA'
+        }
+    }
+    data.append(flow)
+
+with open('test/cbs.json', 'w') as outfile:
+    json.dump(data, outfile)
