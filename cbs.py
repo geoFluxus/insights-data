@@ -1,3 +1,11 @@
+"""
+QUESTIONS:
+1) What is the weight unit in COROP flows (CBS)?
+2) What does 'Nederland' mean in COROP flows (CBS)?
+3) What's the difference between zero and NULL values in COROP flows (CBS)?
+"""
+
+
 import pandas as pd
 import geopandas as gpd
 import numpy as np
