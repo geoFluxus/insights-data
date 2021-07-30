@@ -107,9 +107,8 @@ def compute_lma_waste(df, role=None, apply=None, year=None):
     """
     Compute LMA waste
     """
-    title = apply.__name__
+    title = f'prov_{apply.__name__}_mtn'
     print(title)
-    if title not in DATA.keys(): DATA[title] = []
 
     columns = [
         f'{role}_Provincie',
@@ -125,12 +124,11 @@ def compute_lma_waste(df, role=None, apply=None, year=None):
     # add to data
     df[year] = df['Gewicht_KG'] / 10**9
     df['area'] = df[f'{role}_Provincie']
-    DATA[title].append(df[['area', year]])
+    DATA.setdefault(title, []).append(df[['area', year]])
 
 
 def cbs_primary_waste(input, year=None, title=None):
     print(title)
-    if title not in DATA.keys(): DATA[title] = []
 
     df = input.copy()
     columns = [
@@ -144,13 +142,12 @@ def cbs_primary_waste(input, year=None, title=None):
     # add to data
     df[year] = df['Gewicht_KG'] / 10**9
     df['area'] = df[f'Provincie']
-    DATA[title].append(df[['area', year]])
+    DATA.setdefault(title, []).append(df[['area', year]])
 
 
 def compute_cbs_waste(input, apply=None, year=None):
-    title = apply.__name__
+    title = f'{apply.__name__}_mtn'
     print(title)
-    if title not in DATA.keys(): DATA[title] = []
 
     df = input.copy()
 
@@ -174,15 +171,15 @@ def compute_cbs_waste(input, apply=None, year=None):
     df_total = df_total[columns].groupby("Provincie").sum().reset_index()
     df_total['Gewicht_KG'] = df_total['Gewicht_KG'] / df_total['Inwoners']
 
-    # join dataframes
-    df.rename(columns={'Gebieden': 'area', 'Gewicht_KG': year}, inplace=True)
-    df_total.rename(columns={'Provincie': 'area', 'Gewicht_KG': year}, inplace=True)
-    df_total['area'] = df_total['area'] + ' (PV)'
-    df = pd.concat([df, df_total])
-    df.reset_index(inplace=True)
-
     # add to data
-    DATA[title].append(df[['area', year]])
+    df['area'] = df['Gebieden']
+    df[year] = df['Gewicht_KG']
+    df.reset_index(inplace=True)
+    DATA.setdefault(f'muni_{title}', []).append(df[['area', year]])
+    df_total['area'] = df_total['Provincie']
+    df_total[year] = df_total['Gewicht_KG']
+    df.reset_index(inplace=True)
+    DATA.setdefault(f'prov_{title}', []).append(df_total[['area', year]])
 
 
 if __name__ == '__main__':
@@ -216,7 +213,7 @@ if __name__ == '__main__':
         compute_lma_waste(lma_flows, role='Herkomst', apply=total_primary_waste, year=year)
 
         # total primary waste (CBS)
-        title = 'total_household_primary_waste'
+        title = 'prov_total_household_primary_waste_mtn'
         cbs_primary_waste(cbs_flows, year=year, title=title)
 
         # incineration waste (LMA)
