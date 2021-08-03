@@ -5,6 +5,15 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 import logging
 import itertools
+import json
+
+
+DATA = {}
+
+
+def to_none(value):
+    if np.isnan(value): return None
+    return value
 
 
 def add_areas(flows, areas=None, role=None, admin_level=None):
@@ -30,7 +39,7 @@ def add_areas(flows, areas=None, role=None, admin_level=None):
     return flows
 
 
-def compute_trends(df, on=[], values=[], per_months=12):
+def compute_trends(df, on=[], values=[], per_months=12, prop=None):
     """
     Analyse trends for areas on different timeframe
     df: flow dataframe -> DataFrame
@@ -76,39 +85,59 @@ def compute_trends(df, on=[], values=[], per_months=12):
             value = value[on[idx]].to_list()
         new_values.append(value)
 
-    # retrieve flows for each unique values & run analysis
-    tab = "\t"
-    with open(f'./test/{on}_trends.csv', mode='w') as file:
-        file.write(f'{tab.join(on)}{tab}Change (%)\n')
+    # iterate permutations for all properties & values
+    for value in itertools.product(*new_values):
+        area = value[0]
 
-        # iterate permutations for all properties & values
-        for value in itertools.product(*new_values):
-            # form conditions & select flows for current permutation
-            conditions = []
-            for key, val in zip(on, value):
-                conditions.append(df_new[key] == val)
-            flows = df_new.loc[np.bitwise_and.reduce(conditions)]
+        # form conditions & select flows for current permutation
+        conditions = []
+        for key, val in zip(on, value):
+            conditions.append(df_new[key] == val)
+        flows = df_new.loc[np.bitwise_and.reduce(conditions)]
 
-            # prepare data & run linear regression
-            X, Y = [], []
-            for idx, flow in flows.iterrows():
-                time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
-                amount = flow['Gewicht_TN']
-                X.append(time)
-                Y.append(amount)
-            X = np.array(X).reshape(-1, 1)
-            if Y:
-                # linear regression
-                reg = LinearRegression().fit(X, Y)
+        # prepare data & run linear regression
+        X, Y = [], []
+        for idx, flow in flows.iterrows():
+            time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
+            amount = flow['Gewicht_TN']
+            X.append(time)
+            Y.append(amount)
+        X = np.array(X).reshape(-1, 1)
 
-                # compute initial & final amount based on model
-                Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
-                Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
+        Y_initial, Y_final = np.nan, np.nan
+        if Y:
+            # linear regression
+            reg = LinearRegression().fit(X, Y)
 
-                # change relative to initial amount
-                change = (Y_final - Y_initial) / Y_initial * 100
+            # compute initial & final amount based on model
+            Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
+            Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
-                file.write(f'{tab.join(value)}{tab}{change:.1f}\n')
+        # overall change (mtn)
+        change = Y_final - Y_initial
+        DATA.setdefault(prop + '_tn', {})[area] = to_none(change)
+
+        # overall change (%)
+        change = (Y_final - Y_initial) / Y_initial * 100
+        DATA.setdefault(prop + '_perc', {})[area] = to_none(change)
+
+        # change to same quarter, last year (mtn)
+        Y_initial, Y_final = np.nan, np.nan
+        if len(flows):
+            quarter = flows.iloc[[-1]]['Periode'].values[0]
+            initial_year, final_year = var.YEARS[-2], var.YEARS[-1]
+            Y_initial = flows[(flows['MeldPeriodeJAAR'] == initial_year) &
+                              (flows['Periode'] == quarter)]['Gewicht_TN']
+            Y_initial = Y_initial.values[0] if len(Y_initial) else np.nan
+            Y_final = flows[(flows['MeldPeriodeJAAR'] == final_year) &
+                            (flows['Periode'] == quarter)]['Gewicht_TN']
+            Y_final = Y_final.values[0] if len(Y_final) else np.nan
+        change = Y_final - Y_initial
+        DATA.setdefault(prop + '_quarter_tn', {})[area] = to_none(change)
+
+        # change to same quarter, last year (%)
+        change = (Y_final - Y_initial) / Y_initial * 100
+        DATA.setdefault(prop + '_quarter_perc', {})[area] = to_none(change)
 
 
 def compute_actions(flows, provincies, gemeenten):
@@ -137,18 +166,64 @@ def compute_actions(flows, provincies, gemeenten):
     # get names of provincie gemeenten
     provincie_gemeenten = gemeenten[gemeenten['parent'] == var.PROVINCE]['name'].to_list()
 
-    # add verwerking to flows
-    flows['Verwerking'] = flows['VerwerkingsmethodeCode'].str[0]
+    # TRENDS (All amounts in tonnes)
+    roles = ['Herkomst', 'Verwerker']  # herkomst: production, verwerker: treatment
+    levels = ['Provincie', 'Gemeente']
+    for role, level in itertools.product(roles, levels):
+        on = f'{role}_{level}'
 
-    # compute area trends per quarter (3 months)
-    logging.info("Compute trends...")
-    roles = ['Herkomst', 'Verwerker']
-    areas = ['Provincie', 'Gemeente']
-    for prop in itertools.product(roles, areas):
-        prop = '_'.join(prop)
+        terms = {
+            'Herkomst': 'production',
+            'Verwerker': 'treatment',
+            'Provincie': 'prov',
+            'Gemeente': 'muni'
+        }
+        prefix = f'{terms[level]}_{terms[role]}'
+        areas = [var.PROVINCE] if level == 'Provincie' else provincie_gemeenten
 
-        # general trends
-        compute_trends(flows, on=[prop], values=[provincie_gemeenten], per_months=3)
+        # Average quarterly change on GENERAL waste
+        compute_trends(flows,
+                       on=[on],
+                       values=[areas],
+                       per_months=3, prop=f'{prefix}_change')
 
-        # trends per process group (verwerking)
-        compute_trends(flows, on=[prop, 'Verwerking'], values=[provincie_gemeenten, []], per_months=3)
+        # Average quarterly change in LANDFILL change:
+        ewc = ['G01', 'G02']
+        compute_trends(flows,
+                       on=[on, 'VerwerkingsmethodeCode'],
+                       values=[areas, ewc],
+                       per_months=3, prop=f'{prefix}_landfill_change')
+
+        # Average quarterly change in INCINERATION change:
+        ewc = ['B04', 'F01', 'F02', 'F06', 'F07']
+        compute_trends(flows,
+                       on=[on, 'VerwerkingsmethodeCode'],
+                       values=[areas, ewc],
+                       per_months=3, prop=f'{prefix}_incineration_change')
+
+        # Average quarterly change in REUSE change:
+        ewc = ['B01', 'B03', 'B05']
+        compute_trends(flows,
+                       on=[on, 'VerwerkingsmethodeCode'],
+                       values=[areas, ewc],
+                       per_months=3, prop=f'{prefix}_reuse_change')
+
+        # Average quarterly change in RECYCLING change:
+        ewc = ['C01', 'C02', 'C03', 'C04', 'D01',
+               'D02', 'D03', 'D04', 'D05', 'D06',
+               'E01', 'E02', 'E03', 'E04', 'E05',
+               'F03', 'F04']
+        compute_trends(flows,
+                       on=[on, 'VerwerkingsmethodeCode'],
+                       values=[areas, ewc],
+                       per_months=3, prop=f'{prefix}_recycling_change')
+
+        # Average quarterly change in STORAGE change:
+        ewc = ['A01', 'A02']
+        compute_trends(flows,
+                       on=[on, 'VerwerkingsmethodeCode'],
+                       values=[areas, ewc],
+                       per_months=3, prop=f'{prefix}_storage_change')
+
+    with open('test/actions.json', 'w') as outfile:
+        json.dump(DATA, outfile, indent=4)
