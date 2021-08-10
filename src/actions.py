@@ -113,7 +113,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
             Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
             Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
-        # overall change (mtn)
+        # overall change (tn)
         change = Y_final - Y_initial
         DATA.setdefault(prop + '_tn', {})[area] = to_none(change)
 
@@ -121,7 +121,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
         change = (Y_final - Y_initial) / Y_initial * 100
         DATA.setdefault(prop + '_perc', {})[area] = to_none(change)
 
-        # change to same quarter, last year (mtn)
+        # change to same quarter, last year (tn)
         Y_initial, Y_final = np.nan, np.nan
         if len(flows):
             quarter = flows.iloc[[-1]]['Periode'].values[0]

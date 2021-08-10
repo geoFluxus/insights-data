@@ -146,7 +146,7 @@ def cbs_primary_waste(input, year=None, title=None):
 
 
 def compute_cbs_waste(input, apply=None, year=None):
-    title = f'{apply.__name__}_mtn'
+    title = f'{apply.__name__}_kg'
     print(title)
 
     df = input.copy()
@@ -255,9 +255,9 @@ if __name__ == '__main__':
         compute_cbs_waste(cbs_flows, apply=residual_waste_per_inhabitant, year=year)
 
         # separation of household waste (as % of household waste)
-        def separation_household_waste(df):
+        def separation_waste_per_inhabitant(df):
             return df['Scheidingspercentage totaal huishoudelijk afval [Percentage]'] * 100
-        compute_cbs_waste(cbs_flows, apply=separation_household_waste, year=year)
+        compute_cbs_waste(cbs_flows, apply=separation_waste_per_inhabitant, year=year)
 
         # residual waste of companies, organisations & governments
         def company_residual_waste(df):
