@@ -85,6 +85,10 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
             value = value[on[idx]].to_list()
         new_values.append(value)
 
+    # quarter analysis
+    quarter = var.QUARTER
+    initial_year, final_year = var.YEARS[-2], var.YEARS[-1]
+
     # iterate permutations for all properties & values
     for value in itertools.product(*new_values):
         area = value[0]
@@ -115,17 +119,15 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
 
         # overall change (tn)
         change = Y_final - Y_initial
-        DATA.setdefault(prop + '_tn', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\ttn', {})[area] = to_none(change)
 
         # overall change (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(prop + '_perc', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\tpercentage', {})[area] = to_none(change)
 
         # change to same quarter, last year (tn)
         Y_initial, Y_final = np.nan, np.nan
         if len(flows):
-            quarter = flows.iloc[[-1]]['Periode'].values[0]
-            initial_year, final_year = var.YEARS[-2], var.YEARS[-1]
             Y_initial = flows[(flows['MeldPeriodeJAAR'] == initial_year) &
                               (flows['Periode'] == quarter)]['Gewicht_TN']
             Y_initial = Y_initial.values[0] if len(Y_initial) else np.nan
@@ -133,11 +135,11 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
                             (flows['Periode'] == quarter)]['Gewicht_TN']
             Y_final = Y_final.values[0] if len(Y_final) else np.nan
         change = Y_final - Y_initial
-        DATA.setdefault(prop + '_quarter_tn', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\ttn', {})[area] = to_none(change)
 
         # change to same quarter, last year (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(prop + '_quarter_perc', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\tpercentage', {})[area] = to_none(change)
 
 
 def compute_actions(flows, provincies, gemeenten):
@@ -155,13 +157,15 @@ def compute_actions(flows, provincies, gemeenten):
     # flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
     # flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
     #
-    # # filter flows with origin (herkomst) or destination (verwerker)
-    # # within province in study
-    # logging.info("Filter flows within province in study...")
-    # flows = flows.loc[
-    #     (flows['Herkomst_Provincie'] == PROVINCE) |
-    #     (flows['Verwerker_Provincie'] == PROVINCE)
-    # ]
+    # flows.to_csv('utrecht_actions.csv', index=False)
+
+    # filter flows with origin (herkomst) or destination (verwerker)
+    # within province in study
+    logging.info("Filter flows within province in study...")
+    flows = flows.loc[
+        (flows['Herkomst_Provincie'] == var.PROVINCE) |
+        (flows['Verwerker_Provincie'] == var.PROVINCE)
+    ]
 
     # get names of provincie gemeenten
     provincie_gemeenten = gemeenten[gemeenten['parent'] == var.PROVINCE]['name'].to_list()
@@ -175,38 +179,38 @@ def compute_actions(flows, provincies, gemeenten):
         terms = {
             'Herkomst': 'production',
             'Verwerker': 'treatment',
-            'Provincie': 'prov',
-            'Gemeente': 'muni'
+            'Provincie': 'province',
+            'Gemeente': 'municipality'
         }
-        prefix = f'{terms[level]}_{terms[role]}'
+        prefix = f'{terms[level]}\t{terms[role]}'
         areas = [var.PROVINCE] if level == 'Provincie' else provincie_gemeenten
 
         # Average quarterly change on GENERAL waste
         compute_trends(flows,
                        on=[on],
                        values=[areas],
-                       per_months=3, prop=f'{prefix}_change')
+                       per_months=3, prop=f'{prefix}_general')
 
         # Average quarterly change in LANDFILL change:
         ewc = ['G01', 'G02']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_landfill_change')
+                       per_months=3, prop=f'{prefix}_landfill')
 
         # Average quarterly change in INCINERATION change:
         ewc = ['B04', 'F01', 'F02', 'F06', 'F07']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_incineration_change')
+                       per_months=3, prop=f'{prefix}_incineration')
 
         # Average quarterly change in REUSE change:
         ewc = ['B01', 'B03', 'B05']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_reuse_change')
+                       per_months=3, prop=f'{prefix}_reuse')
 
         # Average quarterly change in RECYCLING change:
         ewc = ['C01', 'C02', 'C03', 'C04', 'D01',
@@ -216,14 +220,42 @@ def compute_actions(flows, provincies, gemeenten):
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_recycling_change')
+                       per_months=3, prop=f'{prefix}_recycling')
 
         # Average quarterly change in STORAGE change:
         ewc = ['A01', 'A02']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_storage_change')
+                       per_months=3, prop=f'{prefix}_storage')
 
+    res = {}
     with open('test/actions.json', 'w') as outfile:
-        json.dump(DATA, outfile, indent=4)
+        fields = sorted(list(DATA.keys()))
+        fields = zip(*[iter(fields)] * 2)
+
+        for tup in fields:
+            key = tup[0]
+            values = DATA[key]
+            level, field, period, unit = key.split('\t')
+
+            for value in values.items():
+                name, amount = value
+                waste = {
+                    unit: amount
+                }
+                for key in tup[1:]:
+                    new_unit = key.split('\t')[-1]
+                    waste[new_unit] = DATA[key][name]
+
+                res.setdefault(field, []).append({
+                    'name': name,
+                    'level': level,
+                    'period': period,
+                    'values': {
+                        'waste': waste
+                    }
+                })
+
+        json.dump(res, outfile, indent=4)
+
