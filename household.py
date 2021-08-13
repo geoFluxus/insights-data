@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import gc
 import json
+import variables as var
 
 # find cbs data (2016-2019) for gemeenten & provincies
 INWONERS = {
@@ -22,7 +23,7 @@ INWONERS = {
 
 DATA = {}
 
-YEARS = ['2016', '2017', '2018', '2019']
+YEARS = var.YEARS
 
 
 def import_household_data(areas=None, population=None):
@@ -107,7 +108,7 @@ def compute_lma_waste(df, role=None, apply=None, year=None):
     """
     Compute LMA waste
     """
-    title = f'prov_{apply.__name__}_mtn'
+    title = f'province\t{apply.__name__}\tmtn'
     print(title)
 
     columns = [
@@ -146,7 +147,7 @@ def cbs_primary_waste(input, year=None, title=None):
 
 
 def compute_cbs_waste(input, apply=None, year=None):
-    title = f'{apply.__name__}_kg'
+    title = f'{apply.__name__}\tkg'
     print(title)
 
     df = input.copy()
@@ -175,11 +176,11 @@ def compute_cbs_waste(input, apply=None, year=None):
     df['area'] = df['Gebieden']
     df[year] = df['Gewicht_KG']
     df.reset_index(inplace=True)
-    DATA.setdefault(f'muni_{title}', []).append(df[['area', year]])
+    DATA.setdefault(f'municipality\t{title}', []).append(df[['area', year]])
     df_total['area'] = df_total['Provincie']
     df_total[year] = df_total['Gewicht_KG']
     df.reset_index(inplace=True)
-    DATA.setdefault(f'prov_{title}', []).append(df_total[['area', year]])
+    DATA.setdefault(f'province\t{title}', []).append(df_total[['area', year]])
 
 
 if __name__ == '__main__':
@@ -213,7 +214,7 @@ if __name__ == '__main__':
         compute_lma_waste(lma_flows, role='Herkomst', apply=total_primary_waste, year=year)
 
         # total primary waste (CBS)
-        title = 'prov_total_household_primary_waste_mtn'
+        title = 'prov\ttotal_household_primary_waste\tmtn'
         cbs_primary_waste(cbs_flows, year=year, title=title)
 
         # incineration waste (LMA)
@@ -263,19 +264,19 @@ if __name__ == '__main__':
         def company_residual_waste(df):
             ewc = ['200301', '200307', '200399']
             return df[df['EuralCode'].isin(ewc)]
-        compute_lma_waste(lma_flows, role='Herkomst', apply=company_residual_waste)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=company_residual_waste, year=year)
 
         # reuse of construction & demolition waste
         def reuse_construction_waste(df):
             ewc = ['B01', 'B03', 'B05']
             return df[(df['EuralCode'].str[:2] == '17') & (df['VerwerkingsmethodeCode'].isin(ewc))]
-        compute_lma_waste(lma_flows, role='Herkomst', apply=reuse_construction_waste)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=reuse_construction_waste, year=year)
 
         # recycling of construction & demolition waste
         def recycling_construction_waste(df):
             ewc = ['B01', 'B03', 'B05']
             return df[(df['EuralCode'].str[:2] == '17') & (df['VerwerkingsmethodeCode'].isin(ewc))]
-        compute_lma_waste(lma_flows, role='Herkomst', apply=recycling_construction_waste)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=recycling_construction_waste, year=year)
 
         # food waste
         def food_waste(df):
@@ -284,7 +285,7 @@ if __name__ == '__main__':
                    '020701', '020702', '020704', '200301', '200399',
                    '200108', '200125', '200302']
             return df[df['EuralCode'].isin(ewc)]
-        compute_lma_waste(lma_flows, role='Herkomst', apply=food_waste)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=food_waste, year=year)
 
         # clean memory & collect garbage
         print('\n')
@@ -297,5 +298,25 @@ if __name__ == '__main__':
         df = df.loc[:, ~df.columns.duplicated()]
         results[field] = json.loads(df.to_json(orient="records"))
 
+    final = {}
     with open('test/household.json', 'w') as outfile:
-        json.dump(results, outfile, indent=4)
+        for key, value in results.items():
+            level, field, unit = key.split('\t')
+            final[field] = []
+            for item in value:
+                name = item.pop('area')
+                for year, amount in item.items():
+                    final[field].append({
+                        'name': name,
+                        'level': level,
+                        'period': year,
+                        'values': {
+                            'waste': {
+                                unit: amount
+                            }
+                        }
+                    })
+        json.dump(final, outfile, indent=4)
+
+
+
