@@ -155,6 +155,38 @@ def get_flows(df,
     return to_flowmap(groups, level=level)
 
 
+def get_activities(df, period=None, source=None,
+                   level=None, areas=None):
+    # filter source in areas
+    flows = df[df[f'{source}_{level}'].isin(areas)]
+    flows = flows.rename(columns={source: 'source'})
+
+    # filter by period
+    if period: flows = flows[flows['Periode'] == period]
+
+    # group by economic activity
+    groups = flows.groupby(f'{source}_NACE')\
+                  .agg({'Gewicht_KG': ['count', 'sum']})\
+                  .reset_index()
+    groups.columns = ['_'.join(col).strip() for col in groups.columns.values]
+    groups = groups.rename(columns={
+        f'{source}_NACE_': 'activity',
+        'Gewicht_KG_count': 'count',
+        'Gewicht_KG_sum': 'sum'
+    })
+
+    # TODO: Add activity descriptions in Dutch
+    results = []
+    for idx, row in groups.iterrows():
+        results.append({
+            'activity': row['activity'],
+            'count': row['count'],
+            'total': row['sum']
+        })
+
+    return results
+
+
 if __name__ == "__main__":
     # import areas
     gemeenten = gpd.read_file('data/areas/gemeenten.shp')
@@ -188,11 +220,13 @@ if __name__ == "__main__":
     ROLES = {
         'Ontvangst': {
             'source': 'Herkomst',
-            'target': 'Verwerker'
+            'target': 'Verwerker',
+            'activity': 'Ontdoener'
         },
         'Afgifte': {
             'source': 'EerstAfnemer',
-            'target': 'Verwerker'
+            'target': 'Verwerker',
+            'activity': 'EerstAfnemer'
         }
     }
 
@@ -218,9 +252,13 @@ if __name__ == "__main__":
             print('Add areas to roles...')
             source = ROLES[typ]['source']
             target = ROLES[typ]['target']
+            activity = ROLES[typ]['activity']
             for role, level in itertools.product([source, target], ['Provincie', 'Gemeente']):
                 areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
+            if typ == 'Ontvangst':
+                df = add_areas(df, areas=AREAS['Provincie'], role=activity, admin_level="Provincie")
+                df = add_areas(df, areas=AREAS['Gemeente'], role=activity, admin_level="Gemeente")
 
             # analyse on provincial & municipal level
             print('Analyse...')
@@ -239,21 +277,28 @@ if __name__ == "__main__":
                     suffix = f'{year}'
                     if p: suffix = f'{suffix}_{period[0]}{p}'
 
-                    # import (source out, target in)
-                    DATA[f'{prefix}_import_{suffix}'] = \
-                        get_flows(df,
-                                  period=p,
-                                  source=source, source_in=False,
-                                  target=target, target_in=True,
-                                  level=level, areas=areas)
-
+                    # # import (source out, target in)
+                    # DATA[f'{prefix}_import_{suffix}'] = \
+                    #     get_flows(df,
+                    #               period=p,
+                    #               source=source, source_in=False,
+                    #               target=target, target_in=True,
+                    #               level=level, areas=areas)
+                    #
                     # # export (source in, target out)
-                    DATA[f'{prefix}_export_{suffix}'] = \
-                        get_flows(df,
-                                  period=p,
-                                  source=source, source_in=True,
-                                  target=target, target_in=False,
-                                  level=level, areas=areas)
+                    # DATA[f'{prefix}_export_{suffix}'] = \
+                    #     get_flows(df,
+                    #               period=p,
+                    #               source=source, source_in=True,
+                    #               target=target, target_in=False,
+                    #               level=level, areas=areas)
+
+                    # economic activities
+                    DATA[f'{prefix}_activities_{suffix}'] = \
+                        get_activities(df,
+                                       period=p,
+                                       source=activity,
+                                       level=level, areas=areas)
 
         print('\n')
 
