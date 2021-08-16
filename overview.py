@@ -3,9 +3,12 @@ import geopandas as gpd
 import variables as var
 import itertools
 import numpy as np
+import json
 
 
 DATA = {}
+
+AREAS = {}
 
 
 def group_flows(df, period='year'):
@@ -51,6 +54,42 @@ def add_areas(flows, areas=None, role=None, admin_level=None):
     return flows
 
 
+def to_flowmap(df, level=None):
+    level_areas = AREAS[level]
+    countries = AREAS['Country']
+
+    for field, areas in zip(['name', 'country_nl'], [level_areas, countries]):
+        for node in ['source', 'target']:
+            columns = list(df.columns)
+            df = pd.merge(df, areas, how='left', left_on=node, right_on=field)
+            if f'{node}_centroid' not in columns:
+                df[f'{node}_centroid'] = df['centroid']
+                columns.append(f'{node}_centroid')
+            else:
+                df.loc[df[f'{node}_centroid'].isnull(), f'{node}'] = df['country_en']
+                df.loc[df[f'{node}_centroid'].isnull(), f'{node}_centroid'] = df['centroid']
+            df = df[columns]
+
+    flows = []
+    for idx, row in df.iterrows():
+        flow = {
+            'amount': row['Gewicht_KG'],
+            'source': {
+                'name': row['source'],
+                'lon': row['source_centroid'].x,
+                'lat': row['source_centroid'].y
+            },
+            'target': {
+                'name': row['target'],
+                'lon': row['target_centroid'].x,
+                'lat': row['target_centroid'].y
+            }
+        }
+        flows.append(flow)
+
+    return flows
+
+
 def get_flows(df,
               period=None,
               source=None, source_in=True,
@@ -92,9 +131,11 @@ def get_flows(df,
         f'{target}_{level}': 'target',
     }
     flows_within = flows_within.rename(columns=columns)
+    source_level = f'{source}_{level}' if source_in else f'{source}_Land'
+    target_level = f'{target}_{level}' if target_in else f'{target}_Land'
     columns = {
-        f'{source}_Land': 'source',
-        f'{target}_Land': 'target'
+        source_level: 'source',
+        target_level: 'target'
     }
     flows_abroad = flows_abroad.rename(columns=columns)
 
@@ -111,25 +152,32 @@ def get_flows(df,
     # aggregate
     groups = flows.groupby(groupby[:-1]).sum().reset_index()
 
-    return groups
+    return to_flowmap(groups, level=level)
 
 
 if __name__ == "__main__":
     # import areas
     gemeenten = gpd.read_file('data/areas/gemeenten.shp')
+    gemeenten['centroid'] = gemeenten['geometry'].centroid
+    AREAS['Gemeente'] = gemeenten
+
     provincies = gpd.read_file('data/areas/provincies.shp')
-    levels = {
-        'Gemeente': gemeenten,
-        'Provincie': provincies
-    }
+    provincies['centroid'] = provincies['geometry'].centroid
+    AREAS['Provincie'] = provincies
+
+    countries = gpd.read_file('data/areas/countries.shp')
+    countries['country_nl'] = countries['country_nl'].str.upper()
+    countries['centroid'] = countries['geometry'].centroid
+    AREAS['Country'] = countries
+
     provincie = var.PROVINCE
     provincie_gemeenten = gemeenten[gemeenten['parent'] == provincie]['name'].to_list()
 
     INPUTS = [
-        {
-            'year': 2020,
-            'period': 'year', # year
-        },
+        # {
+        #     'year': 2020,
+        #     'period': 'year', # year
+        # },
         {
             'year': 2021,
             'period': 'quarter', # quarter
@@ -155,11 +203,11 @@ if __name__ == "__main__":
 
         print(f'YEAR: {year}')
 
-        for type in ['Ontvangst', 'Afgifte']:
+        for typ in ['Ontvangst', 'Afgifte']:
             # import file
             print('')
-            print(f'Import {type}....')
-            path = f'data/flows/{type.lower()}_utrecht_{year}.csv'
+            print(f'Import {typ}....')
+            path = f'data/flows/{typ.lower()}_utrecht_{year}.csv'
             df = pd.read_csv(path, low_memory=False)
 
             # group flows to periods
@@ -168,10 +216,10 @@ if __name__ == "__main__":
 
             # add areas to roles
             print('Add areas to roles...')
-            source = ROLES[type]['source']
-            target = ROLES[type]['target']
-            for role, level in itertools.product([source, target], levels.keys()):
-                areas = levels[level]
+            source = ROLES[typ]['source']
+            target = ROLES[typ]['target']
+            for role, level in itertools.product([source, target], ['Provincie', 'Gemeente']):
+                areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
 
             # analyse on provincial & municipal level
@@ -185,29 +233,30 @@ if __name__ == "__main__":
                     'Ontvangst': 'primary',
                     'Afgifte': 'secondary',
                 }
-                prefix = f'{prefixes[level]}_{prefixes[type]}_waste'
+                prefix = f'{prefixes[level]}_{prefixes[typ]}_waste'
 
                 for p in periods:
                     suffix = f'{year}'
                     if p: suffix = f'{suffix}_{period[0]}{p}'
 
-                    # import (source in, target out)
+                    # import (source out, target in)
                     DATA[f'{prefix}_import_{suffix}'] = \
+                        get_flows(df,
+                                  period=p,
+                                  source=source, source_in=False,
+                                  target=target, target_in=True,
+                                  level=level, areas=areas)
+
+                    # # export (source in, target out)
+                    DATA[f'{prefix}_export_{suffix}'] = \
                         get_flows(df,
                                   period=p,
                                   source=source, source_in=True,
                                   target=target, target_in=False,
                                   level=level, areas=areas)
 
-                    # # export (source out, target in)
-                    DATA[f'{prefix}_export_{suffix}'] = \
-                        get_flows(df,
-                              period=p,
-                              source=source, source_in=False,
-                              target=target, target_in=True,
-                              level=level, areas=areas)
-
         print('\n')
 
-    print(DATA.keys())
+    with open('test/overview.json', 'w') as outfile:
+        json.dump(DATA, outfile, indent=4)
 
