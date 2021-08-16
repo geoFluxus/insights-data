@@ -312,7 +312,10 @@ if __name__ == '__main__':
                         'period': year,
                         'values': {
                             'waste': {
-                                unit: amount
+                                'weight': {
+                                    'value': amount,
+                                    'unit': unit
+                                }
                             }
                         }
                     })

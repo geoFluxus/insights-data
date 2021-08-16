@@ -123,7 +123,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
 
         # overall change (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\tpercentage', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\t%', {})[area] = to_none(change)
 
         # change to same quarter, last year (tn)
         Y_initial, Y_final = np.nan, np.nan
@@ -139,7 +139,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
 
         # change to same quarter, last year (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\tpercentage', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\t%', {})[area] = to_none(change)
 
 
 def compute_actions(flows, provincies, gemeenten):
@@ -147,17 +147,15 @@ def compute_actions(flows, provincies, gemeenten):
     Compute actions for provincie & gemeenten
     """
 
-    # # add gemeente & provincie to flow origins (herkomst)
-    # logging.info("Add gemeente & provincie to flow origins (herkomst)...")
-    # flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
-    # flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
-    #
-    # # add gemeente & provincie to flows destinations (verwerker)
-    # logging.info("Add gemeente & provincie to flows destinations (verwerker)...")
-    # flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
-    # flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
-    #
-    # flows.to_csv('utrecht_actions.csv', index=False)
+    # add gemeente & provincie to flow origins (herkomst)
+    logging.info("Add gemeente & provincie to flow origins (herkomst)...")
+    flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
+    flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
+
+    # add gemeente & provincie to flows destinations (verwerker)
+    logging.info("Add gemeente & provincie to flows destinations (verwerker)...")
+    flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
+    flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
 
     # filter flows with origin (herkomst) or destination (verwerker)
     # within province in study
@@ -242,11 +240,17 @@ def compute_actions(flows, provincies, gemeenten):
             for value in values.items():
                 name, amount = value
                 waste = {
-                    unit: amount
+                    'percentage': {
+                        'value': amount,
+                        'unit': unit
+                    }
                 }
                 for key in tup[1:]:
                     new_unit = key.split('\t')[-1]
-                    waste[new_unit] = DATA[key][name]
+                    waste['weight'] = {
+                        'value': DATA[key][name],
+                        'unit': new_unit
+                    }
 
                 res.setdefault(field, []).append({
                     'name': name,
