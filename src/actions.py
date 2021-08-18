@@ -10,10 +10,12 @@ import json
 
 DATA = {}
 
+RESULTS = {}
 
-def to_none(value):
+
+def to_json(value):
     if np.isnan(value): return None
-    return value
+    return round(value, 2)
 
 
 def add_areas(flows, areas=None, role=None, admin_level=None):
@@ -37,6 +39,24 @@ def add_areas(flows, areas=None, role=None, admin_level=None):
     flows = flows[columns]
 
     return flows
+
+
+def save(flow, area=None, key=None):
+    level, field, typ, period, unit = key.split('\t')
+    RESULTS.setdefault(field, []).append({
+        'name': area,
+        'level': level,
+        'type': typ,
+        'period': period,
+        'values': {
+            'waste': {
+                'weight': {
+                    'value': to_json(flow['Gewicht_TN']),
+                    'unit': unit
+                }
+            }
+        }
+    })
 
 
 def compute_trends(df, on=[], values=[], per_months=12, prop=None):
@@ -102,6 +122,10 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
         # prepare data & run linear regression
         X, Y = [], []
         for idx, flow in flows.iterrows():
+            # add individual data to RESULTS
+            key = f'{prop}\t{flow["MeldPeriodeJAAR"]}-Q{flow["Periode"]}\ttn'
+            save(flow, area=area, key=key)
+
             time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
             amount = flow['Gewicht_TN']
             X.append(time)
@@ -119,11 +143,11 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
 
         # overall change (tn)
         change = Y_final - Y_initial
-        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\ttn', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\tall years\ttn', {})[area] = to_json(change)
 
         # overall change (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\t{var.YEARS[0]}-{var.YEARS[-1]}\t%', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
 
         # change to same quarter, last year (tn)
         Y_initial, Y_final = np.nan, np.nan
@@ -135,11 +159,11 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None):
                             (flows['Periode'] == quarter)]['Gewicht_TN']
             Y_final = Y_final.values[0] if len(Y_final) else np.nan
         change = Y_final - Y_initial
-        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\ttn', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\tlast quarter\ttn', {})[area] = to_json(change)
 
         # change to same quarter, last year (%)
         change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\t{var.YEARS[-1]}-Q{quarter}\t%', {})[area] = to_none(change)
+        DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
 
 
 def compute_actions(flows, provincies, gemeenten):
@@ -187,28 +211,28 @@ def compute_actions(flows, provincies, gemeenten):
         compute_trends(flows,
                        on=[on],
                        values=[areas],
-                       per_months=3, prop=f'{prefix}_general')
+                       per_months=3, prop=f'{prefix}\ttotal')
 
         # Average quarterly change in LANDFILL change:
         ewc = ['G01', 'G02']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_landfill')
+                       per_months=3, prop=f'{prefix}\tlandfill')
 
         # Average quarterly change in INCINERATION change:
         ewc = ['B04', 'F01', 'F02', 'F06', 'F07']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_incineration')
+                       per_months=3, prop=f'{prefix}\tincineration')
 
         # Average quarterly change in REUSE change:
         ewc = ['B01', 'B03', 'B05']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_reuse')
+                       per_months=3, prop=f'{prefix}\treuse')
 
         # Average quarterly change in RECYCLING change:
         ewc = ['C01', 'C02', 'C03', 'C04', 'D01',
@@ -218,16 +242,15 @@ def compute_actions(flows, provincies, gemeenten):
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_recycling')
+                       per_months=3, prop=f'{prefix}\trecycling')
 
         # Average quarterly change in STORAGE change:
         ewc = ['A01', 'A02']
         compute_trends(flows,
                        on=[on, 'VerwerkingsmethodeCode'],
                        values=[areas, ewc],
-                       per_months=3, prop=f'{prefix}_storage')
+                       per_months=3, prop=f'{prefix}\tstorage')
 
-    res = {}
     with open('test/actions.json', 'w') as outfile:
         fields = sorted(list(DATA.keys()))
         fields = zip(*[iter(fields)] * 2)
@@ -235,7 +258,7 @@ def compute_actions(flows, provincies, gemeenten):
         for tup in fields:
             key = tup[0]
             values = DATA[key]
-            level, field, period, unit = key.split('\t')
+            level, field, typ, period, unit = key.split('\t')
 
             for value in values.items():
                 name, amount = value
@@ -252,14 +275,15 @@ def compute_actions(flows, provincies, gemeenten):
                         'unit': new_unit
                     }
 
-                res.setdefault(field, []).append({
+                RESULTS.setdefault(field, []).append({
                     'name': name,
                     'level': level,
+                    'type': typ,
                     'period': period,
                     'values': {
                         'waste': waste
                     }
                 })
 
-        json.dump(res, outfile, indent=4)
+        json.dump(RESULTS, outfile, indent=4)
 
