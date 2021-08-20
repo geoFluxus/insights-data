@@ -208,13 +208,13 @@ if __name__ == '__main__':
         lma_flows = import_lma_flows(areas=postcodes, year=year)
         cbs_flows = household_data[household_data['Perioden'] == int(year)]
 
-        # total primary waste (LMA)
-        def total_primary_waste(df):
+        # total company primary waste (LMA)
+        def total_company_primary_waste(df):
             return df[df['EuralCode'].str[:2] != '19']
-        compute_lma_waste(lma_flows, role='Herkomst', apply=total_primary_waste, year=year)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=total_company_primary_waste, year=year)
 
-        # total primary waste (CBS)
-        title = 'prov\ttotal_household_primary_waste\tmtn'
+        # total household primary waste (CBS)
+        title = 'province\ttotal_household_primary_waste\tmtn'
         cbs_primary_waste(cbs_flows, year=year, title=title)
 
         # incineration waste (LMA)
@@ -261,10 +261,10 @@ if __name__ == '__main__':
         compute_cbs_waste(cbs_flows, apply=separation_waste_per_inhabitant, year=year)
 
         # residual waste of companies, organisations & governments
-        def company_residual_waste(df):
+        def residual_company_waste(df):
             ewc = ['200301', '200307', '200399']
             return df[df['EuralCode'].isin(ewc)]
-        compute_lma_waste(lma_flows, role='Herkomst', apply=company_residual_waste, year=year)
+        compute_lma_waste(lma_flows, role='Herkomst', apply=residual_company_waste, year=year)
 
         # reuse of construction & demolition waste
         def reuse_construction_waste(df):
@@ -313,7 +313,7 @@ if __name__ == '__main__':
                         'values': {
                             'waste': {
                                 'weight': {
-                                    'value': amount,
+                                    'value': round(amount, 2) if type(amount) == float else amount,
                                     'unit': unit
                                 }
                             }
