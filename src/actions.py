@@ -44,11 +44,10 @@ def add_areas(flows, areas=None, role=None, admin_level=None):
 def save(flows, area=None):
     X, Y = [], []
     level, field, category, typ, unit = [None] * 5
-    for key, flow in flows.items():
+    for key, amount in flows.items():
         level, field, category, typ, period, unit = key.split('\t')
         X.append(period)
-        Y.append(to_json(flow['Gewicht_TN']))
-    # print(f'{area}: {level}, {field}, {category}, {typ}')
+        Y.append(to_json(amount))
     RESULTS.setdefault(field, []).append({
         'name': area,
         'level': level,
@@ -125,56 +124,62 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             conditions.append(df_new[key].isin(val))
         flows = df_new.loc[np.bitwise_and.reduce(conditions)]
 
-        # prepare data & run linear regression
-        X, Y = [], []
-        to_save = {}
-        for idx, flow in flows.iterrows():
-            # add individual data to RESULTS
-            key = f'{prop}\t{flow["MeldPeriodeJAAR"]}-Q{flow["Periode"]}\ttn'
-            to_save[key] = flow
-
-            time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
-            amount = flow['Gewicht_TN']
-            X.append(time)
-            Y.append(amount)
-        X = np.array(X).reshape(-1, 1)
-        # TODO: Fill graph data for missing values
+        # save data for graphs
+        # add individual data to RESULTS
         if add_graph:
-            if len(to_save) > 0: save(to_save, area=area)
+            to_save = {}
+            for year in var.YEARS:
+                for period in range(1, len(periods) + 1):
+                    amount = flows[(flows['MeldPeriodeJAAR'] == year) &
+                                   (flows['Periode'] == period)]['Gewicht_TN']
+                    amount = amount.values[0] if len(amount) else 0
+                    key = f'{prop}\t{year}-Q{period}\ttn'
+                    to_save[key] = amount
+            save(to_save, area=area)
 
-        if not add_trends: continue
-        Y_initial, Y_final = np.nan, np.nan
-        if Y:
-            # linear regression
-            reg = LinearRegression().fit(X, Y)
+        # run linear regression
+        if add_trends:
+            # prepare data
+            X, Y = [], []
+            for idx, flow in flows.iterrows():
+                time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
+                amount = flow['Gewicht_TN']
+                X.append(time)
+                Y.append(amount)
+            X = np.array(X).reshape(-1, 1)
 
-            # compute initial & final amount based on model
-            Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
-            Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
+            Y_initial, Y_final = np.nan, np.nan
+            if Y:
+                # linear regression
+                reg = LinearRegression().fit(X, Y)
 
-        # overall change (tn)
-        change = Y_final - Y_initial
-        DATA.setdefault(f'{prop}\tall years\ttn', {})[area] = to_json(change)
+                # compute initial & final amount based on model
+                Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
+                Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
-        # overall change (%)
-        change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
+            # overall change (tn)
+            change = Y_final - Y_initial
+            DATA.setdefault(f'{prop}\tall years\ttn', {})[area] = to_json(change)
 
-        # change to same quarter, last year (tn)
-        Y_initial, Y_final = np.nan, np.nan
-        if len(flows):
-            Y_initial = flows[(flows['MeldPeriodeJAAR'] == initial_year) &
-                              (flows['Periode'] == quarter)]['Gewicht_TN']
-            Y_initial = Y_initial.values[0] if len(Y_initial) else np.nan
-            Y_final = flows[(flows['MeldPeriodeJAAR'] == final_year) &
-                            (flows['Periode'] == quarter)]['Gewicht_TN']
-            Y_final = Y_final.values[0] if len(Y_final) else np.nan
-        change = Y_final - Y_initial
-        DATA.setdefault(f'{prop}\tlast quarter\ttn', {})[area] = to_json(change)
+            # overall change (%)
+            change = (Y_final - Y_initial) / Y_initial * 100
+            DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
 
-        # change to same quarter, last year (%)
-        change = (Y_final - Y_initial) / Y_initial * 100
-        DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
+            # change to same quarter, last year (tn)
+            Y_initial, Y_final = np.nan, np.nan
+            if len(flows):
+                Y_initial = flows[(flows['MeldPeriodeJAAR'] == initial_year) &
+                                  (flows['Periode'] == quarter)]['Gewicht_TN']
+                Y_initial = Y_initial.values[0] if len(Y_initial) else np.nan
+                Y_final = flows[(flows['MeldPeriodeJAAR'] == final_year) &
+                                (flows['Periode'] == quarter)]['Gewicht_TN']
+                Y_final = Y_final.values[0] if len(Y_final) else np.nan
+            change = Y_final - Y_initial
+            DATA.setdefault(f'{prop}\tlast quarter\ttn', {})[area] = to_json(change)
+
+            # change to same quarter, last year (%)
+            change = (Y_final - Y_initial) / Y_initial * 100
+            DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
 
 
 def compute_actions(flows, provincies, gemeenten):
@@ -182,25 +187,23 @@ def compute_actions(flows, provincies, gemeenten):
     Compute actions for provincie & gemeenten
     """
 
-    # # add gemeente & provincie to flow origins (herkomst)
-    # logging.info("Add gemeente & provincie to flow origins (herkomst)...")
-    # flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
-    # flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
-    #
-    # # add gemeente & provincie to flows destinations (verwerker)
-    # logging.info("Add gemeente & provincie to flows destinations (verwerker)...")
-    # flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
-    # flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
-    #
-    # # filter flows with origin (herkomst) or destination (verwerker)
-    # # within province in study
-    # logging.info("Filter flows within province in study...")
-    # flows = flows.loc[
-    #     (flows['Herkomst_Provincie'] == var.PROVINCE) |
-    #     (flows['Verwerker_Provincie'] == var.PROVINCE)
-    # ]
-    #
-    # flows.to_csv('./test/temp.csv', index=False)
+    # add gemeente & provincie to flow origins (herkomst)
+    logging.info("Add gemeente & provincie to flow origins (herkomst)...")
+    flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
+    flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
+
+    # add gemeente & provincie to flows destinations (verwerker)
+    logging.info("Add gemeente & provincie to flows destinations (verwerker)...")
+    flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
+    flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
+
+    # filter flows with origin (herkomst) or destination (verwerker)
+    # within province in study
+    logging.info("Filter flows within province in study...")
+    flows = flows.loc[
+        (flows['Herkomst_Provincie'] == var.PROVINCE) |
+        (flows['Verwerker_Provincie'] == var.PROVINCE)
+    ]
 
     # import industries
     industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
@@ -235,6 +238,8 @@ def compute_actions(flows, provincies, gemeenten):
                        per_months=3, prop=f'{prefix}\ttotal\ttotal',
                        add_graph=False)
 
+        # Average quarterly change in TREATMENT METHODS
+        # ONLY PRODUCTION
         TREATMENT_METHODS = {
             'landfill': ['G01', 'G02'],
             'incineration': ['B04', 'F01', 'F02', 'F06', 'F07'],
@@ -245,22 +250,24 @@ def compute_actions(flows, provincies, gemeenten):
                           'F03', 'F04'],
             'storage': ['A01', 'A02']
         }
+        if terms[role] == 'production':
+            for method, codes in TREATMENT_METHODS.items():
+                compute_trends(flows,
+                               on=[on, 'VerwerkingsmethodeCode'],
+                               values=[areas, codes],
+                               per_months=3, prop=f'{prefix}\tprocess\t{method}',
+                               add_graph=False)
 
-        # Average quarterly change in TREATMENT_METHODS
-        for method, codes in TREATMENT_METHODS.items():
-            compute_trends(flows,
-                           on=[on, 'VerwerkingsmethodeCode'],
-                           values=[areas, codes],
-                           per_months=3, prop=f'{prefix}\tprocess\t{method}',
-                           add_trends=False)
-
-        # Average quarterly change in INDUSTRY GROUPS waste
-        for group in industry_groups:
-            compute_trends(flows,
-                           on=[on, 'industry'],
-                           values=[areas, [group]],
-                           per_months=3, prop=f'{prefix}\tmaterial\t{group}',
-                           add_trends=False)
+        # Average quarterly change in INDUSTRY GROUPS per TREATMENT METHOD
+        # ONLY PRODUCTION
+        if terms[role] == 'production':
+            for method, codes in TREATMENT_METHODS.items():
+                for group in industry_groups:
+                    compute_trends(flows,
+                                   on=[on, 'VerwerkingsmethodeCode', 'industry'],
+                                   values=[areas, codes, [group]],
+                                   per_months=3, prop=f'{prefix}\tmaterial\t{method}_{group}',
+                                   add_trends=False)
 
     with open('test/actions.json', 'w') as outfile:
         fields = sorted(list(DATA.keys()))
@@ -297,5 +304,8 @@ def compute_actions(flows, provincies, gemeenten):
                     }
                 })
 
-        json.dump(RESULTS, outfile, indent=4)
+        import _make_iterencode
+        json.encoder._make_iterencode = _make_iterencode._make_iterencode
+        indent = (2, None)
+        json.dump(RESULTS, outfile, indent=indent)
 
