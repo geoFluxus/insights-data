@@ -208,6 +208,10 @@ if __name__ == '__main__':
         lma_flows = import_lma_flows(areas=postcodes, year=year)
         cbs_flows = household_data[household_data['Perioden'] == int(year)]
 
+        # divide between province in study & others
+        lma_flows.loc[lma_flows['Herkomst_Provincie'] != var.PROVINCE, 'Herkomst_Provincie'] = 'Other'
+        cbs_flows.loc[cbs_flows['Provincie'] != var.PROVINCE, 'Provincie'] = 'Other'
+
         # total company primary waste (LMA)
         def total_company_primary_waste(df):
             return df[df['EuralCode'].str[:2] != '19']
