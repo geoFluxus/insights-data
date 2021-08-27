@@ -14,8 +14,27 @@ RESULTS = {}
 
 
 def to_json(value):
-    if np.isnan(value): return None
+    if np.isnan(value): return 0
     return round(value, 2)
+
+
+def get_flows(year=None):
+    """
+    Import flows from 'data/flows'
+    """
+    path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
+    filename = f'{path}/ontvangst_{var.PROVINCE.lower()}_{year}.csv'
+
+    return pd.read_csv(filename, low_memory=False)
+
+
+def get_areas():
+    """
+    Import areas from 'data/areas'
+    """
+    provincies = gpd.read_file('./data/areas/provincies.shp')
+    gemeenten = gpd.read_file('./data/areas/gemeenten.shp')
+    return provincies, gemeenten
 
 
 def add_areas(flows, areas=None, role=None, admin_level=None):
@@ -182,28 +201,44 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
 
 
-def compute_actions(flows, provincies, gemeenten):
+if __name__ == '__main__':
     """
     Compute actions for provincie & gemeenten
     """
+    # get areas
+    print("Load areas...\n")
+    provincies, gemeenten = get_areas()
 
-    # add gemeente & provincie to flow origins (herkomst)
-    logging.info("Add gemeente & provincie to flow origins (herkomst)...")
-    flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
-    flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
+    print("INPUTS...")
+    all_years = []
+    for year in var.YEARS:
+        print(f"Load {year} flows...")
+        flows = get_flows(year=year)
+        flows['Gewicht_TN'] = flows['Gewicht_KG'] / 10**3
+        print(f"Total flows: {len(flows)}")
 
-    # add gemeente & provincie to flows destinations (verwerker)
-    logging.info("Add gemeente & provincie to flows destinations (verwerker)...")
-    flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
-    flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
+        # add gemeente & provincie to flow origins (herkomst)
+        print("Add gemeente & provincie to flow origins (herkomst)...")
+        flows = add_areas(flows, role='Herkomst', areas=gemeenten, admin_level='Gemeente')
+        flows = add_areas(flows, role='Herkomst', areas=provincies, admin_level='Provincie')
 
-    # filter flows with origin (herkomst) or destination (verwerker)
-    # within province in study
-    logging.info("Filter flows within province in study...")
-    flows = flows.loc[
-        (flows['Herkomst_Provincie'] == var.PROVINCE) |
-        (flows['Verwerker_Provincie'] == var.PROVINCE)
-    ]
+        # add gemeente & provincie to flows destinations (verwerker)
+        print("Add gemeente & provincie to flows destinations (verwerker)...")
+        flows = add_areas(flows, role='Verwerker', areas=gemeenten, admin_level='Gemeente')
+        flows = add_areas(flows, role='Verwerker', areas=provincies, admin_level='Provincie')
+
+        # filter flows with origin (herkomst) or destination (verwerker)
+        # within province in study
+        print("Filter flows within province in study...")
+        flows = flows.loc[
+            (flows['Herkomst_Provincie'] == var.PROVINCE) |
+            (flows['Verwerker_Provincie'] == var.PROVINCE)
+        ]
+        all_years.append(flows)
+        print()
+    print("Merge all years...")
+    flows = pd.concat(all_years)
+    print(f"Total flows: {len(flows)}\n")
 
     # import industries
     industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')

@@ -391,7 +391,7 @@ if __name__ == '__main__':
         # merge all years
         df = pd.concat(sorted_data, axis=1)
         df = df.loc[:, ~df.columns.duplicated()]
-        columns = list(df.columns)[1:]
+        columns = list(df.columns)[1:]  # drop index
         results[field] = json.loads(df[columns].to_json(orient="records"))
 
     final = {}

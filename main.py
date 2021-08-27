@@ -5,28 +5,6 @@ from src import actions
 import logging
 
 
-def get_flows():
-    """
-    Import flows from 'data/flows'
-    """
-    flows = []
-    for year in var.YEARS:
-        filename = f'./data/flows/ontvangst_{var.PROVINCE.lower()}_{year}.csv'
-        csv = pd.read_csv(filename, low_memory=False)
-        flows.append(csv)
-
-    return pd.concat(flows)
-
-
-def get_areas():
-    """
-    Import areas from 'data/areas'
-    """
-    provincies = gpd.read_file('./data/areas/provincies.shp')
-    gemeenten = gpd.read_file('./data/areas/gemeenten.shp')
-    return provincies, gemeenten
-
-
 if __name__ == '__main__':
     # logging: timestamp, warning level & message
     logging.basicConfig(filename="logs.txt",  # file name
@@ -42,8 +20,8 @@ if __name__ == '__main__':
     logging.info("INPUTS...")
     logging.info("Load flows...")
     flows = get_flows()
-    # flows = pd.read_csv('data/flows/utrecht_actions.csv', low_memory=False)
     flows['Gewicht_TN'] = flows['Gewicht_KG'] / 10**3
+    # flows = pd.read_csv('test/temp.csv', low_memory=False)
     logging.info(f"Total flows: {len(flows)}")
 
     # get areas
