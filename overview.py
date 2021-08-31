@@ -33,7 +33,7 @@ ROLES = {
     }
 }
 
-RESOURCE = {} # resource flow data
+MAP = {} # map data
 
 DATA = {}
 
@@ -44,6 +44,37 @@ NETWORK = {}
 ACTIVITIES = None
 
 PROCESSES = None
+
+
+def import_areas():
+    # municipalities
+    gemeenten = gpd.read_file('data/areas/gemeenten.shp')
+    gemeenten['centroid'] = gemeenten['geometry'].centroid
+    # gemeenten['centroid'] = gemeenten['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
+    AREAS['Gemeente'] = gemeenten
+
+    # provinces
+    provincies = gpd.read_file('data/areas/provincies.shp')
+    provincies['centroid'] = provincies['geometry'].centroid
+    # provincies['centroid'] = provincies['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
+    AREAS['Provincie'] = provincies
+
+    # continents
+    continents = gpd.read_file('data/areas/continents.shp')
+    continents['centroid'] = continents['geometry'].centroid
+    # continents['centroid'] = continents['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
+    AREAS['Continent'] = continents
+
+    # countries
+    countries = gpd.read_file('data/areas/countries.shp')
+    countries['country_nl'] = countries['country_nl'].str.upper()
+    countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
+    AREAS['Country'] = countries
+
+    # list of province municipalities
+    provincie_gemeenten = gemeenten[gemeenten['parent'] == var.PROVINCE]['name'].to_list()
+
+    return provincie_gemeenten
 
 
 def group_flows(df, period='year'):
@@ -101,7 +132,29 @@ def add_identifiers(df, type=None):
     return df
 
 
-def to_flowmap(df, level=None):
+def add_routings(flows):
+    # join with routings
+    flows = pd.merge(flows, routings, how='left', on=['origin', 'destination'])
+    unmatched = len(flows[flows['origin'].isnull()])
+    if unmatched:
+        print(f'No routings for {unmatched.index} flows...')
+
+    # TODO: fill with random numbers (Aantal_vrachten)
+    vehicles = pd.read_excel('data/network/vehicle.xlsx')
+    flows['tn'] = flows['Gewicht_KG'] / 10 ** 3
+    flows['average'] = flows['tn'] / flows['Aantal_vrachten']
+
+    # TODO: compute CO2 emissions
+    for idx, row in vehicles.iterrows():
+        min, max = row['min'], row['max']
+        condition = (flows['average'] >= min) & (flows['average'] < max)
+        flows.loc[condition, 'grams per tonne kilometer'] = row['co2']
+    flows['co2'] = flows['grams per tonne kilometer'] * flows['tn'] * flows['distance'] / 10**3
+
+    return flows
+
+
+def to_flowmap(df, level=None, extra=[]):
     level_areas = AREAS[level]
     continents = AREAS['Continent']
 
@@ -132,6 +185,8 @@ def to_flowmap(df, level=None):
                 'lat': row['target_centroid'].y
             }
         }
+        for ex in extra:
+            flow[ex] = row[ex]
         flows.append(flow)
 
     return flows
@@ -139,61 +194,50 @@ def to_flowmap(df, level=None):
 
 def get_flows(df,
               period=None,
-              source=None, source_in=True,
-              target=None, target_in=True,
-              level=None, areas=[]):
+              source=None, source_in=None,
+              target=None, target_in=None,
+              level=None, areas=[],
+              groupby=[], rename={}):
+    # extra fields for json
+    extra = list(rename.values())
+
     # filter dataframe
     conditions = []
     for node, node_in in zip([source, target], [source_in, target_in]):
+        if node_in is None: continue
         condition = df[f'{node}_{level}'].isin(areas)
         if not node_in: condition = ~condition
         conditions.append(condition)
     if period: conditions.append(df['Periode'] == period)
-    flows = df[np.bitwise_and.reduce(conditions)]
+    flows = df[np.bitwise_and.reduce(conditions)].copy() if len(conditions) else df.copy()
 
     # groupby columns
-    groupby = [
+    _groupby = groupby.copy()
+    _groupby.extend([
         'source',
         'target',
         'Gewicht_KG'
-    ]
+    ])
 
-    columns_within = {
+    columns = {
         f'{source}_{level}': 'source',
         f'{target}_{level}': 'target',
     }
 
-    # spli to flows within Netherlands & abroad
-    conditions = []
-    for node, node_in in zip([source, target], [source_in, target_in]):
-        if not node_in:
-            condition = (flows[f'{node}_Land'] == 'NEDERLAND') |\
-                        (flows[f'{node}_Land'] == 'NAN')
-            conditions.append(condition)
-    flows_within = flows[np.bitwise_and.reduce(conditions)]
-    flows_abroad = flows[~np.bitwise_and.reduce(conditions)]
-
-    # flows = flows within Netherlands + flows abroad
-    assert len(flows) == len(flows_abroad) + len(flows_within)
-
-    # preprocess
-    flows_within = flows_within.rename(columns=columns_within)
-    source_level = f'{source}_{level}' if source_in else f'{source}_Continent'
-    target_level = f'{target}_{level}' if target_in else f'{target}_Continent'
-    columns_abroad = {
-        source_level: 'source',
-        target_level: 'target'
-    }
-    flows_abroad = flows_abroad.rename(columns=columns_abroad)
-
-    flows_within = flows_within[groupby]
-    flows_abroad = flows_abroad[groupby]
-    flows = pd.concat([flows_within, flows_abroad])
+    # split to flows with source/target in/out Netherlands
+    for node in [source, target]:
+        condition = (flows[f'{node}_Land'] == 'NEDERLAND') |\
+                    (flows[f'{node}_Land'] == 'NAN')
+        flows.loc[condition, f'{node}_in'] = True
+        flows.loc[~condition, f'{node}_in'] = False
+        flows.loc[flows[f'{node}_in'] == True, columns[f'{node}_{level}']] = flows[f'{node}_{level}']
+        flows.loc[flows[f'{node}_in'] == False, columns[f'{node}_{level}']] = flows[f'{node}_Continent']
 
     # aggregate
-    groups = flows.groupby(groupby[:-1]).sum().reset_index()
+    groups = flows[_groupby].groupby(_groupby[:-1]).sum().reset_index()
+    groups = groups.rename(columns=rename)
 
-    return to_flowmap(groups, level=level)
+    return to_flowmap(groups, level=level, extra=extra)
 
 
 def get_activities(df, period=None, source=None,
@@ -261,7 +305,6 @@ def get_activities(df, period=None, source=None,
 
     # group by ACTIVITY & PROCESS
     # TODO: have a constant grid of activities & processes -> add missing values
-    flows['VerwerkingsGroep'] = flows['VerwerkingsmethodeCode'].str[0]
     groups = flows.groupby([
         f'{source}_{level}',
         f'{source}_AG',
@@ -317,12 +360,13 @@ def get_activities(df, period=None, source=None,
     return results
 
 
-def get_network(df,
+def get_emissions(df,
                 period=None,
                 source=None, source_in=True,
                 target=None, target_in=True,
-                level=None, areas=[],
-                routings=None):
+                level=None, areas=[]):
+    results = []
+
     # filter dataframe
     conditions = []
     for node, node_in in zip([source, target], [source_in, target_in]):
@@ -332,87 +376,102 @@ def get_network(df,
     if period: conditions.append(df['Periode'] == period)
     flows = df[np.bitwise_and.reduce(conditions)]
 
-    # join with routings
-    flows = pd.merge(flows, routings, how='left', on=['origin', 'destination'])
-    unmatched = len(flows[flows['origin'].isnull()])
-    if unmatched:
-        print(f'No routings for {unmatched.index} flows...')
-
-    # TODO: fill with random numbers (Aantal_vrachten)
-    vehicles = pd.read_excel('data/network/vehicle.xlsx')
-    flows['Aantal_vrachten'] = np.random.randint(1, 10, flows.shape[0])
-    flows['tn'] = flows['Gewicht_KG'] / 10**3
-    flows['average'] = flows['tn'] / flows['Aantal_vrachten']
-
-    # TODO: compute CO2 emissions
-    for idx, row in vehicles.iterrows():
-        min, max = row['min'], row['max']
-        condition = (flows['average'] >= min) & (flows['average'] < max)
-        flows.loc[condition, 'grams per tonne kilometer'] = row['co2']
-    flows['co2'] = flows['grams per tonne kilometer'] * flows['tn'] * flows['distance'] / 10**3
-
     # totals
     area = f'{source}_{level}' if source_in else f'{target}_{level}'
     groupby = [
         area,
         'co2'
     ]
-    groups = flows.groupby(groupby[:-1]).sum().reset_index()
+    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
+    groups = groups.rename(columns={area: 'area'})
 
-    # network map for province
-    # if level == 'Provincie':
-        # # distribute along network
-        # ways = {}
-        # for idx, flow in flows.iterrows():
-        #     seq, amount = flow['seq'], flow['co2']
-        #     if not amount: continue
-        #
-        #     if type(seq) == str:
-        #         seq = [id for id in seq.split('@')]
-        #         for id in seq:
-        #             if id in ways:
-        #                 ways[id] += amount
-        #             else:
-        #                 ways[id] = amount
-        #
-        # data = []
-        # for way in NETWORK.items():
-        #     id, geometry = way
-        #     id = str(id)
-        #     if id not in ways: ways[id] = 0
-        #     data.append({
-        #         'geometry': geometry,
-        #         'amount': ways[id]
-        #     })
-        #
-        # return [{
-        #     'id': key,
-        #     'value': value
-        # } for key, value in ways.items()]
+    # add missing values
+    for area in areas:
+        search = groups[groups['area'] == area]
+        if len(search) == 0:
+            groups.loc[len(groups)] = [area, 0]
+    groups = groups.sort_values(by=['area'])
+
+    # write results
+    for idx, item in groups.iterrows():
+        results.append({
+            'name': item['area'],
+            'values': {
+                'weight': {
+                    'value': round(item['co2'] / 10**9, 2),
+                    'unit': 'ktn'
+                }
+            }
+        })
+
+    return results
+
+
+def get_network(df):
+    # distribute along network
+    ways = {}
+    for idx, flow in df.iterrows():
+        seq, amount = flow['seq'], flow['co2']
+        if type(seq) == str:
+            seq = [id for id in seq.split('@')]
+            if np.isnan(amount): amount = 0
+            for id in seq:
+                if id in ways:
+                    ways[id] += amount
+                else:
+                    ways[id] = amount
+
+    # load to segments
+    data = []
+    for way in NETWORK.items():
+        id, geometry = way
+        id = str(id)
+        if id not in ways: ways[id] = 0
+        data.append({
+            'geometry': geometry,
+            'amount': ways[id]
+        })
+
+    return data
+
+
+def export():
+    # # GRAPHS
+    # results = {}
+    # with open('test/overview.json', 'w') as outfile:
+    #     for key, items in DATA.items():
+    #         level, field, period = key.split('\t')
+    #         for item in items:
+    #             item['level'] = level
+    #             item['period'] = period
+    #             results.setdefault(field, []).append(item)
+    #     json.encoder._make_iterencode = _make_iterencode._make_iterencode
+    #     indent = (2, None)
+    #     json.dump(results, outfile, indent=indent)
+
+    # NETWORK MAPS
+    data = MAP.pop('transport')
+    # print(data)
+
+    # # FLOWMAPS
+    # for section, data in MAP.items():
+    #     with open(f'test/overview_{section}_flowmap.json', 'w') as outfile:
+    #         results = []
+    #         for key, items in data.items():
+    #             level, field, period = key.split('\t')
+    #             type = field.replace('_', ' ')
+    #             for item in items:
+    #                 item['period'] = period
+    #                 item['type'] = type
+    #                 results.append(item)
+    #         json.dump(results, outfile, indent=4)
 
 
 if __name__ == "__main__":
     # import areas
     print('Import areas...')
-    gemeenten = gpd.read_file('data/areas/gemeenten.shp')
-    gemeenten['centroid'] = gemeenten['geometry'].centroid
-    AREAS['Gemeente'] = gemeenten
-
-    provincies = gpd.read_file('data/areas/provincies.shp')
-    provincies['centroid'] = provincies['geometry'].centroid
-    AREAS['Provincie'] = provincies
-
-    continents = gpd.read_file('data/areas/continents.shp')
-    continents['centroid'] = continents['geometry'].centroid
-    AREAS['Continent'] = continents
-
-    countries = gpd.read_file('data/areas/countries.shp')
-    countries['country_nl'] = countries['country_nl'].str.upper()
-    countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
-    AREAS['Country'] = countries
-
+    provincie_gemeenten = import_areas()
     provincie = var.PROVINCE
-    provincie_gemeenten = gemeenten[gemeenten['parent'] == provincie]['name'].to_list()
 
     # import routings
     print('Import routings...')
@@ -449,6 +508,7 @@ if __name__ == "__main__":
             path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
             filename = f'{path}/{typ.lower()}_{var.PROVINCE.lower()}_{year}.csv'
             df = pd.read_csv(filename, low_memory=False)
+            df['VerwerkingsGroep'] = df['VerwerkingsmethodeCode'].str[0]
 
             # group flows to periods
             print('Split to periods...')
@@ -459,17 +519,15 @@ if __name__ == "__main__":
             source = ROLES[typ]['source']  # source role
             target = ROLES[typ]['target']  # target role
             activity = ROLES[typ]['activity']  # activity role (ontvangst: 'ontdoener')
-            for role, level in itertools.product([source, target], [
-                'Provincie',
-                # 'Gemeente'
-            ]):
+            for role, level in itertools.product([source, target], ['Provincie', 'Gemeente']):
                 areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
             if typ == 'Ontvangst':
                 df = add_areas(df, areas=AREAS['Provincie'], role=activity, admin_level="Provincie")
-                # df = add_areas(df, areas=AREAS['Gemeente'], role=activity, admin_level="Gemeente")
+                df = add_areas(df, areas=AREAS['Gemeente'], role=activity, admin_level="Gemeente")
 
             # add continents based on countries to roles
+            countries = AREAS['Country']
             countries = countries[['country_nl', 'cont_nl']]
             for role in [source, target]:
                 columns = list(df.columns)
@@ -482,105 +540,101 @@ if __name__ == "__main__":
             print('Add identifiers to flows...')
             df = add_identifiers(df, type=typ)
 
-            # analyse on provincial & municipal level
-            print('Analyse...')
-            for level in [
-                'Provincie',
-                # 'Gemeente'
-            ]:
-                areas = [provincie] if level == 'Provincie' else provincie_gemeenten
+            # add routings
+            print('Add routings to flows...')
+            df = add_routings(df)
 
-                prefixes = {
-                    'Provincie': 'province',
-                    'Gemeente': 'municipality',
-                    'Ontvangst': 'primary',
-                    'Afgifte': 'secondary',
-                }
-                prefix = f'{prefixes[level]}\t{prefixes[typ]}_waste'
+            prefixes = {
+                'Provincie': 'province',
+                'Gemeente': 'municipality',
+                'Ontvangst': 'primary',
+                'Afgifte': 'secondary',
+            }
 
-                for p in periods:
-                    suffix = f'{year}'
-                    if p: suffix = f'{suffix}-{period[0].upper()}{p}'
+            # # analyse on provincial & municipal level
+            # print('Analyse...')
+            # for level in ['Provincie', 'Gemeente']:
+            #     areas = [provincie] if level == 'Provincie' else provincie_gemeenten
+            #
+            #     prefix = f'{prefixes[level]}\t{prefixes[typ]}_waste'
+            #
+            #     for p in periods:
+            #         suffix = f'{year}'
+            #         if p: suffix = f'{suffix}-{period[0].upper()}{p}'
+            #
+            #         # RESOURCES
+            #         if prefixes[level] == 'province':
+            #             # import (source out, target in) -> FLOWMAP
+            #             MAP.setdefault('resources', {})[f'{prefix}_import\t{suffix}'] = \
+            #                 get_flows(df,
+            #                           period=p,
+            #                           source=source, source_in=False,
+            #                           target=target, target_in=True,
+            #                           level=level, areas=areas)
+            #
+            #             # export (source in, target out) -> FLOWMAP
+            #             MAP.setdefault('resources', {})[f'{prefix}_export\t{suffix}'] = \
+            #                 get_flows(df,
+            #                           period=p,
+            #                           source=source, source_in=True,
+            #                           target=target, target_in=False,
+            #                           level=level, areas=areas)
+            #
+            #         # ECONOMIC ACTIVITIES
+            #         if prefixes[typ] == 'primary':
+            #             # GRAPHS
+            #             if prefixes[level] == 'province':
+            #                 DATA[f'{prefix}_activities\t{suffix}'] = \
+            #                     get_activities(df,
+            #                                    period=p,
+            #                                    source=activity,
+            #                                    level=level, areas=areas)
+            #
+            #             # FLOWMAPS
+            #             if prefixes[level] == 'municipality':
+            #                 # economic activities (Herkomst in) -> FLOWMAP
+            #                 MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
+            #                     get_flows(df,
+            #                               period=p,
+            #                               source=source, source_in=True,
+            #                               target=target,
+            #                               level=level, areas=areas,
+            #                               groupby=[f'{activity}_AG'], rename={f'{activity}_AG': 'activity'})
+            #
+            #                 # waste processes (Herkomst in) -> FLOWMAP
+            #                 MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
+            #                     get_flows(df,
+            #                               period=p,
+            #                               source=source, source_in=True,
+            #                               target=target,
+            #                               level=level, areas=areas,
+            #                               groupby=['VerwerkingsGroep'],
+            #                               rename={'VerwerkingsGroep': 'process'})
+            #
+            #         # TRANSPORT
+            #         # GRAPHS
+            #         if prefixes[level] == 'province':
+            #             DATA[f'{prefix}_import_co2\t{suffix}'] = \
+            #                 get_emissions(df,
+            #                             period=p,
+            #                             source=activity, source_in=False,
+            #                             target=target, target_in=True,
+            #                             level=level, areas=areas)
+            #
+            #             DATA[f'{prefix}_export_co2\t{suffix}'] = \
+            #                 get_emissions(df,
+            #                             period=p,
+            #                             source=activity, source_in=True,
+            #                             target=target, target_in=False,
+            #                             level=level, areas=areas)
 
-                    # import (source out, target in) -> FLOWMAP
-                    RESOURCE[f'{prefix}_import\t{suffix}'] = \
-                        get_flows(df,
-                                  period=p,
-                                  source=source, source_in=False,
-                                  target=target, target_in=True,
-                                  level=level, areas=areas)
-
-                    # # internal (source in, target in) -> FLOWMAP
-                    # RESOURCE[f'{prefix}_internal\t{suffix}'] = \
-                    #     get_flows(df,
-                    #               period=p,
-                    #               source=source, source_in=True,
-                    #               target=target, target_in=True,
-                    #               level=level, areas=areas)
-                    #
-                    # # export (source in, target out) -> FLOWMAP
-                    # RESOURCE[f'{prefix}_export\t{suffix}'] = \
-                    #     get_flows(df,
-                    #               period=p,
-                    #               source=source, source_in=True,
-                    #               target=target, target_in=False,
-                    #               level=level, areas=areas)
-
-                    # # economic activities -> GRAPHS
-                    # DATA[f'{prefix}_activities\t{suffix}'] = \
-                    #     get_activities(df,
-                    #                    period=p,
-                    #                    source=activity,
-                    #                    level=level, areas=areas)
-                    #
-                    # # economic activities -> FLOWMAPS
-                    # RESOURCE[f'{prefix}_activities\t{suffix}'] = \
-                    #     get_flows(df,
-                    #               period=p,
-                    #               source=source,
-                    #               target=target,
-                    #               level=level, areas=areas)
-
-                    # # transport
-                    # DATA[f'{prefix}_import_co2\t{suffix}'] = \
-                    #     get_network(df,
-                    #                 period=p,
-                    #                 source=activity, source_in=False,
-                    #                 target=target, target_in=True,
-                    #                 level=level, areas=areas,
-                    #                 routings=routings)
-
-                    # DATA[f'{prefix}_export_co2_{suffix}'] = \
-                    #     get_network(df,
-                    #                 period=p,
-                    #                 source=activity, source_in=True,
-                    #                 target=target, target_in=False,
-                    #                 level=level, areas=areas,
-                    #                 routings=routings)
+            # CO2 NETWORK MAP (all levels)
+            MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
 
         print('\n')
 
-    # results = {}
-    # with open('test/overview.json', 'w') as outfile:
-    #     for key, items in DATA.items():
-    #         level, field, period = key.split('\t')
-    #         for item in items:
-    #             item['level'] = level
-    #             item['period'] = period
-    #             results.setdefault(field, []).append(item)
-    #     json.encoder._make_iterencode = _make_iterencode._make_iterencode
-    #     indent = (2, None)
-    #     json.dump(results, outfile, indent=indent)
-
-    with open('test/overview_resource.json', 'w') as outfile:
-        results = []
-        for key, items in RESOURCE.items():
-            level, field, period = key.split('\t')
-            type = field.replace('_', ' ')
-            for item in items:
-                item['type'] = type
-                results.append(item)
-        json.dump(results, outfile, indent=4)
+    # export analysis
+    export()
 
 
 
