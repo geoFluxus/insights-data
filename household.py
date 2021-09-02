@@ -5,21 +5,6 @@ import gc
 import json
 import variables as var
 
-# find cbs data (2016-2019) for gemeenten & provincies
-INWONERS = {
-    'Groningen': 586813,
-    'Friesland': 651459,
-    'Drenthe': 494760,
-    'Overijssel': 1166478,
-    'Flevoland': 428264,
-    'Gelderland': 2096620,
-    'Utrecht': 1361093,
-    'Noord-Holland': 2887906,
-    'Zuid-Holland': 3726173,
-    'Zeeland': 385379,
-    'Noord-Brabant': 2573853,
-    'Limburg': 1115895
-}
 
 DATA = {}
 
@@ -104,7 +89,14 @@ def import_lma_flows(areas=None, year=None):
     return df
 
 
-def compute_lma_waste(df, role=None, level=None, areas=None, apply=None, year=None):
+def compute_lma_waste(df,
+                      role=None,
+                      level=None,
+                      areas=None,
+                      apply=None,
+                      year=None,
+                      reference=None,
+                      ignore=False):
     """
     Compute LMA waste
     """
@@ -112,7 +104,8 @@ def compute_lma_waste(df, role=None, level=None, areas=None, apply=None, year=No
         'Provincie': 'province',
         'Gemeente': 'municipality'
     }
-    title = f'{terms[level]}\t{apply.__name__}\tmtn'
+    unit = '%' if reference is not None else 'mtn'
+    title = f'{terms[level]}\t{apply.__name__}\t{unit}'
     print(title)
 
     columns = [
@@ -135,7 +128,12 @@ def compute_lma_waste(df, role=None, level=None, areas=None, apply=None, year=No
     # add to data
     df[year] = df['Gewicht_KG'] / 10**9
     df['area'] = df[f'{role}_{level}']
-    DATA.setdefault(title, []).append(df[['area', year]])
+    result = df[['area', year]].sort_values(by='area')
+    if reference is not None:
+        result[year] = (result[year] / reference[year]) * 100
+    if not ignore: DATA.setdefault(title, []).append(result)
+
+    return result
 
 
 def cbs_primary_waste(input, level=None, year=None, title=None):
@@ -153,11 +151,14 @@ def cbs_primary_waste(input, level=None, year=None, title=None):
     # add to data
     df[year] = df['Gewicht_KG'] / 10**9
     df['area'] = df[f'{level}']
-    DATA.setdefault(title, []).append(df[['area', year]])
+    result = df[['area', year]].sort_values(by='area')
+    DATA.setdefault(title, []).append(result)
+
+    return result
 
 
-def compute_cbs_waste(input, apply=None, year=None):
-    title = f'{apply.__name__}\tkg'
+def compute_cbs_waste(input, apply=None, year=None, unit=None):
+    title = f'{apply.__name__}\t{unit}'
     print(title)
 
     df = input.copy()
@@ -221,7 +222,7 @@ if __name__ == '__main__':
 
         # process for province & municipalities
         for level in ['Provincie', 'Gemeente']:
-            areas = [var.PROVINCE, 'Other'] if level == 'Provincie' else provincie_gemeenten
+            areas = [var.PROVINCE, 'All other provinces'] if level == 'Provincie' else provincie_gemeenten
 
             # copy initial dataframes
             lma_flows = LMA_FLOWS.copy()
@@ -229,33 +230,39 @@ if __name__ == '__main__':
 
             # if level == 'Provincie', divide between current area & others
             if level == 'Provincie':
-                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != var.PROVINCE, f'Herkomst_{level}'] = 'Other'
-                cbs_flows.loc[cbs_flows['Provincie'] != var.PROVINCE, 'Provincie'] = 'Other'
+                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != var.PROVINCE, f'Herkomst_{level}'] = 'All other provinces'
+                cbs_flows.loc[cbs_flows['Provincie'] != var.PROVINCE, 'Provincie'] = 'All other provinces'
 
             # if level == 'Gemeente', get only province data
             if level == 'Gemeente':
                 lma_flows = lma_flows[lma_flows[f'Herkomst_Provincie'] == var.PROVINCE]
-                cbs_flows = CBS_FLOWS[CBS_FLOWS['Provincie'] == var.PROVINCE]
+                cbs_flows = cbs_flows[cbs_flows['Provincie'] == var.PROVINCE]
 
-            # total company primary waste (LMA)
+            # total company primary waste (LMA) -> weight
             def total_company_primary_waste(df):
                 return df[df['EuralCode'].str[:2] != '19']
-            compute_lma_waste(lma_flows,
-                              role='Herkomst',
-                              level=level,
-                              areas=areas,
-                              apply=total_company_primary_waste,
-                              year=year)
+            total_company_primary =\
+                compute_lma_waste(lma_flows,
+                                  role='Herkomst',
+                                  level=level,
+                                  areas=areas,
+                                  apply=total_company_primary_waste,
+                                  year=year)
 
-            # total household primary waste (CBS)
+            # total household primary waste (CBS) -> weight
             prefix = 'province' if level == 'Provincie' else 'municipality'
             title = f'{prefix}\ttotal_household_primary_waste\tmtn'
-            cbs_primary_waste(cbs_flows,
-                              level=level,
-                              year=year,
-                              title=title)
+            total_household_primary =\
+                cbs_primary_waste(cbs_flows,
+                                  level=level,
+                                  year=year,
+                                  title=title)
 
-            # incineration waste (LMA)
+            # # total primary = company + household
+            # total_primary = pd.concat([total_company_primary, total_household_primary])
+            # total_primary = total_primary.groupby('area').sum().reset_index()
+
+            # incineration waste (LMA) -> weight
             def incineration_waste(df):
                 ewc = ['B04', 'F01', 'F02', 'F06', 'F07']
                 return df[df['VerwerkingsmethodeCode'].isin(ewc)]
@@ -266,7 +273,7 @@ if __name__ == '__main__':
                               apply=incineration_waste,
                               year=year)
 
-            # landfill waste
+            # landfill waste -> weight
             def landfill_waste(df):
                 ewc = ['G01', 'G02']
                 return df[df['VerwerkingsmethodeCode'].isin(ewc)]
@@ -277,7 +284,7 @@ if __name__ == '__main__':
                               apply=landfill_waste,
                               year=year)
 
-            # reuse of primary waste
+            # reuse of primary waste -> percentage (primary waste: company)
             def reuse_primary_waste(df):
                 ewc = ['B01', 'B03', 'B05']
                 return df[(df['EuralCode'].str[:2] != '19') & (df['VerwerkingsmethodeCode'].isin(ewc))]
@@ -286,9 +293,10 @@ if __name__ == '__main__':
                               level=level,
                               areas=areas,
                               apply=reuse_primary_waste,
-                              year=year)
+                              year=year,
+                              reference=total_company_primary)
 
-            # recycling of primary waste
+            # recycling of primary waste -> percentage (primary waste: company)
             def recycling_primary_waste(df):
                 ewc = ['C01', 'C02', 'C03', 'C04', 'D01',
                        'D02', 'D03', 'D04', 'D05', 'D06',
@@ -300,32 +308,36 @@ if __name__ == '__main__':
                               level=level,
                               areas=areas,
                               apply=recycling_primary_waste,
-                              year=year)
+                              year=year,
+                              reference=total_company_primary)
 
-            # total household waste per inhabitant
+            # total household waste per inhabitant -> kg
             if level == 'Gemeente':
                 def household_waste_per_inhabitant(df):
                     return df["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"]
                 compute_cbs_waste(cbs_flows,
                                   apply=household_waste_per_inhabitant,
-                                  year=year)
+                                  year=year,
+                                  unit='kg')
 
-                # household residual waste per inhabitant
+                # household residual waste per inhabitant -> kg
                 def residual_waste_per_inhabitant(df):
                     return df["Hoeveelheid fijn huishoudelijk restafval [Kilo's per inwoner]"] + \
                            df["Hoeveelheid grof huishoudelijk restafval [Kilo's per inwoner]"]
                 compute_cbs_waste(cbs_flows,
                                   apply=residual_waste_per_inhabitant,
-                                  year=year)
+                                  year=year,
+                                  unit='kg')
 
-                # separation of household waste (as % of household waste)
+                # separation of household waste (as % of household waste) -> %
                 def separation_waste_per_inhabitant(df):
                     return df['Scheidingspercentage totaal huishoudelijk afval [Percentage]'] * 100
                 compute_cbs_waste(cbs_flows,
                                   apply=separation_waste_per_inhabitant,
-                                  year=year)
+                                  year=year,
+                                  unit='%')
 
-            # residual waste of companies, organisations & governments
+            # residual waste of companies, organisations & governments -> weight
             def residual_company_waste(df):
                 ewc = ['200301', '200307', '200399']
                 return df[df['EuralCode'].isin(ewc)]
@@ -336,7 +348,19 @@ if __name__ == '__main__':
                               apply=residual_company_waste,
                               year=year)
 
-            # reuse of construction & demolition waste
+            # construction waste (chapter 17)
+            def construction_waste(df):
+                return df[df['EuralCode'].str[:2] == '17']
+            construction_waste =\
+                compute_lma_waste(lma_flows,
+                                  role='Herkomst',
+                                  level=level,
+                                  areas=areas,
+                                  apply=construction_waste,
+                                  year=year,
+                                  ignore=True)
+
+            # reuse of construction & demolition waste -> percentage (primary waste: company construction waste)
             def reuse_construction_waste(df):
                 ewc = ['B01', 'B03', 'B05']
                 return df[(df['EuralCode'].str[:2] == '17') & (df['VerwerkingsmethodeCode'].isin(ewc))]
@@ -345,9 +369,10 @@ if __name__ == '__main__':
                               level=level,
                               areas=areas,
                               apply=reuse_construction_waste,
-                              year=year)
+                              year=year,
+                              reference=construction_waste)
 
-            # recycling of construction & demolition waste
+            # recycling of construction & demolition waste -> percentage (primary waste: company construction waste)
             def recycling_construction_waste(df):
                 ewc = ['C01', 'C02', 'C03', 'C04', 'D01',
                        'D02', 'D03', 'D04', 'D05', 'D06',
@@ -359,9 +384,10 @@ if __name__ == '__main__':
                               level=level,
                               areas=areas,
                               apply=recycling_construction_waste,
-                              year=year)
+                              year=year,
+                              reference=construction_waste)
 
-            # food waste
+            # food waste -> weight
             def food_waste(df):
                 ewc = ['020102', '020103', '020201', '020202', '020203',
                        '020301', '020303', '020304', '020501', '020601',
