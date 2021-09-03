@@ -421,37 +421,82 @@ def get_network(df):
                 else:
                     ways[id] = amount
 
-    # load to segments
-    data = []
-    for way in NETWORK.items():
-        id, geometry = way
-        id = str(id)
-        if id not in ways: ways[id] = 0
-        data.append({
-            'geometry': geometry,
-            'amount': ways[id]
+    return ways
+
+
+def group_activities(results):
+    keys = [key for key in results.keys() if 'activities' in key]
+    types = [
+        typ.replace('_activities', '').replace('_', ' ')
+        for typ in keys
+    ]
+    datasets = [results.pop(key) for key in keys]
+    for typ, dataset in zip(types, datasets):
+        for item in dataset:
+            process = item.get('process', None)
+            key = 'activities' if process is None else 'process_per_activity'
+            item['type'] = typ
+            results.setdefault(key, []).append(item)
+
+    return results
+
+
+def group_emissions(results):
+    # emissions_co2
+    keys = [key for key in results.keys() if 'co2' in key]
+    types = [
+        typ.replace('_co2', '').replace('_', ' ')
+        for typ in keys
+    ]
+    datasets = [results.pop(key) for key in keys]
+    for item in datasets[0]:
+        weight = item["values"]["weight"]
+        values, unit = [weight["value"]], weight["unit"]
+        for d in datasets[1:]:
+            other = next(
+                res for res in d
+                if all(res[prop] == item[prop] for prop in ['name', 'level', 'period'])
+            )
+            weight = other["values"]["weight"]
+            values.append(weight["value"])
+        results.setdefault('emissions_co2', []).append({
+            "name": item["name"],
+            "type": types,
+            "values": {
+                "weight": {
+                    "value": values,
+                    "unit": unit
+                }
+            },
+            "level": item["level"],
+            "period": item["period"]
         })
 
-    return data
+    return results
 
 
 def export():
-    # # GRAPHS
-    # results = {}
-    # with open('test/overview.json', 'w') as outfile:
-    #     for key, items in DATA.items():
-    #         level, field, period = key.split('\t')
-    #         for item in items:
-    #             item['level'] = level
-    #             item['period'] = period
-    #             results.setdefault(field, []).append(item)
-    #     json.encoder._make_iterencode = _make_iterencode._make_iterencode
-    #     indent = (2, None)
-    #     json.dump(results, outfile, indent=indent)
+    # GRAPHS
+    with open('test/overview.json', 'w') as outfile:
+        # preprocess
+        results = {}
+        for key, items in DATA.items():
+            level, field, period = key.split('\t')
+            for item in items:
+                item['level'] = level
+                item['period'] = period
+                results.setdefault(field, []).append(item)
 
-    # NETWORK MAPS
-    data = MAP.pop('transport')
-    # print(data)
+        # group activities
+        results = group_activities(results)
+
+        # group emissions
+        results = group_emissions(results)
+
+        # export
+        json.encoder._make_iterencode = _make_iterencode._make_iterencode
+        indent = (2, None)
+        json.dump(results, outfile, indent=indent)
 
     # # FLOWMAPS
     # for section, data in MAP.items():
@@ -465,6 +510,27 @@ def export():
     #                 item['type'] = type
     #                 results.append(item)
     #         json.dump(results, outfile, indent=4)
+
+    # # NETWORK MAP
+    # data = MAP.pop('transport', {})
+    # # add ontvangst & afgifte
+    # from collections import Counter
+    # ways = Counter()
+    # for key in data.keys():
+    #     ways.update(data[key])
+    # # load to segments
+    # results = []
+    # for way in NETWORK.items():
+    #     id, geometry = way
+    #     id = str(id)
+    #     if id not in ways: ways[id] = 0
+    #     results.append({
+    #         'id': id,
+    #         'geometry': geometry,
+    #         'amount': round(ways[id] / 10**6, 2)  # grams -> tn
+    #     })
+    # with open('test/overview_co2_network.json', 'w') as outfile:
+    #     json.dump(results, outfile)
 
 
 if __name__ == "__main__":
@@ -551,85 +617,85 @@ if __name__ == "__main__":
                 'Afgifte': 'secondary',
             }
 
-            # # analyse on provincial & municipal level
-            # print('Analyse...')
-            # for level in ['Provincie', 'Gemeente']:
-            #     areas = [provincie] if level == 'Provincie' else provincie_gemeenten
-            #
-            #     prefix = f'{prefixes[level]}\t{prefixes[typ]}_waste'
-            #
-            #     for p in periods:
-            #         suffix = f'{year}'
-            #         if p: suffix = f'{suffix}-{period[0].upper()}{p}'
-            #
-            #         # RESOURCES
-            #         if prefixes[level] == 'province':
-            #             # import (source out, target in) -> FLOWMAP
-            #             MAP.setdefault('resources', {})[f'{prefix}_import\t{suffix}'] = \
-            #                 get_flows(df,
-            #                           period=p,
-            #                           source=source, source_in=False,
-            #                           target=target, target_in=True,
-            #                           level=level, areas=areas)
-            #
-            #             # export (source in, target out) -> FLOWMAP
-            #             MAP.setdefault('resources', {})[f'{prefix}_export\t{suffix}'] = \
-            #                 get_flows(df,
-            #                           period=p,
-            #                           source=source, source_in=True,
-            #                           target=target, target_in=False,
-            #                           level=level, areas=areas)
-            #
-            #         # ECONOMIC ACTIVITIES
-            #         if prefixes[typ] == 'primary':
-            #             # GRAPHS
-            #             if prefixes[level] == 'province':
-            #                 DATA[f'{prefix}_activities\t{suffix}'] = \
-            #                     get_activities(df,
-            #                                    period=p,
-            #                                    source=activity,
-            #                                    level=level, areas=areas)
-            #
-            #             # FLOWMAPS
-            #             if prefixes[level] == 'municipality':
-            #                 # economic activities (Herkomst in) -> FLOWMAP
-            #                 MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
-            #                     get_flows(df,
-            #                               period=p,
-            #                               source=source, source_in=True,
-            #                               target=target,
-            #                               level=level, areas=areas,
-            #                               groupby=[f'{activity}_AG'], rename={f'{activity}_AG': 'activity'})
-            #
-            #                 # waste processes (Herkomst in) -> FLOWMAP
-            #                 MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
-            #                     get_flows(df,
-            #                               period=p,
-            #                               source=source, source_in=True,
-            #                               target=target,
-            #                               level=level, areas=areas,
-            #                               groupby=['VerwerkingsGroep'],
-            #                               rename={'VerwerkingsGroep': 'process'})
-            #
-            #         # TRANSPORT
-            #         # GRAPHS
-            #         if prefixes[level] == 'province':
-            #             DATA[f'{prefix}_import_co2\t{suffix}'] = \
-            #                 get_emissions(df,
-            #                             period=p,
-            #                             source=activity, source_in=False,
-            #                             target=target, target_in=True,
-            #                             level=level, areas=areas)
-            #
-            #             DATA[f'{prefix}_export_co2\t{suffix}'] = \
-            #                 get_emissions(df,
-            #                             period=p,
-            #                             source=activity, source_in=True,
-            #                             target=target, target_in=False,
-            #                             level=level, areas=areas)
+            # analyse on provincial & municipal level
+            print('Analyse...')
+            for level in ['Provincie', 'Gemeente']:
+                areas = [provincie] if level == 'Provincie' else provincie_gemeenten
 
-            # CO2 NETWORK MAP (all levels)
-            MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
+                prefix = f'{prefixes[level]}\t{prefixes[typ]}_waste'
+
+                for p in periods:
+                    suffix = f'{year}'
+                    if p: suffix = f'{suffix}-{period[0].upper()}{p}'
+
+                    # # RESOURCES
+                    # if prefixes[level] == 'province':
+                    #     # import (source out, target in) -> FLOWMAP
+                    #     MAP.setdefault('resources', {})[f'{prefix}_import\t{suffix}'] = \
+                    #         get_flows(df,
+                    #                   period=p,
+                    #                   source=source, source_in=False,
+                    #                   target=target, target_in=True,
+                    #                   level=level, areas=areas)
+                    #
+                    #     # export (source in, target out) -> FLOWMAP
+                    #     MAP.setdefault('resources', {})[f'{prefix}_export\t{suffix}'] = \
+                    #         get_flows(df,
+                    #                   period=p,
+                    #                   source=source, source_in=True,
+                    #                   target=target, target_in=False,
+                    #                   level=level, areas=areas)
+
+                    # ECONOMIC ACTIVITIES
+                    if prefixes[typ] == 'primary':
+                        # GRAPHS
+                        if prefixes[level] == 'province':
+                            DATA[f'{prefix}_activities\t{suffix}'] = \
+                                get_activities(df,
+                                               period=p,
+                                               source=activity,
+                                               level=level, areas=areas)
+
+                        # # FLOWMAPS
+                        # if prefixes[level] == 'municipality':
+                        #     # economic activities (Herkomst in) -> FLOWMAP
+                        #     MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
+                        #         get_flows(df,
+                        #                   period=p,
+                        #                   source=source, source_in=True,
+                        #                   target=target,
+                        #                   level=level, areas=areas,
+                        #                   groupby=[f'{activity}_AG'], rename={f'{activity}_AG': 'activity'})
+                        #
+                        #     # waste processes (Herkomst in) -> FLOWMAP
+                        #     MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
+                        #         get_flows(df,
+                        #                   period=p,
+                        #                   source=source, source_in=True,
+                        #                   target=target,
+                        #                   level=level, areas=areas,
+                        #                   groupby=['VerwerkingsGroep'],
+                        #                   rename={'VerwerkingsGroep': 'process'})
+
+                    # TRANSPORT
+                    # GRAPHS
+                    if prefixes[level] == 'province':
+                        DATA[f'{prefix}_import_co2\t{suffix}'] = \
+                            get_emissions(df,
+                                        period=p,
+                                        source=activity, source_in=False,
+                                        target=target, target_in=True,
+                                        level=level, areas=areas)
+
+                        DATA[f'{prefix}_export_co2\t{suffix}'] = \
+                            get_emissions(df,
+                                        period=p,
+                                        source=activity, source_in=True,
+                                        target=target, target_in=False,
+                                        level=level, areas=areas)
+
+            # # CO2 NETWORK MAP (all levels)
+            # MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
 
         print('\n')
 

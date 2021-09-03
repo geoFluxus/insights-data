@@ -215,6 +215,7 @@ if __name__ == '__main__':
     household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
 
     # import data for each year
+    alias = 'Other provinces'
     for year in YEARS:
         print(f'Analyse {year}...')
         LMA_FLOWS = import_lma_flows(areas=postcodes, year=year)
@@ -222,7 +223,7 @@ if __name__ == '__main__':
 
         # process for province & municipalities
         for level in ['Provincie', 'Gemeente']:
-            areas = [var.PROVINCE, 'All other provinces'] if level == 'Provincie' else provincie_gemeenten
+            areas = [var.PROVINCE, alias] if level == 'Provincie' else provincie_gemeenten
 
             # copy initial dataframes
             lma_flows = LMA_FLOWS.copy()
@@ -230,8 +231,8 @@ if __name__ == '__main__':
 
             # if level == 'Provincie', divide between current area & others
             if level == 'Provincie':
-                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != var.PROVINCE, f'Herkomst_{level}'] = 'All other provinces'
-                cbs_flows.loc[cbs_flows['Provincie'] != var.PROVINCE, 'Provincie'] = 'All other provinces'
+                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != var.PROVINCE, f'Herkomst_{level}'] = alias
+                cbs_flows.loc[cbs_flows['Provincie'] != var.PROVINCE, 'Provincie'] = alias
 
             # if level == 'Gemeente', get only province data
             if level == 'Gemeente':
