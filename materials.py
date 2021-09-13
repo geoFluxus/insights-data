@@ -4,6 +4,7 @@ import variables as var
 import itertools
 import numpy as np
 import json
+from mergedeep import merge
 
 
 INPUTS = [
@@ -216,7 +217,23 @@ def get_material_use(df, period=None, source=None,
     ]
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
-    sums = {} # contains amounts for all levels
+    def build_tree(tree_list):
+        if tree_list:
+            return {tree_list[0]: build_tree(tree_list[1:])}
+        return {}
+
+    def merge(add, ref):
+        res = {}
+        for key in ref.keys():
+            if type(add.get(key, None)) == dict:
+                res[key] = merge(add[key], ref[key])
+            else:
+                res[key] = add.get(key, ref[key])
+        for key in add.keys():
+            res[key] = res.get(key, add[key])
+        return res
+
+    sums = {}  # contains amounts for all levels
     hierarchy = {}  # level hierarchy
     for idx, row in groups.iterrows():
         # split materials
@@ -224,15 +241,29 @@ def get_material_use(df, period=None, source=None,
         for material in materials:
             # retrieve all material levels
             levels = material.split(',')
-            for level, name in enumerate(levels):
-                if hierarchy.get(name, None) is None:
-                    hierarchy[name] = set()
-                if level:
-                    hierarchy[levels[level-1]].add(name)
-                sums[name] = sums.get(name, 0) + row['Gewicht_KG']
-    hierarchy = {k: list(v) for k, v in hierarchy.items()}
-    print(json.dumps(sums, indent=4))
+            tree = build_tree(levels)
+            hierarchy = merge(tree, hierarchy)
+            sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
     print(json.dumps(hierarchy, indent=4))
+    print(json.dumps(sums, indent=4))
+
+    # hierarchy = {k: v for k, v in hierarchy.items() if len(v)}
+    # new = {}
+    # for k, vs in hierarchy.items():
+    #     sum = 0
+    #     subs = {}
+    #     for v in vs:
+    #         sum += sums[v]
+    #         subs[v] = sums[v]
+    #     assert sums[k] >= sum
+    #     diff = sums[k] - sum
+    #     if diff: subs['Other'] = diff
+    #     new[k] = subs
+    # print(json.dumps(new, indent=4))
+
+    # def merge(dic, start={}):
+    #     for key in dic.keys():
+    #         if
 
 
 if __name__ == "__main__":
@@ -258,7 +289,7 @@ if __name__ == "__main__":
             print(f'Import {typ}....')
             path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
             filename = f'{path}/{typ.lower()}_{var.PROVINCE.lower()}_{year}.csv'
-            df = pd.read_csv(filename, low_memory=False)
+            df = pd.read_csv(filename, low_memory=False)[:1000]
             df['VerwerkingsGroep'] = df['VerwerkingsmethodeCode'].str[0]
 
             # group flows to periods
