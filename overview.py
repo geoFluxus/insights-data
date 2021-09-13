@@ -243,7 +243,9 @@ def get_flows(df,
 def get_activities(df, period=None, source=None,
                    level=None, areas=None):
     activities = ACTIVITIES['code'].to_list()
+    activity_descriptions = ACTIVITIES['name'].to_list()
     processes = PROCESSES['code'].to_list()
+    process_descriptions = PROCESSES['name'].to_list()
     results = []
 
     # filter source in areas
@@ -290,7 +292,7 @@ def get_activities(df, period=None, source=None,
             count.append(item['count'])
         results.append({
             'name': item['area'],
-            'activity': activities,
+            'activity': activity_descriptions,
             'values': {
                 'weight': {
                     'value': weight,
@@ -347,8 +349,8 @@ def get_activities(df, period=None, source=None,
             weight.append(activity_weight)
         results.append({
             'name': item['area'],
-            'activity': activities,
-            'process': processes,
+            'activity': activity_descriptions,
+            'process': process_descriptions,
             'values': {
                 'weight': {
                     'value': weight,
@@ -498,39 +500,39 @@ def export():
         indent = (2, None)
         json.dump(results, outfile, indent=indent)
 
-    # # FLOWMAPS
-    # for section, data in MAP.items():
-    #     with open(f'test/overview_{section}_flowmap.json', 'w') as outfile:
-    #         results = []
-    #         for key, items in data.items():
-    #             level, field, period = key.split('\t')
-    #             type = field.replace('_', ' ')
-    #             for item in items:
-    #                 item['period'] = period
-    #                 item['type'] = type
-    #                 results.append(item)
-    #         json.dump(results, outfile, indent=4)
+    # NETWORK MAP
+    data = MAP.pop('transport', {})
+    # add ontvangst & afgifte
+    from collections import Counter
+    ways = Counter()
+    for key in data.keys():
+        ways.update(data[key])
+    # load to segments
+    results = []
+    for way in NETWORK.items():
+        id, geometry = way
+        id = str(id)
+        if id not in ways: ways[id] = 0
+        results.append({
+            'id': id,
+            'geometry': geometry,
+            'amount': round(ways[id] / 10**6, 2)  # grams -> tn
+        })
+    with open('test/overview_co2_network.json', 'w') as outfile:
+        json.dump(results, outfile, indent=4)
 
-    # # NETWORK MAP
-    # data = MAP.pop('transport', {})
-    # # add ontvangst & afgifte
-    # from collections import Counter
-    # ways = Counter()
-    # for key in data.keys():
-    #     ways.update(data[key])
-    # # load to segments
-    # results = []
-    # for way in NETWORK.items():
-    #     id, geometry = way
-    #     id = str(id)
-    #     if id not in ways: ways[id] = 0
-    #     results.append({
-    #         'id': id,
-    #         'geometry': geometry,
-    #         'amount': round(ways[id] / 10**6, 2)  # grams -> tn
-    #     })
-    # with open('test/overview_co2_network.json', 'w') as outfile:
-    #     json.dump(results, outfile)
+    # FLOWMAPS
+    for section, data in MAP.items():
+        with open(f'test/overview_{section}_flowmap.json', 'w') as outfile:
+            results = []
+            for key, items in data.items():
+                level, field, period = key.split('\t')
+                type = field.replace('_', ' ')
+                for item in items:
+                    item['period'] = period
+                    item['type'] = type
+                    results.append(item)
+            json.dump(results, outfile, indent=4)
 
 
 if __name__ == "__main__":
@@ -602,6 +604,20 @@ if __name__ == "__main__":
                 columns.append(f'{role}_Continent')
                 df = df[columns]
 
+            # add activity names
+            columns = list(df.columns)
+            df = pd.merge(df, ACTIVITIES, how='left', left_on=f'{activity}_AG', right_on='code')
+            df = df.rename(columns={'name': 'Activity'})
+            columns.append('Activity')
+            df = df[columns]
+
+            # add process names
+            columns = list(df.columns)
+            df = pd.merge(df, ACTIVITIES, how='left', left_on='VerwerkingsGroep', right_on='code')
+            df = df.rename(columns={'name': 'Process'})
+            columns.append('Process')
+            df = df[columns]
+
             # add identifiers
             print('Add identifiers to flows...')
             df = add_identifiers(df, type=typ)
@@ -628,23 +644,23 @@ if __name__ == "__main__":
                     suffix = f'{year}'
                     if p: suffix = f'{suffix}-{period[0].upper()}{p}'
 
-                    # # RESOURCES
-                    # if prefixes[level] == 'province':
-                    #     # import (source out, target in) -> FLOWMAP
-                    #     MAP.setdefault('resources', {})[f'{prefix}_import\t{suffix}'] = \
-                    #         get_flows(df,
-                    #                   period=p,
-                    #                   source=source, source_in=False,
-                    #                   target=target, target_in=True,
-                    #                   level=level, areas=areas)
-                    #
-                    #     # export (source in, target out) -> FLOWMAP
-                    #     MAP.setdefault('resources', {})[f'{prefix}_export\t{suffix}'] = \
-                    #         get_flows(df,
-                    #                   period=p,
-                    #                   source=source, source_in=True,
-                    #                   target=target, target_in=False,
-                    #                   level=level, areas=areas)
+                    # RESOURCES
+                    if prefixes[level] == 'province':
+                        # import (source out, target in) -> FLOWMAP
+                        MAP.setdefault('resources', {})[f'{prefix}_import\t{suffix}'] = \
+                            get_flows(df,
+                                      period=p,
+                                      source=source, source_in=False,
+                                      target=target, target_in=True,
+                                      level=level, areas=areas)
+
+                        # export (source in, target out) -> FLOWMAP
+                        MAP.setdefault('resources', {})[f'{prefix}_export\t{suffix}'] = \
+                            get_flows(df,
+                                      period=p,
+                                      source=source, source_in=True,
+                                      target=target, target_in=False,
+                                      level=level, areas=areas)
 
                     # ECONOMIC ACTIVITIES
                     if prefixes[typ] == 'primary':
@@ -656,26 +672,26 @@ if __name__ == "__main__":
                                                source=activity,
                                                level=level, areas=areas)
 
-                        # # FLOWMAPS
-                        # if prefixes[level] == 'municipality':
-                        #     # economic activities (Herkomst in) -> FLOWMAP
-                        #     MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
-                        #         get_flows(df,
-                        #                   period=p,
-                        #                   source=source, source_in=True,
-                        #                   target=target,
-                        #                   level=level, areas=areas,
-                        #                   groupby=[f'{activity}_AG'], rename={f'{activity}_AG': 'activity'})
-                        #
-                        #     # waste processes (Herkomst in) -> FLOWMAP
-                        #     MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
-                        #         get_flows(df,
-                        #                   period=p,
-                        #                   source=source, source_in=True,
-                        #                   target=target,
-                        #                   level=level, areas=areas,
-                        #                   groupby=['VerwerkingsGroep'],
-                        #                   rename={'VerwerkingsGroep': 'process'})
+                        # FLOWMAPS
+                        if prefixes[level] == 'municipality':
+                            # economic activities (Herkomst in) -> FLOWMAP
+                            MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
+                                get_flows(df,
+                                          period=p,
+                                          source=source, source_in=True,
+                                          target=target,
+                                          level=level, areas=areas,
+                                          groupby=['Activity'], rename={'Activity': 'activity'})
+
+                            # waste processes (Herkomst in) -> FLOWMAP
+                            MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
+                                get_flows(df,
+                                          period=p,
+                                          source=source, source_in=True,
+                                          target=target,
+                                          level=level, areas=areas,
+                                          groupby=['Process'],
+                                          rename={'Process': 'process'})
 
                     # TRANSPORT
                     # GRAPHS
@@ -694,8 +710,8 @@ if __name__ == "__main__":
                                         target=target, target_in=False,
                                         level=level, areas=areas)
 
-            # # CO2 NETWORK MAP (all levels)
-            # MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
+            # CO2 NETWORK MAP (all levels)
+            MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
 
         print('\n')
 

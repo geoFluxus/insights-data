@@ -245,8 +245,8 @@ if __name__ == '__main__':
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
     flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')
-    flows.loc[flows['industry'].isnull(), 'industry'] = 'Unknown'
-    industry_groups = flows['industry'].drop_duplicates().to_list()
+    flows.loc[flows['industries'].isnull(), 'industries'] = 'Unknown'
+    industry_groups = flows['industries'].drop_duplicates().to_list()
 
     # get names of provincie gemeenten
     provincie_gemeenten = gemeenten[gemeenten['parent'] == var.PROVINCE]['name'].to_list()
@@ -299,7 +299,7 @@ if __name__ == '__main__':
             for method, codes in TREATMENT_METHODS.items():
                 for group in industry_groups:
                     compute_trends(flows,
-                                   on=[on, 'VerwerkingsmethodeCode', 'industry'],
+                                   on=[on, 'VerwerkingsmethodeCode', 'industries'],
                                    values=[areas, codes, [group]],
                                    per_months=3, prop=f'{prefix}\tmaterial\t{method}_{group}',
                                    add_trends=False)

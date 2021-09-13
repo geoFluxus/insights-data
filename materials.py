@@ -3,6 +3,7 @@ import geopandas as gpd
 import variables as var
 import itertools
 import numpy as np
+import json
 
 
 INPUTS = [
@@ -31,6 +32,8 @@ ROLES = {
         'activity': 'EerstAfnemer'
     }
 }
+
+DATA = {}
 
 MAP = {}
 
@@ -195,6 +198,43 @@ def get_flows(df,
     return to_flowmap(groups, level=level, extra=extra)
 
 
+def get_material_use(df, period=None, source=None,
+                     level=None, areas=None):
+    # filter source in areas
+    flows = df[df[f'{source}_{level}'].isin(areas)]
+    flows = flows.rename(columns={source: 'source'})
+
+    # filter by period
+    if period: flows = flows[flows['Periode'] == period]
+
+    # groupby: source, ruralmaterials
+    groupby = [
+        f'{source}_{level}',
+        'EuralCode',
+        'materials',
+        'Gewicht_KG'
+    ]
+    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
+
+    sums = {} # contains amounts for all levels
+    hierarchy = {}  # level hierarchy
+    for idx, row in groups.iterrows():
+        # split materials
+        materials = row['materials'].split('&')
+        for material in materials:
+            # retrieve all material levels
+            levels = material.split(',')
+            for level, name in enumerate(levels):
+                if hierarchy.get(name, None) is None:
+                    hierarchy[name] = set()
+                if level:
+                    hierarchy[levels[level-1]].add(name)
+                sums[name] = sums.get(name, 0) + row['Gewicht_KG']
+    hierarchy = {k: list(v) for k, v in hierarchy.items()}
+    print(json.dumps(sums, indent=4))
+    print(json.dumps(hierarchy, indent=4))
+
+
 if __name__ == "__main__":
     # import areas
     print('Import areas...')
@@ -251,7 +291,7 @@ if __name__ == "__main__":
             materials['ewc'] = materials['ewc'].astype(str).str.zfill(6)
             df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
             df = pd.merge(df, materials, how='left', left_on='EuralCode', right_on='ewc')
-            df.loc[df['materials'].isnull(), 'materials'] = 'Unclassified'
+            df.loc[df['materials'].isnull(), 'materials'] = 'Unknown'
 
             prefixes = {
                 'Provincie': 'province',
@@ -271,10 +311,19 @@ if __name__ == "__main__":
                     suffix = f'{year}'
                     if p: suffix = f'{suffix}-{period[0].upper()}{p}'
 
-                    MAP.setdefault('materials', {})[f'{prefix}_materials\t{suffix}'] = \
-                        get_flows(df,
-                                  period=p,
-                                  source=source, source_in=True,
-                                  target=target,
-                                  level=level, areas=areas,
-                                  groupby=['materials'], rename={'materials': 'materials'})
+                    # material SUNBURST
+                    # only on province level & primary waste
+                    if prefixes[level] == 'province' and prefixes[typ] == 'primary':
+                        DATA[f'{prefix}_material_use\t{suffix}'] =\
+                            get_material_use(df,
+                                             period=p,
+                                             source=source,
+                                             level=level, areas=areas)
+
+                    # MAP.setdefault('materials', {})[f'{prefix}_materials\t{suffix}'] = \
+                    #     get_flows(df,
+                    #               period=p,
+                    #               source=source, source_in=True,
+                    #               target=target,
+                    #               level=level, areas=areas,
+                    #               groupby=['materials'], rename={'materials': 'materials'})
