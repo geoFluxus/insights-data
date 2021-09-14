@@ -4,7 +4,8 @@ import variables as var
 import itertools
 import numpy as np
 import json
-from mergedeep import merge
+from operator import itemgetter
+from itertools import groupby
 
 
 INPUTS = [
@@ -199,6 +200,38 @@ def get_flows(df,
     return to_flowmap(groups, level=level, extra=extra)
 
 
+def build_tree(tree_list):
+    if tree_list:
+        return {tree_list[0]: build_tree(tree_list[1:])}
+    return {}
+
+def merge(add, ref):
+    res = {}
+    for key in ref.keys():
+        if type(add.get(key, None)) == dict:
+            res[key] = merge(add[key], ref[key])
+        else:
+            res[key] = add.get(key, ref[key])
+    for key in add.keys():
+        res[key] = res.get(key, add[key])
+    return res
+
+def search_nested(key, dic):
+    if key in dic: return dic[key]
+    for v in dic.values():
+        if isinstance(v, dict):
+            a = search_nested(key, v)
+            if a is not None: return a
+    return None
+
+def update_nested(dic, key, value):
+    for k, v in dic.items():
+        if key == k:
+            dic[k] = value
+        elif isinstance(v, dict):
+            update_nested(v, key, value)
+
+
 def get_material_use(df, period=None, source=None,
                      level=None, areas=None):
     # filter source in areas
@@ -208,7 +241,7 @@ def get_material_use(df, period=None, source=None,
     # filter by period
     if period: flows = flows[flows['Periode'] == period]
 
-    # groupby: source, ruralmaterials
+    # groupby: source, materials
     groupby = [
         f'{source}_{level}',
         'EuralCode',
@@ -217,53 +250,39 @@ def get_material_use(df, period=None, source=None,
     ]
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
-    def build_tree(tree_list):
-        if tree_list:
-            return {tree_list[0]: build_tree(tree_list[1:])}
-        return {}
+    for area in areas:
+        select = groups[groups[f'{source}_{level}'] == area]
 
-    def merge(add, ref):
-        res = {}
-        for key in ref.keys():
-            if type(add.get(key, None)) == dict:
-                res[key] = merge(add[key], ref[key])
+        sums = {}  # contains amounts for all levels
+        hierarchy = {}  # level hierarchy
+        for idx, row in select.iterrows():
+            # split materials
+            materials = row['materials'].split('&')
+
+            for material in materials:
+                # retrieve all material levels
+                levels = material.split(',')
+
+                # convert into hierarchy
+                tree = build_tree(levels)
+
+                # merge with existent hierarchy
+                hierarchy = merge(tree, hierarchy)
+
+                # save amount for lowest level
+                sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
+
+        # populate hierarchy with amounts
+        for material in sums.keys():
+            obj = search_nested(material, hierarchy)
+            if not len(obj):
+                update_nested(hierarchy, material, sums[material])
             else:
-                res[key] = add.get(key, ref[key])
-        for key in add.keys():
-            res[key] = res.get(key, add[key])
-        return res
+                obj = search_nested(material, hierarchy)
+                obj['Other'] = sums[material]
+                update_nested(hierarchy, material, obj)
 
-    sums = {}  # contains amounts for all levels
-    hierarchy = {}  # level hierarchy
-    for idx, row in groups.iterrows():
-        # split materials
-        materials = row['materials'].split('&')
-        for material in materials:
-            # retrieve all material levels
-            levels = material.split(',')
-            tree = build_tree(levels)
-            hierarchy = merge(tree, hierarchy)
-            sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
-    print(json.dumps(hierarchy, indent=4))
-    print(json.dumps(sums, indent=4))
-
-    # hierarchy = {k: v for k, v in hierarchy.items() if len(v)}
-    # new = {}
-    # for k, vs in hierarchy.items():
-    #     sum = 0
-    #     subs = {}
-    #     for v in vs:
-    #         sum += sums[v]
-    #         subs[v] = sums[v]
-    #     assert sums[k] >= sum
-    #     diff = sums[k] - sum
-    #     if diff: subs['Other'] = diff
-    #     new[k] = subs
-    # print(json.dumps(new, indent=4))
-
-    # def merge(dic, start={}):
-    #     for key in dic.keys():
-    #         if
+        print(f'{area}: {json.dumps(hierarchy, indent=4)}')
 
 
 if __name__ == "__main__":
