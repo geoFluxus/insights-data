@@ -104,7 +104,7 @@ def compute_lma_waste(df,
         'Provincie': 'province',
         'Gemeente': 'municipality'
     }
-    unit = '%' if reference is not None else 'mtn'
+    unit = '%' if reference is not None else 'Mt'
     title = f'{terms[level]}\t{apply.__name__}\t{unit}'
     print(title)
 
@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
             # total household primary waste (CBS) -> weight
             prefix = 'province' if level == 'Provincie' else 'municipality'
-            title = f'{prefix}\ttotal_household_primary_waste\tmtn'
+            title = f'{prefix}\ttotal_household_primary_waste\tMt'
             total_household_primary =\
                 cbs_primary_waste(cbs_flows,
                                   level=level,

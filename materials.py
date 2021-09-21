@@ -6,6 +6,7 @@ import numpy as np
 import json
 from operator import itemgetter
 from itertools import groupby
+import _make_iterencode
 
 
 INPUTS = [
@@ -231,6 +232,19 @@ def update_nested(dic, key, value):
         elif isinstance(v, dict):
             update_nested(v, key, value)
 
+def nivo_sunburst(nivo, dic):
+    for key in dic.keys():
+        item = {
+            "name": key,
+        }
+        if isinstance(dic[key], dict):
+            item["children"] = []
+            item = nivo_sunburst(item, dic[key])
+        else:
+            item["loc"] = dic[key]
+        nivo["children"].append(item)
+    return nivo
+
 
 def get_material_use(df, period=None, source=None,
                      level=None, areas=None):
@@ -244,12 +258,12 @@ def get_material_use(df, period=None, source=None,
     # groupby: source, materials
     groupby = [
         f'{source}_{level}',
-        'EuralCode',
         'materials',
         'Gewicht_KG'
     ]
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
+    sunbursts = []
     for area in areas:
         select = groups[groups[f'{source}_{level}'] == area]
 
@@ -282,7 +296,71 @@ def get_material_use(df, period=None, source=None,
                 obj['Other'] = sums[material]
                 update_nested(hierarchy, material, obj)
 
-        print(f'{area}: {json.dumps(hierarchy, indent=4)}')
+        # create nivo sunburst
+        nivo = {
+            "name": "nivo",
+            "children": []
+        }
+        sunbursts.append({
+            "name": area,
+            "materials": nivo_sunburst(nivo, hierarchy)
+        })
+
+    return sunbursts
+
+
+def get_classification_graphs(df, period=None, source=None,
+                              level=None, areas=None, klass=None):
+    # filter source in areas
+    flows = df[df[f'{source}_{level}'].isin(areas)]
+    flows = flows.rename(columns={source: 'source'})
+
+    # filter by period
+    if period: flows = flows[flows['Periode'] == period]
+
+    # groupby: source, materials
+    groupby = [
+        f'{source}_{level}',
+        klass,
+        'Gewicht_KG'
+    ]
+    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
+
+    results = []
+    for area in areas:
+        select = groups[groups[f'{source}_{level}'] == area]
+
+        collection = {}
+        for idx, row in select.iterrows():
+            classifs = row[klass].split('&')
+            for classif in classifs:
+                collection[classif] = collection.get(classif, 0) + row['Gewicht_KG']
+
+        classifs, values = [],  []
+        for classif, value in collection.items():
+            classifs.append(classif)
+            values.append(round(value / 10**9, 2))  # kg -> Mt
+
+        results.append({
+            "name": area,
+            klass: classifs,
+            "values": {
+                "weight": {
+                    "value": values,
+                    "unit": "Mt"
+                }
+            }
+        })
+
+    return results
+
+
+def add_classification(df, classif, name=None):
+    classif['ewc'] = classif['ewc'].astype(str).str.zfill(6)
+    df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
+    df = pd.merge(df, classif, how='left', left_on='EuralCode', right_on='ewc')
+    df.loc[df[name].isnull(), name] = 'Unknown'
+    return df
 
 
 if __name__ == "__main__":
@@ -291,8 +369,10 @@ if __name__ == "__main__":
     provincie_gemeenten = import_areas()
     provincie = var.PROVINCE
 
-    # import materials
-    materials = pd.read_csv('./data/materials/ewc_materials.csv', low_memory=False, sep=';')
+    # import ewc classifications
+    classifs = {}
+    for classif in ['materials', 'agendas', 'chains']:
+        classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv', low_memory=False, sep=';')
 
     for input in INPUTS:
         year = input['year']
@@ -308,7 +388,7 @@ if __name__ == "__main__":
             print(f'Import {typ}....')
             path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
             filename = f'{path}/{typ.lower()}_{var.PROVINCE.lower()}_{year}.csv'
-            df = pd.read_csv(filename, low_memory=False)[:1000]
+            df = pd.read_csv(filename, low_memory=False)
             df['VerwerkingsGroep'] = df['VerwerkingsmethodeCode'].str[0]
 
             # group flows to periods
@@ -337,11 +417,9 @@ if __name__ == "__main__":
                 columns.append(f'{role}_Continent')
                 df = df[columns]
 
-            # add materials
-            materials['ewc'] = materials['ewc'].astype(str).str.zfill(6)
-            df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
-            df = pd.merge(df, materials, how='left', left_on='EuralCode', right_on='ewc')
-            df.loc[df['materials'].isnull(), 'materials'] = 'Unknown'
+            # add classifications
+            for name, classif in classifs.items():
+                df = add_classification(df, classif, name=name)
 
             prefixes = {
                 'Provincie': 'province',
@@ -355,25 +433,49 @@ if __name__ == "__main__":
             for level in ['Provincie', 'Gemeente']:
                 areas = [provincie] if level == 'Provincie' else provincie_gemeenten
 
-                prefix = f'{prefixes[level]}\t{prefixes[typ]}_waste'
+                prefix = f'{prefixes[level]}\t{prefixes[typ]} waste'
 
                 for p in periods:
                     suffix = f'{year}'
                     if p: suffix = f'{suffix}-{period[0].upper()}{p}'
 
-                    # material SUNBURST
                     # only on province level & primary waste
                     if prefixes[level] == 'province' and prefixes[typ] == 'primary':
-                        DATA[f'{prefix}_material_use\t{suffix}'] =\
+                        # material use
+                        DATA[f'{prefix}\tmaterial_use\t{suffix}'] =\
                             get_material_use(df,
                                              period=p,
                                              source=source,
                                              level=level, areas=areas)
 
-                    # MAP.setdefault('materials', {})[f'{prefix}_materials\t{suffix}'] = \
-                    #     get_flows(df,
-                    #               period=p,
-                    #               source=source, source_in=True,
-                    #               target=target,
-                    #               level=level, areas=areas,
-                    #               groupby=['materials'], rename={'materials': 'materials'})
+                        # transition agendas
+                        DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
+                            get_classification_graphs(df,
+                                                      period=p,
+                                                      source=source,
+                                                      level=level, areas=areas,
+                                                      klass='agendas')
+
+                        # supply chains
+                        DATA[f'{prefix}\tsupply_chains\t{suffix}'] = \
+                            get_classification_graphs(df,
+                                                      period=p,
+                                                      source=source,
+                                                      level=level, areas=areas,
+                                                      klass='chains')
+
+    # GRAPHS
+    with open('test/materials.json', 'w') as outfile:
+        # preprocess
+        results = {}
+        for key, items in DATA.items():
+            level, type, field, period = key.split('\t')
+            for item in items:
+                item['level'] = level
+                item['period'] = period
+                item['type'] = type
+                results.setdefault(field, []).append(item)
+
+        json.encoder._make_iterencode = _make_iterencode._make_iterencode
+        indent = (2, None)
+        json.dump(results, outfile, indent=indent)

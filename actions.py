@@ -152,7 +152,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
                     amount = flows[(flows['MeldPeriodeJAAR'] == year) &
                                    (flows['Periode'] == period)]['Gewicht_TN']
                     amount = amount.values[0] if len(amount) else 0
-                    key = f'{prop}\t{year}-Q{period}\ttn'
+                    key = f'{prop}\tQ{period}/{str(year)[-2:]}\tt'
                     to_save[key] = amount
             save(to_save, area=area)
 
@@ -178,7 +178,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
 
             # overall change (tn)
             change = Y_final - Y_initial
-            DATA.setdefault(f'{prop}\tall years\ttn', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\tall years\tt', {})[area] = to_json(change)
 
             # overall change (%)
             change = (Y_final - Y_initial) / Y_initial * 100
@@ -194,7 +194,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
                                 (flows['Periode'] == quarter)]['Gewicht_TN']
                 Y_final = Y_final.values[0] if len(Y_final) else np.nan
             change = Y_final - Y_initial
-            DATA.setdefault(f'{prop}\tlast quarter\ttn', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\tlast quarter\tt', {})[area] = to_json(change)
 
             # change to same quarter, last year (%)
             change = (Y_final - Y_initial) / Y_initial * 100

@@ -296,7 +296,7 @@ def get_activities(df, period=None, source=None,
             'values': {
                 'weight': {
                     'value': weight,
-                    'unit': 'ktn'
+                    'unit': 'kt'
                 },
                 'count': {
                     'value': count,
@@ -354,7 +354,7 @@ def get_activities(df, period=None, source=None,
             'values': {
                 'weight': {
                     'value': weight,
-                    'unit': 'ktn'
+                    'unit': 'kt'
                 }
             }
         })
@@ -401,7 +401,7 @@ def get_emissions(df,
             'values': {
                 'weight': {
                     'value': round(item['co2'] / 10**9, 2),
-                    'unit': 'ktn'
+                    'unit': 'kt'
                 }
             }
         })
@@ -543,16 +543,18 @@ if __name__ == "__main__":
 
     # import routings
     print('Import routings...')
-    routings = pd.read_csv('data/network/routings.csv', low_memory=False, sep=';')
-    # routings['distance'] = gpd.GeoSeries.from_wkt(routings[routings['wkt'].notnull()]['wkt'])\
-    #                                     .set_crs('epsg:4326')\
-    #                                     .to_crs('epsg:3857')\
-    #                                     .length
+    routings = pd.read_csv(f'../../../../../media/geofluxus/DATA/national/routings.csv', low_memory=False, sep=';')
+    routings['distance'] = gpd.GeoSeries.from_wkt(routings[routings['wkt'].notnull()]['wkt'])\
+                                        .set_crs('epsg:4326')\
+                                        .to_crs('epsg:3857')\
+                                        .length
     # routings.to_csv('data/network/routings.csv', index=False, sep=';')
 
     # import activities & processes
     ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
+    ACTIVITIES['name'] = ACTIVITIES['name'].str.lower().str.capitalize()
     PROCESSES = pd.read_excel('data/flows/processgroup.xlsx')
+    PROCESSES['name'] = PROCESSES['name'].str.lower().str.capitalize()
 
     # import network
     with open('data/network/network.geojson') as f:
@@ -613,7 +615,7 @@ if __name__ == "__main__":
 
             # add process names
             columns = list(df.columns)
-            df = pd.merge(df, ACTIVITIES, how='left', left_on='VerwerkingsGroep', right_on='code')
+            df = pd.merge(df, PROCESSES, how='left', left_on='VerwerkingsGroep', right_on='code')
             df = df.rename(columns={'name': 'Process'})
             columns.append('Process')
             df = df[columns]
@@ -709,6 +711,13 @@ if __name__ == "__main__":
                                         source=activity, source_in=True,
                                         target=target, target_in=False,
                                         level=level, areas=areas)
+
+                        DATA[f'{prefix}_internal_co2\t{suffix}'] = \
+                            get_emissions(df,
+                                          period=p,
+                                          source=activity, source_in=True,
+                                          target=target, target_in=True,
+                                          level=level, areas=areas)
 
             # CO2 NETWORK MAP (all levels)
             MAP.setdefault('transport', {})[f'{prefixes[typ]}_waste\tco2'] = get_network(df)
