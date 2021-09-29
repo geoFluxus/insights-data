@@ -234,8 +234,10 @@ def update_nested(dic, key, value):
 
 def nivo_sunburst(nivo, dic):
     for key in dic.keys():
+        name = key
+        if 'Mixed' in name: name = 'Mixed'
         item = {
-            "name": key,
+            "name": name,
         }
         if isinstance(dic[key], dict):
             item["children"] = []
@@ -273,18 +275,27 @@ def get_material_use(df, period=None, source=None,
             # split materials
             materials = row['materials'].split('&')
 
-            for material in materials:
-                # retrieve all material levels
-                levels = material.split(',')
+            # retrieve material intersection
+            # to defin levels
+            levels = materials[0].split(',')
+            for material in materials[1:]:
+                search = material.split(',')
+                new = []
+                for item in levels:
+                    if item in search:
+                        new.append(item)
+                levels = new
+            if len(materials) > 1:
+                levels.append(','.join(levels) + ',Mixed')
 
-                # convert into hierarchy
-                tree = build_tree(levels)
+            # convert into hierarchy
+            tree = build_tree(levels)
 
-                # merge with existent hierarchy
-                hierarchy = merge(tree, hierarchy)
+            # merge with existent hierarchy
+            hierarchy = merge(tree, hierarchy)
 
-                # save amount for lowest level
-                sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
+            # save amount for lowest level
+            sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
 
         # populate hierarchy with amounts
         for material in sums.keys():
@@ -332,9 +343,9 @@ def get_classification_graphs(df, period=None, source=None,
 
         collection = {}
         for idx, row in select.iterrows():
-            classifs = row[klass].split('&')
-            for classif in classifs:
-                collection[classif] = collection.get(classif, 0) + row['Gewicht_KG']
+            # classifs = row[klass].split('&')
+            # for classif in classifs:
+            collection[row[klass]] = collection.get(row[klass], 0) + row['Gewicht_KG']
 
         classifs, values = [],  []
         for classif, value in collection.items():

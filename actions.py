@@ -130,10 +130,6 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             value = value[on[idx]].to_list()
         new_values.append(value)
 
-    # quarter analysis
-    quarter = var.QUARTER
-    initial_year, final_year = var.YEARS[-2], var.YEARS[-1]
-
     # iterate permutations for all properties & values
     # first value is always the area
     for area in new_values[0]:
@@ -149,55 +145,51 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             to_save = {}
             for year in var.YEARS:
                 for period in range(1, len(periods) + 1):
-                    amount = flows[(flows['MeldPeriodeJAAR'] == year) &
-                                   (flows['Periode'] == period)]['Gewicht_TN']
-                    amount = amount.values[0] if len(amount) else 0
-                    key = f'{prop}\tQ{period}/{str(year)[-2:]}\tt'
-                    to_save[key] = amount
+                    if year < var.YEARS[-1] or period <= var.QUARTER:
+                        amount = flows[(flows['MeldPeriodeJAAR'] == year) &
+                                       (flows['Periode'] == period)]['Gewicht_TN']
+                        amount = amount.values[0] if len(amount) else 0
+                        key = f'{prop}\tQ{period}/{str(year)[-2:]}\tt'
+                        to_save[key] = amount
             save(to_save, area=area)
 
         # run linear regression
         if add_trends:
             # prepare data
             X, Y = [], []
-            for idx, flow in flows.iterrows():
-                time = flow['MeldPeriodeJAAR'] * 12 + flow['Periode'] * per_months
-                amount = flow['Gewicht_TN']
-                X.append(time)
-                Y.append(amount)
+            for year in var.YEARS:
+                for period in range(1, len(periods) + 1):
+                    if year < var.YEARS[-1] or period <= var.QUARTER:
+                        time = year * 12 + period * per_months
+                        amount = flows[(flows['MeldPeriodeJAAR'] == year) &
+                                       (flows['Periode'] == period)]['Gewicht_TN']
+                        amount = amount.values[0] if len(amount) else 0
+                        X.append(time)
+                        Y.append(amount)
             X = np.array(X).reshape(-1, 1)
 
-            Y_initial, Y_final = np.nan, np.nan
-            if Y:
-                # linear regression
-                reg = LinearRegression().fit(X, Y)
+            # linear regression
+            reg = LinearRegression().fit(X, Y)
 
-                # compute initial & final amount based on model
-                Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
-                Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
+            # compute initial & final amount based on model
+            Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
+            Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
             # overall change (tn)
             change = Y_final - Y_initial
             DATA.setdefault(f'{prop}\tall years\tt', {})[area] = to_json(change)
 
             # overall change (%)
-            change = (Y_final - Y_initial) / Y_initial * 100
+            change = (Y_final - Y_initial) / abs(Y_initial) * 100 if Y_initial else np.nan
             DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
 
             # change to same quarter, last year (tn)
-            Y_initial, Y_final = np.nan, np.nan
-            if len(flows):
-                Y_initial = flows[(flows['MeldPeriodeJAAR'] == initial_year) &
-                                  (flows['Periode'] == quarter)]['Gewicht_TN']
-                Y_initial = Y_initial.values[0] if len(Y_initial) else np.nan
-                Y_final = flows[(flows['MeldPeriodeJAAR'] == final_year) &
-                                (flows['Periode'] == quarter)]['Gewicht_TN']
-                Y_final = Y_final.values[0] if len(Y_final) else np.nan
+            Y_final, Y_initial = Y[-1], Y[-5]
             change = Y_final - Y_initial
             DATA.setdefault(f'{prop}\tlast quarter\tt', {})[area] = to_json(change)
 
             # change to same quarter, last year (%)
-            change = (Y_final - Y_initial) / Y_initial * 100
+            change = (Y_final - Y_initial) / Y_initial * 100 if Y_initial else np.nan
             DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
 
 
