@@ -247,6 +247,20 @@ def nivo_sunburst(nivo, dic):
         nivo["children"].append(item)
     return nivo
 
+def nivo_sankey(nivo, dic, sums={}):
+    for key in dic.keys():
+        nivo['nodes'].add(key)
+        if isinstance(dic[key], dict):
+            children = dic[key].keys()
+            sums[key] = 0
+            for child in children:
+                nivo['links'].add((key, child))
+                nivo_sankey(nivo, dic[key], sums=sums)
+                sums[key] += sums[child]
+        else:
+            sums[key] = dic[key]
+    return nivo, sums
+
 
 def get_material_use(df, period=None, source=None,
                      level=None, areas=None):
@@ -265,7 +279,8 @@ def get_material_use(df, period=None, source=None,
     ]
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
-    sunbursts = []
+    # sunbursts = []
+    sankeys = []
     for area in areas:
         select = groups[groups[f'{source}_{level}'] == area]
 
@@ -286,7 +301,8 @@ def get_material_use(df, period=None, source=None,
                         new.append(item)
                 levels = new
             if len(materials) > 1:
-                levels.append(','.join(levels) + ',Mixed')
+                value = f'{levels[-1]} (Mixed)' if len(levels) else 'Mixed'
+                levels.append(value)
 
             # convert into hierarchy
             tree = build_tree(levels)
@@ -298,26 +314,53 @@ def get_material_use(df, period=None, source=None,
             sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
 
         # populate hierarchy with amounts
+        hierarchy = {"Total": hierarchy}
         for material in sums.keys():
             obj = search_nested(material, hierarchy)
             if not len(obj):
                 update_nested(hierarchy, material, sums[material])
             else:
                 obj = search_nested(material, hierarchy)
-                obj['Other'] = sums[material]
+                obj[f'{material} (Other)'] = sums[material]
                 update_nested(hierarchy, material, obj)
 
-        # create nivo sunburst
+        json.encoder._make_iterencode = _make_iterencode._make_iterencode
+        indent = (2, None)
+        print(json.dumps(hierarchy, indent=4))
+
+        # create nivo sankey
+        # MISSING SINGLE NODES: Mixed, Unknown
         nivo = {
-            "name": "nivo",
-            "children": []
+            'nodes': set(),
+            'links': set()
         }
-        sunbursts.append({
+        nivo, sums = nivo_sankey(nivo, hierarchy)
+        nivo['nodes'] = [{
+            'id': node
+        } for node in nivo['nodes']]
+        nivo['links'] = [{
+            'source': source,
+            'target': target
+        } for source, target in nivo['links']]
+        for link in nivo['links']:
+            link['value'] = sums[link['target']]
+            print(f'{link["source"]} [{link["value"]}] {link["target"]}')
+        sankeys.append({
             "name": area,
-            "materials": nivo_sunburst(nivo, hierarchy)
+            "materials": nivo
         })
 
-    return sunbursts
+        # # create nivo sunburst
+        # nivo = {
+        #     "name": "nivo",
+        #     "children": []
+        # }
+        # sunbursts.append({
+        #     "name": area,
+        #     "materials": nivo_sunburst(nivo, hierarchy)
+        # })
+
+    return sankeys
 
 
 def get_classification_graphs(df, period=None, source=None,
@@ -459,21 +502,21 @@ if __name__ == "__main__":
                                              source=source,
                                              level=level, areas=areas)
 
-                        # transition agendas
-                        DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
-                            get_classification_graphs(df,
-                                                      period=p,
-                                                      source=source,
-                                                      level=level, areas=areas,
-                                                      klass='agendas')
-
-                        # supply chains
-                        DATA[f'{prefix}\tsupply_chains\t{suffix}'] = \
-                            get_classification_graphs(df,
-                                                      period=p,
-                                                      source=source,
-                                                      level=level, areas=areas,
-                                                      klass='chains')
+                        # # transition agendas
+                        # DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
+                        #     get_classification_graphs(df,
+                        #                               period=p,
+                        #                               source=source,
+                        #                               level=level, areas=areas,
+                        #                               klass='agendas')
+                        #
+                        # # supply chains
+                        # DATA[f'{prefix}\tsupply_chains\t{suffix}'] = \
+                        #     get_classification_graphs(df,
+                        #                               period=p,
+                        #                               source=source,
+                        #                               level=level, areas=areas,
+                        #                               klass='chains')
 
     # GRAPHS
     with open('test/materials.json', 'w') as outfile:
