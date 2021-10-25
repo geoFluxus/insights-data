@@ -232,6 +232,10 @@ if __name__ == '__main__':
     flows = pd.concat(all_years)
     print(f"Total flows: {len(flows)}\n")
 
+    # import activities
+    ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
+    ACTIVITIES['name'] = ACTIVITIES['name'].str.lower().str.capitalize()
+
     # import industries
     industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
@@ -244,8 +248,14 @@ if __name__ == '__main__':
     provincie_gemeenten = gemeenten[gemeenten['parent'] == var.PROVINCE]['name'].to_list()
 
     # TRENDS (All amounts in tonnes)
-    roles = ['Herkomst', 'Verwerker']  # herkomst: production, verwerker: treatment
-    levels = ['Provincie', 'Gemeente']
+    roles = [
+        'Herkomst',
+        # 'Verwerker'
+    ]  # herkomst: production, verwerker: treatment
+    levels = [
+        'Provincie',
+        # 'Gemeente'
+    ]
     for role, level in itertools.product(roles, levels):
         on = f'{role}_{level}'
 
@@ -265,6 +275,16 @@ if __name__ == '__main__':
                        per_months=3, prop=f'{prefix}\ttotal\ttotal',
                        add_graph=False)
 
+        # Average quarterly change in ECONOMIC ACTIVITIES
+        # ONLY PRODUCTION
+        # if terms[role] == 'production':
+        for index, activity in ACTIVITIES.iterrows():
+            compute_trends(flows,
+                           on=[on, 'Ontdoener_AG'],
+                           values=[areas, [activity['code']]],
+                           per_months=3, prop=f'{prefix}\tactivity\t{activity["code"]} - {activity["name"]}',
+                           add_graph=False)
+
         # Average quarterly change in TREATMENT METHODS
         # ONLY PRODUCTION
         TREATMENT_METHODS = {
@@ -277,24 +297,24 @@ if __name__ == '__main__':
                           'F03', 'F04'],
             'storage': ['A01', 'A02']
         }
-        if terms[role] == 'production':
+        # # if terms[role] == 'production':
+        for method, codes in TREATMENT_METHODS.items():
+            compute_trends(flows,
+                           on=[on, 'VerwerkingsmethodeCode'],
+                           values=[areas, codes],
+                           per_months=3, prop=f'{prefix}\tprocessing\t{method}',
+                           add_graph=False)
+
+        # Average quarterly change in INDUSTRIES per TREATMENT method
+        # ONLY PRODUCTION
+        # # if terms[role] == 'production':
+        for group in industry_groups:
             for method, codes in TREATMENT_METHODS.items():
                 compute_trends(flows,
-                               on=[on, 'VerwerkingsmethodeCode'],
-                               values=[areas, codes],
-                               per_months=3, prop=f'{prefix}\tprocess\t{method}',
-                               add_graph=False)
-
-        # Average quarterly change in INDUSTRY GROUPS per TREATMENT METHOD
-        # ONLY PRODUCTION
-        if terms[role] == 'production':
-            for method, codes in TREATMENT_METHODS.items():
-                for group in industry_groups:
-                    compute_trends(flows,
-                                   on=[on, 'VerwerkingsmethodeCode', 'industries'],
-                                   values=[areas, codes, [group]],
-                                   per_months=3, prop=f'{prefix}\tmaterial\t{method}_{group}',
-                                   add_trends=False)
+                               on=[on, 'industries', 'VerwerkingsmethodeCode'],
+                               values=[areas, [group], codes],
+                               per_months=3, prop=f'{prefix}\tindustry\t{group}_{method}',
+                               add_trends=False)
 
     with open('test/actions.json', 'w') as outfile:
         fields = sorted(list(DATA.keys()))
