@@ -293,7 +293,7 @@ if __name__ == "__main__":
                         # FLOWMAPS
                         if prefixes[level] == 'municipality':
                             # economic activities (Herkomst in) -> FLOWMAP
-                            MAP.setdefault('activities', {})[f'{prefix}_activity\t{suffix}'] = \
+                            MAP.setdefault('economic_sectors', {})[f'{prefix}_activity\t{suffix}'] = \
                                 get_flows(df,
                                           period=p,
                                           source=source, source_in=True,
@@ -303,7 +303,7 @@ if __name__ == "__main__":
                                           rename={'Activity': 'activity'})
 
                             # waste processes (Herkomst in) -> FLOWMAP
-                            MAP.setdefault('processes', {})[f'{prefix}_process\t{suffix}'] = \
+                            MAP.setdefault('treatment_methods', {})[f'{prefix}_process\t{suffix}'] = \
                                 get_flows(df,
                                           period=p,
                                           source=source, source_in=True,
@@ -314,7 +314,7 @@ if __name__ == "__main__":
 
     # FLOWMAPS
     for section, data in MAP.items():
-        with open(f'test/overview_{section}_flowmap.json', 'w') as outfile:
+        with open(f'test/{section}_flowmap.json', 'w') as outfile:
             results = []
             for key, items in data.items():
                 level, field, period = key.split('\t')
