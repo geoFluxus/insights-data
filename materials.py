@@ -11,7 +11,7 @@ import _make_iterencode
 
 INPUTS = [
     {
-        'year': 2020,
+        'year': 2019,
         'period': 'year', # year
     },
     # {
@@ -38,7 +38,10 @@ ROLES = {
 
 DATA = {}
 
-MAP = {}
+# COROPs in province
+COROPS = [
+    'Utrecht'
+]
 
 
 def import_areas():
@@ -235,7 +238,6 @@ def update_nested(dic, key, value):
 def nivo_sunburst(nivo, dic):
     for key in dic.keys():
         name = key
-        if 'Mixed' in name: name = 'Mixed'
         item = {
             "name": name,
         }
@@ -246,6 +248,15 @@ def nivo_sunburst(nivo, dic):
             item["loc"] = dic[key]
         nivo["children"].append(item)
     return nivo
+
+
+def get_sunburst(hierarchy):
+    nivo = {
+        "name": "nivo",
+        "children": []
+    }
+    return nivo_sunburst(nivo, hierarchy)
+
 
 def nivo_sankey(nivo, dic, sums={}):
     for key in dic.keys():
@@ -260,6 +271,73 @@ def nivo_sankey(nivo, dic, sums={}):
         else:
             sums[key] = dic[key]
     return nivo, sums
+
+
+def get_sankey(hierarchy):
+
+    # create nivo sankey
+    # MISSING SINGLE NODES: Mixed, Unknown
+    nivo = {
+        'nodes': set(),
+        'links': set()
+    }
+    nivo, sums = nivo_sankey(nivo, hierarchy)
+    print(sums)
+    nivo['nodes'] = [{
+        'id': node
+    } for node in nivo['nodes']]
+    nivo['links'] = [{
+        'source': source,
+        'target': target
+    } for source, target in nivo['links']]
+    for link in nivo['links']:
+        link['value'] = sums[link['target']]
+
+    return nivo, sums
+
+
+def get_hierarchy(df):
+    sums = {}  # contains amounts for all levels
+    hierarchy = {}  # level hierarchy
+    for idx, row in df.iterrows():
+        # split materials
+        materials = row['materials'].split('&')
+
+        # retrieve material intersection
+        # to define levels
+        levels = materials[0].split(',')
+        for material in materials[1:]:
+            search = material.split(',')
+            new = []
+            for item in levels:
+                if item in search:
+                    new.append(item)
+            levels = new
+        if len(materials) > 1:
+            value = f'{levels[-1]} (Mixed)' if len(levels) else 'Mixed'
+            levels.append(value)
+
+        # convert into hierarchy
+        tree = build_tree(levels)
+
+        # merge with existent hierarchy
+        hierarchy = merge(tree, hierarchy)
+
+        # save amount for lowest level
+        sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
+
+    # populate hierarchy with amounts
+    hierarchy = {"Total": hierarchy}
+    for material in sums.keys():
+        obj = search_nested(material, hierarchy)
+        if not len(obj):
+            update_nested(hierarchy, material, sums[material])
+        else:
+            obj = search_nested(material, hierarchy)
+            obj[f'{material} (Other)'] = sums[material]
+            update_nested(hierarchy, material, obj)
+
+    return hierarchy
 
 
 def get_material_use(df, period=None, source=None,
@@ -282,85 +360,21 @@ def get_material_use(df, period=None, source=None,
     # sunbursts = []
     sankeys = []
     for area in areas:
-        select = groups[groups[f'{source}_{level}'] == area]
+        df = groups[groups[f'{source}_{level}'] == area]
+        hierarchy = get_hierarchy(df)
 
-        sums = {}  # contains amounts for all levels
-        hierarchy = {}  # level hierarchy
-        for idx, row in select.iterrows():
-            # split materials
-            materials = row['materials'].split('&')
-
-            # retrieve material intersection
-            # to defin levels
-            levels = materials[0].split(',')
-            for material in materials[1:]:
-                search = material.split(',')
-                new = []
-                for item in levels:
-                    if item in search:
-                        new.append(item)
-                levels = new
-            if len(materials) > 1:
-                value = f'{levels[-1]} (Mixed)' if len(levels) else 'Mixed'
-                levels.append(value)
-
-            # convert into hierarchy
-            tree = build_tree(levels)
-
-            # merge with existent hierarchy
-            hierarchy = merge(tree, hierarchy)
-
-            # save amount for lowest level
-            sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
-
-        # populate hierarchy with amounts
-        hierarchy = {"Total": hierarchy}
-        for material in sums.keys():
-            obj = search_nested(material, hierarchy)
-            if not len(obj):
-                update_nested(hierarchy, material, sums[material])
-            else:
-                obj = search_nested(material, hierarchy)
-                obj[f'{material} (Other)'] = sums[material]
-                update_nested(hierarchy, material, obj)
-
-        json.encoder._make_iterencode = _make_iterencode._make_iterencode
-        indent = (2, None)
-        print(json.dumps(hierarchy, indent=4))
-
-        # create nivo sankey
-        # MISSING SINGLE NODES: Mixed, Unknown
-        nivo = {
-            'nodes': set(),
-            'links': set()
-        }
-        nivo, sums = nivo_sankey(nivo, hierarchy)
-        nivo['nodes'] = [{
-            'id': node
-        } for node in nivo['nodes']]
-        nivo['links'] = [{
-            'source': source,
-            'target': target
-        } for source, target in nivo['links']]
-        for link in nivo['links']:
-            link['value'] = sums[link['target']]
-            print(f'{link["source"]} [{link["value"]}] {link["target"]}')
+        sankey, sums = get_sankey(hierarchy)
         sankeys.append({
             "name": area,
-            "materials": nivo
+            "materials": sankey
         })
 
-        # # create nivo sunburst
-        # nivo = {
-        #     "name": "nivo",
-        #     "children": []
-        # }
         # sunbursts.append({
         #     "name": area,
-        #     "materials": nivo_sunburst(nivo, hierarchy)
+        #     "materials": get_sunburst(hierarchy)
         # })
 
-    return sankeys
+    return sankeys, sums
 
 
 def get_classification_graphs(df, period=None, source=None,
@@ -409,10 +423,11 @@ def get_classification_graphs(df, period=None, source=None,
     return results
 
 
-def add_classification(df, classif, name=None):
-    classif['ewc'] = classif['ewc'].astype(str).str.zfill(6)
-    df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
-    df = pd.merge(df, classif, how='left', left_on='EuralCode', right_on='ewc')
+def add_classification(df, classif, name=None,
+                       left_on=None, right_on=None):
+    classif[right_on] = classif[right_on].astype(str).str.zfill(6)
+    df[left_on] = df[left_on].astype(str).str.zfill(6)
+    df = pd.merge(df, classif, how='left', left_on=left_on, right_on=right_on)
     df.loc[df[name].isnull(), name] = 'Unknown'
     return df
 
@@ -425,9 +440,10 @@ if __name__ == "__main__":
 
     # import ewc classifications
     classifs = {}
-    for classif in ['materials', 'agendas', 'chains']:
+    for classif in ['agendas', 'materials']:
         classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv', low_memory=False, sep=';')
 
+    tree = {}
     for input in INPUTS:
         year = input['year']
         period = input['period']
@@ -442,8 +458,7 @@ if __name__ == "__main__":
             print(f'Import {typ}....')
             path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
             filename = f'{path}/{typ.lower()}_{var.PROVINCE.lower()}_{year}.csv'
-            df = pd.read_csv(filename, low_memory=False)
-            df['VerwerkingsGroep'] = df['VerwerkingsmethodeCode'].str[0]
+            df = pd.read_csv(filename, low_memory=False)[:1000]
 
             # group flows to periods
             print('Split to periods...')
@@ -453,27 +468,15 @@ if __name__ == "__main__":
             print('Add areas to roles...')
             source = ROLES[typ]['source']  # source role
             target = ROLES[typ]['target']  # target role
-            activity = ROLES[typ]['activity']  # activity role (ontvangst: 'ontdoener')
-            for role, level in itertools.product([source, target], ['Provincie', 'Gemeente']):
+            for role, level in itertools.product([source, target], ['Provincie']):
                 areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
-            if typ == 'Ontvangst':
-                df = add_areas(df, areas=AREAS['Provincie'], role=activity, admin_level="Provincie")
-                df = add_areas(df, areas=AREAS['Gemeente'], role=activity, admin_level="Gemeente")
-
-            # add continents based on countries to roles
-            countries = AREAS['Country']
-            countries = countries[['country_nl', 'cont_nl']]
-            for role in [source, target]:
-                columns = list(df.columns)
-                df = pd.merge(df, countries, how='left', left_on=f'{role}_Land', right_on='country_nl')
-                df[f'{role}_Continent'] = df['cont_nl']
-                columns.append(f'{role}_Continent')
-                df = df[columns]
 
             # add classifications
             for name, classif in classifs.items():
-                df = add_classification(df, classif, name=name)
+                df = add_classification(df, classif, name=name,
+                                        left_on='EuralCode',
+                                        right_on='ewc')
 
             prefixes = {
                 'Provincie': 'province',
@@ -496,40 +499,143 @@ if __name__ == "__main__":
                     # only on province level & primary waste
                     if prefixes[level] == 'province' and prefixes[typ] == 'primary':
                         # material use
-                        DATA[f'{prefix}\tmaterial_use\t{suffix}'] =\
+                        DATA[f'{prefix}\tsankey\t{suffix}'], sums =\
                             get_material_use(df,
                                              period=p,
                                              source=source,
                                              level=level, areas=areas)
+                        tree['EWC'] = {
+                            'hierarchy': get_hierarchy(df),
+                            'sums': sums
+                        }
 
-                        # # transition agendas
-                        # DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
-                        #     get_classification_graphs(df,
-                        #                               period=p,
-                        #                               source=source,
-                        #                               level=level, areas=areas,
-                        #                               klass='agendas')
-                        #
-                        # # supply chains
-                        # DATA[f'{prefix}\tsupply_chains\t{suffix}'] = \
-                        #     get_classification_graphs(df,
-                        #                               period=p,
-                        #                               source=source,
-                        #                               level=level, areas=areas,
-                        #                               klass='chains')
+    #                     # transition agendas
+    #                     DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
+    #                         get_classification_graphs(df,
+    #                                                   period=p,
+    #                                                   source=source,
+    #                                                   level=level, areas=areas,
+    #                                                   klass='agendas')
 
-    # GRAPHS
-    with open('test/materials.json', 'w') as outfile:
-        # preprocess
-        results = {}
-        for key, items in DATA.items():
-            level, type, field, period = key.split('\t')
-            for item in items:
-                item['level'] = level
-                item['period'] = period
-                item['type'] = type
-                results.setdefault(field, []).append(item)
+    # CBS DATA
+    # stromen -> million kg
+    path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
+    df = pd.read_csv(path, low_memory=False, sep=';')
+    df['Gewicht_KG'] = round(df['Brutogew'] * 10**6)
+    df['Gewicht_KG'] = df['Gewicht_KG'].astype(int)
 
-        json.encoder._make_iterencode = _make_iterencode._make_iterencode
-        indent = (2, None)
-        json.dump(results, outfile, indent=indent)
+    # filter by year & COROPS
+    df = df[(df['Jaar'] == year) & (df['COROP_naam'].isin(COROPS))]
+    stromen = [
+        'Aanbod_eigen_regio',
+        'Distributie',
+        'Doorvoer',
+        'Invoer_internationaal',
+        'Invoer_regionaal',
+        'Uitvoer_internationaal',
+        'Uitvoer_regionaal'
+    ]
+
+    # import cbs classifications
+    classifs = {}
+    for classif in ['agendas', 'materials']:
+        classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+
+    # add classifications
+    for name, classif in classifs.items():
+        df = add_classification(df, classif, name=name,
+                                left_on='Goederengroep_nr',
+                                right_on='cbs')
+
+    # # TRANSITION AGENDAS
+    # # groupby: source, materials
+    # groupby = [
+    #     'agendas',
+    #     'Brutogew'
+    # ]
+    # groups = df[groupby].groupby(groupby[:-1]).sum().reset_index()
+    #
+    # results = []
+    #
+    # collection = {}
+    # for idx, row in groups.iterrows():
+    #     collection[row['agendas']] = collection.get(row['agendas'], 0) + row['Brutogew']
+    #
+    # classifs, values = [], []
+    # for classif, value in collection.items():
+    #     classifs.append(classif)
+    #     values.append(round(value / 10**3, 2))  # ml kg -> Mt
+    #
+    # results.append({
+    #     "name": var.PROVINCE,
+    #     "agendas": classifs,
+    #     "values": {
+    #         "weight": {
+    #             "value": values,
+    #             "unit": "Mt"
+    #         }
+    #     }
+    # })
+    # prefix = 'province\tmaterial'
+    # DATA[f'{prefix}\tagendas\t{suffix}'] = results
+
+    # SANKEY
+    sankey, sums = get_sankey(get_hierarchy(df))
+    # DATA[f'province\tmaterials\tsankey\t{year}'] = [{
+    #     "name": var.PROVINCE,
+    #     "materials": sankey
+    # }]
+    # tree['NST'] = {
+    #     'hierarchy': get_hierarchy(df),
+    #     'sums': sums
+    # }
+
+    # print(json.dumps(tree, indent=4))
+
+    # hierarchy = {}
+    # sums = {}
+    # for typ, item in tree.items():
+    #     print(item)
+    #     hierarchy = merge(item['hierarchy'], hierarchy)
+    #     for k, v in item['sums'].items():
+    #         sums.setdefault(k, []).append({
+    #             "type": typ,
+    #             "value": v
+    #         })
+    # print(json.dumps(hierarchy, indent=4))
+    # print(json.dumps(sums, indent=4))
+
+    # hierarchy = {}
+    # sums = {}
+    # for item in tree:
+    #     hierarchy = merge(item['hierarchy'], hierarchy)
+    #     for key, value in item['sums'].items():
+    #         sums[key] = sums.get(key, 0) + value
+    # print(sums)
+
+    # sunbursts = []
+    # keys = list(DATA.keys())
+    # for key in keys:
+    #     if 'sunburst' in key:
+    #         sunbursts.append(DATA.pop(key))
+    # add, ref = sunbursts[0][0], sunbursts[1][0]
+    # combo = merge(add, ref)
+    # print(json.dumps(add, indent=2))
+    # print(json.dumps(ref, indent=2))
+    # print(json.dumps(combo, indent=2))
+
+    # # GRAPHS
+    # with open('test/materials.json', 'w') as outfile:
+    #     # preprocess
+    #     results = {}
+    #     for key, items in DATA.items():
+    #         level, type, field, period = key.split('\t')
+    #         for item in items:
+    #             item['level'] = level
+    #             item['period'] = period
+    #             item['type'] = type
+    #             results.setdefault(field, []).append(item)
+    #
+    #     json.encoder._make_iterencode = _make_iterencode._make_iterencode
+    #     indent = (2, None)
+    #     json.dump(results, outfile, indent=indent)
