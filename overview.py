@@ -3,6 +3,8 @@ import geopandas as gpd
 import numpy as np
 import variables as var
 import itertools
+import _make_iterencode
+import json
 
 
 INPUTS = [
@@ -31,6 +33,8 @@ ROLES = {
 }
 
 AREAS = {}
+
+DATA = {}
 
 
 def import_areas():
@@ -94,12 +98,73 @@ def compute_sankey_branch(flows,
         print(f'{source} ({binnen[source_in]} {area}) -> {target} ({binnen[target_in]} {area}): {new_flows} Mtn')
 
 
+def get_classification_graphs(df, period=None, source=None,
+                              level=None, areas=None, klass=None):
+    # filter source in areas
+    flows = df[df[f'{source}_{level}'].isin(areas)]
+    flows = flows.rename(columns={source: 'source'})
+
+    # filter by period
+    if period: flows = flows[flows['Periode'] == period]
+
+    # groupby: source, materials
+    groupby = [
+        f'{source}_{level}',
+        klass,
+        'Gewicht_KG'
+    ]
+    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
+
+    results = []
+    for area in areas:
+        select = groups[groups[f'{source}_{level}'] == area]
+
+        collection = {}
+        for idx, row in select.iterrows():
+            # classifs = row[klass].split('&')
+            # for classif in classifs:
+            collection[row[klass]] = collection.get(row[klass], 0) + row['Gewicht_KG']
+
+        classifs, values = [],  []
+        for classif, value in collection.items():
+            classifs.append(classif)
+            values.append(round(value / 10**9, 2))  # kg -> Mt
+
+        results.append({
+            "name": area,
+            klass: classifs,
+            "values": {
+                "weight": {
+                    "value": values,
+                    "unit": "Mt"
+                }
+            }
+        })
+
+    return results
+
+
+def add_classification(df, classif, name=None,
+                       left_on=None, right_on=None):
+    classif[right_on] = classif[right_on].astype(str).str.zfill(6)
+    df[left_on] = df[left_on].astype(str).str.zfill(6)
+    df = pd.merge(df, classif, how='left', left_on=left_on, right_on=right_on)
+    df.loc[df[name].isnull(), name] = 'Unknown'
+    return df
+
+
 if __name__ == "__main__":
     # import areas
     print('Import areas...')
     provincie_gemeenten = import_areas()
     provincie = var.PROVINCE
 
+    # import ewc classifications
+    classifs = {}
+    for classif in ['chains']:
+        classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv', low_memory=False, sep=';')
+
+    # LMA DATA
     for input in INPUTS:
         year = input['year']
         period = input['period']
@@ -107,7 +172,6 @@ if __name__ == "__main__":
 
         print(f'YEAR: {year}')
 
-        # recover LMA data
         for typ in ['Ontvangst', 'Afgifte']:
             # import file
             print('')
@@ -124,6 +188,12 @@ if __name__ == "__main__":
                 areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
 
+            # add classifications
+            for name, classif in classifs.items():
+                df = add_classification(df, classif, name=name,
+                                        left_on='EuralCode',
+                                        right_on='ewc')
+
             prefixes = {
                 'Provincie': 'province',
                 'Gemeente': 'municipality',
@@ -138,44 +208,115 @@ if __name__ == "__main__":
             ]:
                 areas = [provincie] if level == 'Provincie' else provincie_gemeenten
 
-                # SANKEY
-                # source in / target in
-                compute_sankey_branch(df,
-                                      source=source, source_in=True,
-                                      target=target, target_in=True,
-                                      level=level, areas=areas)
+                prefix = f'{prefixes[level]}\t{prefixes[typ]} waste'
 
-                # source in / target out
-                compute_sankey_branch(df,
-                                      source=source, source_in=True,
-                                      target=target, target_in=False,
-                                      level=level, areas=areas)
+                for p in periods:
+                    suffix = f'{year}'
+                    if p: suffix = f'{suffix}-{period[0].upper()}{p}'
 
-                # source out / target in
-                compute_sankey_branch(df,
-                                      source=source, source_in=False,
-                                      target=target, target_in=True,
-                                      level=level, areas=areas)
+                    # # SANKEY
+                    # # source in / target in
+                    # compute_sankey_branch(df,
+                    #                       source=source, source_in=True,
+                    #                       target=target, target_in=True,
+                    #                       level=level, areas=areas)
+                    #
+                    # # source in / target out
+                    # compute_sankey_branch(df,
+                    #                       source=source, source_in=True,
+                    #                       target=target, target_in=False,
+                    #                       level=level, areas=areas)
+                    #
+                    # # source out / target in
+                    # compute_sankey_branch(df,
+                    #                       source=source, source_in=False,
+                    #                       target=target, target_in=True,
+                    #                       level=level, areas=areas)
 
-        # # recover CBS data
+                    # SUPPLY CHAIN
+                    # only on province level & primary waste
+                    if prefixes[level] == 'province' and prefixes[typ] == 'primary':
+                        DATA[f'{prefix}\tsupply_chains\t{suffix}'] = \
+                            get_classification_graphs(df,
+                                                      period=p,
+                                                      source=source,
+                                                      level=level, areas=areas,
+                                                      klass='chains')
+
+        # CBS DATA
+        # stromen -> million kg
+        path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
+        df = pd.read_csv(path, low_memory=False, sep=';')
+        # filter by year & COROPS
+        df = df[(df['Jaar'] == year) & (df['COROP_naam'].isin(COROPS))]
+        stromen = [
+            'Aanbod_eigen_regio',
+            'Distributie',
+            'Doorvoer',
+            'Invoer_internationaal',
+            'Invoer_regionaal',
+            'Uitvoer_internationaal',
+            'Uitvoer_regionaal'
+        ]
+
         # SANKEY
-        # # stromen -> million kg
-        # path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
-        # cbs = pd.read_csv(path, low_memory=False, sep=';')
-        #
-        # # filter by year & COROPS
-        # cbs = cbs[(cbs['Jaar'] == year) & (cbs['COROP_naam'].isin(COROPS))]
-        # stromen = [
-        #     'Aanbod_eigen_regio',
-        #     'Distributie',
-        #     'Doorvoer',
-        #     'Invoer_internationaal',
-        #     'Invoer_regionaal',
-        #     'Uitvoer_internationaal',
-        #     'Uitvoer_regionaal'
-        # ]
-        # # instroom_totaal = (cbs_tabel['Import, binnen Nederland'].sum() + cbs_tabel['Import, buiten Nederland'].sum()) / 10**3  # megatonnes
-        # # intrastroom_totaal = (cbs_tabel['Distributie'].sum() + cbs_tabel['Aanbod'].sum()) / 10**3  # megatonnes
-        # # uitstroom_totaal = (cbs_tabel['Export, binnen Nederland'].sum() + cbs_tabel['Export, buiten Nederland'].sum()) / 10**3  # megatonnes
         # for stroom in stromen:
-        #     print(f"{stroom}: {cbs[cbs['Stroom'] == stroom]['Brutogew'].sum() / 10**3}")
+        #     print(f"{stroom}: {df[df['Stroom'] == stroom]['Brutogew'].sum() / 10**3}")
+
+        # SUPPLY CHAIN
+        # import cbs classifications
+        classifs = {}
+        for classif in ['chains']:
+            classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+        # add classifications
+        for name, classif in classifs.items():
+            df = add_classification(df, classif, name=name,
+                                    left_on='Goederengroep_nr',
+                                    right_on='cbs')
+
+        # groupby: source, materials
+        groupby = [
+            'chains',
+            'Brutogew'
+        ]
+        groups = df[groupby].groupby(groupby[:-1]).sum().reset_index()
+
+        results = []
+
+        collection = {}
+        for idx, row in groups.iterrows():
+            collection[row['chains']] = collection.get(row['chains'], 0) + row['Brutogew']
+
+        classifs, values = [], []
+        for classif, value in collection.items():
+            classifs.append(classif)
+            values.append(round(value / 10**3, 2))  # ml kg -> Mt
+
+        results.append({
+            "name": var.PROVINCE,
+            "chains": classifs,
+            "values": {
+                "weight": {
+                    "value": values,
+                    "unit": "Mt"
+                }
+            }
+        })
+        prefix = 'province\tmaterial'
+        DATA[f'{prefix}\tsupply_chains\t{suffix}'] = results
+
+        # GRAPHS
+        with open('test/overview.json', 'w') as outfile:
+            # preprocess
+            results = {}
+            for key, items in DATA.items():
+                level, type, field, period = key.split('\t')
+                for item in items:
+                    item['level'] = level
+                    item['period'] = period
+                    item['type'] = type
+                    results.setdefault(field, []).append(item)
+
+            json.encoder._make_iterencode = _make_iterencode._make_iterencode
+            indent = (2, None)
+            json.dump(results, outfile, indent=indent)

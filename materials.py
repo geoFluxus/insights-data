@@ -258,7 +258,7 @@ def get_sunburst(hierarchy):
     return nivo_sunburst(nivo, hierarchy)
 
 
-def nivo_sankey(nivo, dic, sums={}):
+def nivo_sankey(nivo, dic, sums):
     for key in dic.keys():
         nivo['nodes'].add(key)
         if isinstance(dic[key], dict):
@@ -266,7 +266,7 @@ def nivo_sankey(nivo, dic, sums={}):
             sums[key] = 0
             for child in children:
                 nivo['links'].add((key, child))
-                nivo_sankey(nivo, dic[key], sums=sums)
+                nivo_sankey(nivo, dic[key], sums)
                 sums[key] += sums[child]
         else:
             sums[key] = dic[key]
@@ -274,15 +274,13 @@ def nivo_sankey(nivo, dic, sums={}):
 
 
 def get_sankey(hierarchy):
-
     # create nivo sankey
     # MISSING SINGLE NODES: Mixed, Unknown
     nivo = {
         'nodes': set(),
         'links': set()
     }
-    nivo, sums = nivo_sankey(nivo, hierarchy)
-    print(sums)
+    nivo, sums = nivo_sankey(nivo, hierarchy, {})
     nivo['nodes'] = [{
         'id': node
     } for node in nivo['nodes']]
@@ -374,7 +372,7 @@ def get_material_use(df, period=None, source=None,
         #     "materials": get_sunburst(hierarchy)
         # })
 
-    return sankeys, sums
+    return sankeys, hierarchy, sums
 
 
 def get_classification_graphs(df, period=None, source=None,
@@ -458,7 +456,7 @@ if __name__ == "__main__":
             print(f'Import {typ}....')
             path = f'../../../../../media/geofluxus/DATA/national/{var.PROVINCE.lower()}/processed'
             filename = f'{path}/{typ.lower()}_{var.PROVINCE.lower()}_{year}.csv'
-            df = pd.read_csv(filename, low_memory=False)[:1000]
+            df = pd.read_csv(filename, low_memory=False)
 
             # group flows to periods
             print('Split to periods...')
@@ -499,13 +497,13 @@ if __name__ == "__main__":
                     # only on province level & primary waste
                     if prefixes[level] == 'province' and prefixes[typ] == 'primary':
                         # material use
-                        DATA[f'{prefix}\tsankey\t{suffix}'], sums =\
+                        DATA[f'{prefix}\tsankey\t{suffix}'], hierarchy, sums =\
                             get_material_use(df,
                                              period=p,
                                              source=source,
                                              level=level, areas=areas)
                         tree['EWC'] = {
-                            'hierarchy': get_hierarchy(df),
+                            'hierarchy': hierarchy,
                             'sums': sums
                         }
 
@@ -585,44 +583,52 @@ if __name__ == "__main__":
     #     "name": var.PROVINCE,
     #     "materials": sankey
     # }]
-    # tree['NST'] = {
-    #     'hierarchy': get_hierarchy(df),
-    #     'sums': sums
-    # }
+    tree['NST'] = {
+        'hierarchy': get_hierarchy(df),
+        'sums': sums
+    }
+    print(json.dumps(tree, indent=4))
 
-    # print(json.dumps(tree, indent=4))
+    # merge all to tree
+    hierarchy = {}
+    total = {}
+    for typ, item in tree.items():
+        hierarchy = merge(item['hierarchy'], hierarchy)
+        # for key, value in item['sums'].items():
+        #     total[key] = total.get(key, 0) + value
 
-    # hierarchy = {}
-    # sums = {}
-    # for typ, item in tree.items():
-    #     print(item)
-    #     hierarchy = merge(item['hierarchy'], hierarchy)
-    #     for k, v in item['sums'].items():
-    #         sums.setdefault(k, []).append({
-    #             "type": typ,
-    #             "value": v
-    #         })
-    # print(json.dumps(hierarchy, indent=4))
-    # print(json.dumps(sums, indent=4))
+    def flatten_hierarchy(dic, keys=set()):
+        """
+        recover all hierarchy levels
+        """
+        for key in dic.keys():
+            keys.add(key)
+            if isinstance(dic[key], dict):
+                flatten_hierarchy(dic[key], keys=keys)
+        return sorted(list(keys))
 
-    # hierarchy = {}
-    # sums = {}
-    # for item in tree:
-    #     hierarchy = merge(item['hierarchy'], hierarchy)
-    #     for key, value in item['sums'].items():
-    #         sums[key] = sums.get(key, 0) + value
-    # print(sums)
+    sums = {}
+    for typ, item in tree.items():
+        for k in flatten_hierarchy(hierarchy):
+            sums.setdefault(k, []).append({
+                "type": typ,
+                "value": item['sums'].get(k, 0)
+                # "value": round(item['sums'].get(k, 0) / total[k] * 100)
+            })
 
-    # sunbursts = []
-    # keys = list(DATA.keys())
-    # for key in keys:
-    #     if 'sunburst' in key:
-    #         sunbursts.append(DATA.pop(key))
-    # add, ref = sunbursts[0][0], sunbursts[1][0]
-    # combo = merge(add, ref)
-    # print(json.dumps(add, indent=2))
-    # print(json.dumps(ref, indent=2))
-    # print(json.dumps(combo, indent=2))
+    def update_tree(tree, dic):
+        for key in dic.keys():
+            item = {
+                "name": key,
+                'values': sums[key]
+            }
+            if isinstance(dic[key], dict):
+                item["children"] = []
+                item = update_tree(item, dic[key])
+            tree.setdefault("children", []).append(item)
+        return tree
+
+    print(json.dumps(update_tree({}, hierarchy)))
 
     # # GRAPHS
     # with open('test/materials.json', 'w') as outfile:
