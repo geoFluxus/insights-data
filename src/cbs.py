@@ -19,7 +19,7 @@ ontvangst = pd.read_csv('./data/flows/ontvangst_mra_2019.csv', low_memory=False)
 afgifte = pd.read_csv('./data/flows/afgifte_2019_full.csv', low_memory=False)
 
 # process postocdes
-MRA_PC4 = pd.read_csv('./data/areas/AMA_postcode.csv', low_memory=False)['AMA_postcode'].to_list()
+MRA_PC4 = pd.read_csv('../data/areas/AMA_postcode.csv', low_memory=False)['AMA_postcode'].to_list()
 MRA_PC4 = [str(code) for code in MRA_PC4]
 ontvangst.loc[ontvangst['Herkomst_Land'] == 'NEDERLAND', 'Herkomst_PC4'] = ontvangst['Herkomst_Postcode'].str[:4]
 ontvangst.loc[ontvangst['Verwerker_Land'] == 'NEDERLAND', 'Verwerker_PC4'] = ontvangst['Verwerker_Postcode'].str[:4]
@@ -92,8 +92,8 @@ instroom = import_cbs_flows(type='instroom')
 uitstroom = import_cbs_flows(type='uitstroom')
 
 # import areas
-provincies = gpd.read_file('./data/areas/provincies.shp')
-continents = gpd.read_file('./data/areas/continents.shp')
+provincies = gpd.read_file('../data/areas/provincies.shp')
+continents = gpd.read_file('../data/areas/continents.shp')
 continents['name'] = continents['cont_nl']
 provincies['Centroid'] = provincies.centroid
 continents['Centroid'] = continents.centroid

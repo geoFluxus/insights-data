@@ -46,25 +46,25 @@ COROPS = [
 
 def import_areas():
     # municipalities
-    gemeenten = gpd.read_file('data/areas/gemeenten.shp')
+    gemeenten = gpd.read_file('../data/areas/gemeenten.shp')
     gemeenten['centroid'] = gemeenten['geometry'].centroid
     # gemeenten['centroid'] = gemeenten['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Gemeente'] = gemeenten
 
     # provinces
-    provincies = gpd.read_file('data/areas/provincies.shp')
+    provincies = gpd.read_file('../data/areas/provincies.shp')
     provincies['centroid'] = provincies['geometry'].centroid
     # provincies['centroid'] = provincies['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Provincie'] = provincies
 
     # continents
-    continents = gpd.read_file('data/areas/continents.shp')
+    continents = gpd.read_file('../data/areas/continents.shp')
     continents['centroid'] = continents['geometry'].centroid
     # continents['centroid'] = continents['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Continent'] = continents
 
     # countries
-    countries = gpd.read_file('data/areas/countries.shp')
+    countries = gpd.read_file('../data/areas/countries.shp')
     countries['country_nl'] = countries['country_nl'].str.upper()
     countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
     AREAS['Country'] = countries
@@ -290,6 +290,7 @@ def get_sankey(hierarchy):
     } for source, target in nivo['links']]
     for link in nivo['links']:
         link['value'] = sums[link['target']]
+        print(f'{link["source"]}[{link["value"]}]{link["target"]}')
 
     return nivo, sums
 
@@ -439,7 +440,7 @@ if __name__ == "__main__":
     # import ewc classifications
     classifs = {}
     for classif in ['agendas', 'materials']:
-        classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv', low_memory=False, sep=';')
+        classifs[classif] = pd.read_csv(f'../data/materials/ewc_{classif}.csv', low_memory=False, sep=';')
 
     tree = {}
     for input in INPUTS:
@@ -502,10 +503,10 @@ if __name__ == "__main__":
                                              period=p,
                                              source=source,
                                              level=level, areas=areas)
-                        tree['EWC'] = {
-                            'hierarchy': hierarchy,
-                            'sums': sums
-                        }
+                        # tree['EWC'] = {
+                        #     'hierarchy': hierarchy,
+                        #     'sums': sums
+                        # }
 
     #                     # transition agendas
     #                     DATA[f'{prefix}\ttransition_agendas\t{suffix}'] =\
@@ -515,35 +516,35 @@ if __name__ == "__main__":
     #                                                   level=level, areas=areas,
     #                                                   klass='agendas')
 
-    # CBS DATA
-    # stromen -> million kg
-    path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
-    df = pd.read_csv(path, low_memory=False, sep=';')
-    df['Gewicht_KG'] = round(df['Brutogew'] * 10**6)
-    df['Gewicht_KG'] = df['Gewicht_KG'].astype(int)
-
-    # filter by year & COROPS
-    df = df[(df['Jaar'] == year) & (df['COROP_naam'].isin(COROPS))]
-    stromen = [
-        'Aanbod_eigen_regio',
-        'Distributie',
-        'Doorvoer',
-        'Invoer_internationaal',
-        'Invoer_regionaal',
-        'Uitvoer_internationaal',
-        'Uitvoer_regionaal'
-    ]
-
-    # import cbs classifications
-    classifs = {}
-    for classif in ['agendas', 'materials']:
-        classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
-
-    # add classifications
-    for name, classif in classifs.items():
-        df = add_classification(df, classif, name=name,
-                                left_on='Goederengroep_nr',
-                                right_on='cbs')
+    # # CBS DATA
+    # # stromen -> million kg
+    # path = '../data/cbs/Tabel Regionale stromen 2015-2019.csv'
+    # df = pd.read_csv(path, low_memory=False, sep=';')
+    # df['Gewicht_KG'] = round(df['Brutogew'] * 10**6)
+    # df['Gewicht_KG'] = df['Gewicht_KG'].astype(int)
+    #
+    # # filter by year & COROPS
+    # df = df[(df['Jaar'] == year) & (df['COROP_naam'].isin(COROPS))]
+    # stromen = [
+    #     'Aanbod_eigen_regio',
+    #     'Distributie',
+    #     'Doorvoer',
+    #     'Invoer_internationaal',
+    #     'Invoer_regionaal',
+    #     'Uitvoer_internationaal',
+    #     'Uitvoer_regionaal'
+    # ]
+    #
+    # # import cbs classifications
+    # classifs = {}
+    # for classif in ['agendas', 'materials']:
+    #     classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+    #
+    # # add classifications
+    # for name, classif in classifs.items():
+    #     df = add_classification(df, classif, name=name,
+    #                             left_on='Goederengroep_nr',
+    #                             right_on='cbs')
 
     # # TRANSITION AGENDAS
     # # groupby: source, materials
@@ -577,58 +578,58 @@ if __name__ == "__main__":
     # prefix = 'province\tmaterial'
     # DATA[f'{prefix}\tagendas\t{suffix}'] = results
 
-    # SANKEY
-    sankey, sums = get_sankey(get_hierarchy(df))
-    # DATA[f'province\tmaterials\tsankey\t{year}'] = [{
-    #     "name": var.PROVINCE,
-    #     "materials": sankey
-    # }]
-    tree['NST'] = {
-        'hierarchy': get_hierarchy(df),
-        'sums': sums
-    }
-    print(json.dumps(tree, indent=4))
-
-    # merge all to tree
-    hierarchy = {}
-    total = {}
-    for typ, item in tree.items():
-        hierarchy = merge(item['hierarchy'], hierarchy)
-        # for key, value in item['sums'].items():
-        #     total[key] = total.get(key, 0) + value
-
-    def flatten_hierarchy(dic, keys=set()):
-        """
-        recover all hierarchy levels
-        """
-        for key in dic.keys():
-            keys.add(key)
-            if isinstance(dic[key], dict):
-                flatten_hierarchy(dic[key], keys=keys)
-        return sorted(list(keys))
-
-    sums = {}
-    for typ, item in tree.items():
-        for k in flatten_hierarchy(hierarchy):
-            sums.setdefault(k, []).append({
-                "type": typ,
-                "value": item['sums'].get(k, 0)
-                # "value": round(item['sums'].get(k, 0) / total[k] * 100)
-            })
-
-    def update_tree(tree, dic):
-        for key in dic.keys():
-            item = {
-                "name": key,
-                'values': sums[key]
-            }
-            if isinstance(dic[key], dict):
-                item["children"] = []
-                item = update_tree(item, dic[key])
-            tree.setdefault("children", []).append(item)
-        return tree
-
-    print(json.dumps(update_tree({}, hierarchy)))
+    # # SANKEY
+    # sankey, sums = get_sankey(get_hierarchy(df))
+    # # DATA[f'province\tmaterials\tsankey\t{year}'] = [{
+    # #     "name": var.PROVINCE,
+    # #     "materials": sankey
+    # # }]
+    # tree['NST'] = {
+    #     'hierarchy': get_hierarchy(df),
+    #     'sums': sums
+    # }
+    # print(json.dumps(tree, indent=4))
+    #
+    # # merge all to tree
+    # hierarchy = {}
+    # total = {}
+    # for typ, item in tree.items():
+    #     hierarchy = merge(item['hierarchy'], hierarchy)
+    #     # for key, value in item['sums'].items():
+    #     #     total[key] = total.get(key, 0) + value
+    #
+    # def flatten_hierarchy(dic, keys=set()):
+    #     """
+    #     recover all hierarchy levels
+    #     """
+    #     for key in dic.keys():
+    #         keys.add(key)
+    #         if isinstance(dic[key], dict):
+    #             flatten_hierarchy(dic[key], keys=keys)
+    #     return sorted(list(keys))
+    #
+    # sums = {}
+    # for typ, item in tree.items():
+    #     for k in flatten_hierarchy(hierarchy):
+    #         sums.setdefault(k, []).append({
+    #             "type": typ,
+    #             "value": item['sums'].get(k, 0)
+    #             # "value": round(item['sums'].get(k, 0) / total[k] * 100)
+    #         })
+    #
+    # def update_tree(tree, dic):
+    #     for key in dic.keys():
+    #         item = {
+    #             "name": key,
+    #             'values': sums[key]
+    #         }
+    #         if isinstance(dic[key], dict):
+    #             item["children"] = []
+    #             item = update_tree(item, dic[key])
+    #         tree.setdefault("children", []).append(item)
+    #     return tree
+    #
+    # print(json.dumps(update_tree({}, hierarchy)))
 
     # # GRAPHS
     # with open('test/materials.json', 'w') as outfile:

@@ -32,8 +32,8 @@ def get_areas():
     """
     Import areas from 'data/areas'
     """
-    provincies = gpd.read_file('./data/areas/provincies.shp')
-    gemeenten = gpd.read_file('./data/areas/gemeenten.shp')
+    provincies = gpd.read_file('../data/areas/provincies.shp')
+    gemeenten = gpd.read_file('../data/areas/gemeenten.shp')
     return provincies, gemeenten
 
 
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     ACTIVITIES['name'] = ACTIVITIES['name'].str.lower().str.capitalize()
 
     # import industries
-    industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
+    industries = pd.read_csv('../data/materials/ewc_industries.csv', low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
     flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')
@@ -316,7 +316,7 @@ if __name__ == '__main__':
                                per_months=3, prop=f'{prefix}\tindustry\t{group}_{method}',
                                add_trends=False)
 
-    with open('test/actions.json', 'w') as outfile:
+    with open('../test/actions.json', 'w') as outfile:
         fields = sorted(list(DATA.keys()))
         fields = zip(*[iter(fields)] * 2)
 

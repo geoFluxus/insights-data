@@ -1,0 +1,1643 @@
+{
+  "production": [{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MineralConstuctionDemolitionIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [1466.5,95.74,164.3,671.86,371.98,355.3,129.72,1431.34,3428.0,243.9,680.34,518.96,2717.28,92.82,344.56,500.16,876.44,475.8,195.7,1023.3,5791.47,6816.49],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MineralConstuctionDemolitionIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [3728.16,2251.14,1597.86,523.04,367.04,706.16,1.26,0,40.72,175.64,2256.28,1408.96,2730.65,2122.78,1675.79,2956.58,1910.86,3721.28,3219.2,3823.36,2445.72,4388.46],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MineralConstuctionDemolitionIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [7853.95,32389.84,2798.77,13967.34,9137.96,15883.96,1.08,23964.6,14368.16,23349.02,24174.42,2.68,0.74,17174.84,25965.04,18832.44,1.58,24738.07,25208.93,32797.62,1.68,0.72],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MineralConstuctionDemolitionIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [171517.98,206143.5,215343.91,199204.2,188835.0,252755.18,208040.23,241088.16,187764.38,225596.22,194018.3,221991.93,212358.25,266856.11,202267.23,221646.5,203840.37,232419.19,225606.49,226751.71,264231.72,186297.59],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MineralConstuctionDemolitionIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [2007.85,3843.3,2707.97,2742.74,4944.08,5341.17,2871.39,2803.47,4131.5,3338.69,2087.15,2083.68,2385.31,2407.25,2414.81,2639.66,4253.46,3864.5,5544.48,6393.58,3567.9,1628.82],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "WasteManagementIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [22978.98,21048.18,21898.0,17733.62,22478.26,28864.87,15855.44,14435.34,16338.35,14247.56,16098.28,37060.19,14930.3,12535.02,16331.92,40134.28,39663.42,46130.68,48040.91,53767.7,40382.56,22821.56],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "WasteManagementIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [13918.96,11644.66,12200.06,13631.96,11958.7,13429.08,14531.8,10740.46,16139.52,16746.5,20400.8,20460.0,22180.27,18172.04,519.3,20807.26,21931.52,14737.62,17402.44,26349.72,17627.86,24072.28],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "WasteManagementIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [1351.08,1412.68,1306.4,1586.0,940.72,2798.67,1731.03,667.2,1092.97,639.05,2710.39,844.86,856.46,749.82,6838.01,134.51,455.84,385.2,887.42,518.7,414.58,878.49],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "WasteManagementIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [12068.04,15669.7,5632.8,7599.38,4772.26,6343.76,5613.94,8367.94,11796.39,15154.86,12442.91,11430.54,4644.86,8118.42,5483.28,2969.88,4435.26,8578.41,10206.18,5855.94,5455.94,8740.28],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "WasteManagementIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [20.82,0.22,0.38,7.82,2.02,3.32,12.12,685.79,4794.42,2091.17,0.39,0.52,1.06,1.04,23.13,29.38,3.93,3.69,0.12,0.94,36.46,74502.51],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "Unknown_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [7155.23,8041.33,7179.3,6348.8,3897.89,3465.63,3119.62,6257.73,9587.45,7591.32,4453.16,6875.77,14087.2,6288.39,7986.38,6594.07,2457.81,7100.12,2770.16,3064.26,3807.35,2783.36],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "Unknown_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [104.3,143.14,141.08,145.7,117.24,115.24,97.46,171.22,130.54,175.34,92.94,67.58,1.9,3.04,4.82,3.8,0.1,0.36,1.38,1.78,848.77,8.68],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "Unknown_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [3684.15,6161.37,4681.96,6742.64,3192.78,6013.56,4469.1,2607.04,852.0,5351.88,5560.05,3125.33,65.23,100.07,68.19,101.78,660.68,3441.62,6823.44,6516.54,1885.83,60.8],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "Unknown_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [15970.53,20128.86,28776.06,38000.96,19692.49,38514.69,28773.92,33195.11,11155.94,27991.91,47066.11,29599.61,13344.54,17626.15,24737.62,24380.17,17831.55,26526.9,25922.08,28922.13,13999.82,19173.29],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "Unknown_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [706.77,770.97,704.83,674.17,822.42,751.39,615.71,711.85,680.59,938.76,778.38,1361.14,709.44,670.59,692.43,722.32,699.36,529.74,627.36,522.33,737.61,427.45],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MetalMachineryElectronicIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MetalMachineryElectronicIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MetalMachineryElectronicIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [78.34,131.75,155.27,101.84,108.98,254.8,272.7,2227.11,208.49,12.3,12.25,0,9.32,0,9.34,35.76,31.6,69.04,39.48,27.02,264.24,221.12],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MetalMachineryElectronicIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [14270.24,16185.27,14093.29,17891.11,0.78,22641.9,552.12,24.22,60.82,16041.96,16935.7,3326.2,817.58,83.46,35.14,527.64,851.48,562.42,822.7,587.28,508.9,27.54],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MetalMachineryElectronicIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [897.49,45.4,129.88,41.85,114.42,80.16,90.5,144.72,198.21,124.03,718.62,1381.13,1443.29,1763.82,1303.17,1002.8,35.81,19.65,17.46,18.11,21.15,7.4],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "ChemicalFossilEnergyIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [10.96,0,0,12.32,0,2.22,0,17.0,2.8,16.0,0,8.76,86.58,23.4,37.7,22.64,23.3,0,0,20.26,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "ChemicalFossilEnergyIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [151.0,203.13,188.38,131.28,100.2,139.66,183.16,110.72,97.66,228.04,297.04,35.14,57.18,24.42,63.36,35.12,12.76,138.72,6.24,62.8,50.2,87.52],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "ChemicalFossilEnergyIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,0,0,0,0,10.84,3.18,3.24,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "ChemicalFossilEnergyIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [142.68,136.69,140.72,152.3,202.02,163.61,173.23,147.39,142.99,152.4,160.5,165.17,118.73,172.02,1.46,2.4,2.83,1.52,1.84,136.84,1.69,66.18],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "ChemicalFossilEnergyIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [101.78,87.38,39.3,44.92,13.34,14.63,14.27,11.75,5.4,14.22,9.98,6.63,10.78,11.07,10.22,6.4,6.9,4.33,5.75,6.7,4.83,2.27],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "AnimalPlantIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,289.92,60.54,84.06,11.38,0,0,0,0,0,0,0,0,4.02,20.46,0,9.64,20.5,0,7.22],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "AnimalPlantIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [27.72,0,8.42,0,19.5,27.26,0.16,0,2.46,0,0,0,1.28,2.88,0,0,0,3.92,0,0,1.36,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "AnimalPlantIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [1651.63,158.36,280.56,924.71,786.92,1.22,521.96,29.3,2.0,61.36,57.68,56.5,11.17,97.56,17.2,3.72,4.36,111.58,2.86,80.12,0.4,7.84],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "AnimalPlantIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [128.65,188.25,141.56,75.85,157.82,202.08,218.19,250.04,266.9,262.94,236.41,206.66,221.37,189.3,267.91,520.38,297.94,235.94,235.18,263.64,262.46,382.1],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "AnimalPlantIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [29.93,22.97,21.64,18.84,25.8,29.96,1.39,0.74,1.36,2.12,0.56,2.1,0.19,1.36,0.22,2.51,0.06,4.42,2.9,62.3,32.58,0.76],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "PlasticRubberTextileIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,13.64,0,4.32,0,0,0,0,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "PlasticRubberTextileIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [17.9,7.0,55.24,18.34,42.66,21.78,14.42,17.1,15.48,13.66,25.66,13.62,23.28,19.26,0,0,0,59.68,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "PlasticRubberTextileIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,0,0,0.3,0,0,0,0.2,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "PlasticRubberTextileIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [825.9,673.13,727.45,644.77,772.49,913.67,914.78,727.12,1076.93,761.01,877.28,1027.02,1040.74,1105.35,1080.1,1151.13,1132.75,944.24,909.43,1.26,972.46,569.66],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "PlasticRubberTextileIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [5.13,1.96,11.18,2.36,2.78,1.26,0.44,4.68,1.06,1.75,0.58,12.96,9.84,8222.05,7788.27,9167.99,8867.33,8675.38,7415.57,7886.2,7793.86,4956.72],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MiscellaneousIndustry_landfill",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [55.08,17.44,28.12,47.94,77.02,111.92,123.58,67.36,75.94,154.46,63.86,159.42,68.7,57.22,102.94,54.7,78.88,40.46,97.34,186.12,29.98,56.86],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MiscellaneousIndustry_incineration",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [677.92,674.18,630.06,662.7,755.16,489.23,373.14,414.26,496.14,467.94,570.5,759.14,818.82,834.78,814.98,873.92,832.4,484.72,843.72,863.0,894.12,854.92],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MiscellaneousIndustry_reuse",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MiscellaneousIndustry_recycling",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [1698.5,1694.58,1324.08,1654.81,366.5,188.48,57.28,573.44,1171.76,1099.04,1071.72,972.98,886.54,1058.82,721.66,315.17,41.98,18.34,23.8,308.58,246.0,151.93],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "industry",
+    "type": "MiscellaneousIndustry_storage",
+    "period": ["Q1/16","Q2/16","Q3/16","Q4/16","Q1/17","Q2/17","Q3/17","Q4/17","Q1/18","Q2/18","Q3/18","Q4/18","Q1/19","Q2/19","Q3/19","Q4/19","Q1/20","Q2/20","Q3/20","Q4/20","Q1/21","Q2/21"],
+    "values": {
+      "waste": {
+        "weight": {
+          "value": [1833.75,2383.1,3155.64,4036.56,5804.29,1.5,3879.23,2743.01,5394.2,0.5,3276.88,3105.79,3173.0,3158.73,2803.05,2114.67,1613.84,0.4,0.4,2.4,0.24,198.78],
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "A - Agriculture, forestry and fishing",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "A - Agriculture, forestry and fishing",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "B - Mining and quarrying",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "B - Mining and quarrying",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "C - Manufacturing",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -14.4,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -5397.58,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "C - Manufacturing",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -10.57,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -3372.63,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "D - Electricity, gas, steam and air conditioning supply",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 267.99,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 1501.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "D - Electricity, gas, steam and air conditioning supply",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 29.94,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 479.44,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "E - Water supply; sewerage, waste management and remediation activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -20.56,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -64020.84,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "E - Water supply; sewerage, waste management and remediation activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -21.2,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -55317.78,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "F - Construction",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 43.21,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 63261.74,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "F - Construction",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -20.69,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -44857.55,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "G - Wholesale and retail trade; repair of motor vehicles and motorcycles",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -18.51,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -18257.81,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "G - Wholesale and retail trade; repair of motor vehicles and motorcycles",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -21.58,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -17037.9,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "H - Transportation and storage",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 38.03,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 15072.93,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "H - Transportation and storage",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 5.58,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 2952.72,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "I - Accommodation and food service activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -40.23,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -1693.89,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "I - Accommodation and food service activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -38.15,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -1507.33,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "J - Information and communication",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -75.49,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -6929.92,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "J - Information and communication",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -34.37,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -1177.06,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "K - Financial and insurance activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -51.98,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -15652.43,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "K - Financial and insurance activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -11.79,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -1413.64,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "L - Real estate activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 16.97,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 7433.57,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "L - Real estate activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -22.35,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -10319.41,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "M - Professional, scientific and technical activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 4.06,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 1064.66,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "M - Professional, scientific and technical activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -20.5,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -5697.9,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "N - Administrative and support service activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 13.46,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 5547.27,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "N - Administrative and support service activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -8.66,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -3982.08,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "O - Public administration and defence; compulsory social security",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 19.27,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 19568.91,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "O - Public administration and defence; compulsory social security",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -39.02,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -68943.78,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "P - Education",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -104.64,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -4621.05,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "P - Education",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -30.6,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -197.52,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "Q - Human health and social work activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -48.84,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -2832.12,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "Q - Human health and social work activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -19.38,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -415.19,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "R - Arts, entertainment and recreation",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 43.56,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 1856.86,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "R - Arts, entertainment and recreation",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -4.9,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -245.87,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "S - Other service activities",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -19.73,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -17236.3,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "S - Other service activities",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -15.16,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -11297.38,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "T - Activities of households as employers; undifferentiated goods- and services-producing activities of households for own use",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "T - Activities of households as employers; undifferentiated goods- and services-producing activities of households for own use",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "U - Activities of extraterritorial organisations and bodies",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "U - Activities of extraterritorial organisations and bodies",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "V - Onbekend",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "V - Onbekend",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "W - Unknown",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 22.4,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 31998.28,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "W - Unknown",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -21.33,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -37185.3,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "X - Route inzameling",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0.0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "activity",
+    "type": "X - Route inzameling",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 0,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "incineration",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 88.69,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 11676.97,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "incineration",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 54.28,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 10316.76,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "landfill",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 109.72,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 24012.89,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "landfill",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -39.56,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -21261.57,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "recycling",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 7.62,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 18359.9,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "recycling",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -20.01,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -53702.07,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "reuse",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -28.48,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -4081.21,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "reuse",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -100.0,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -24737.35,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "storage",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0.06,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 2.73,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "processing",
+    "type": "storage",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -53.31,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -2360.04,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "total",
+    "type": "total",
+    "period": "all years",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": 0.94,
+          "unit": "%"
+        },
+        "weight": {
+          "value": 10663.27,
+          "unit": "t"
+        }
+      }
+    }
+  },{
+    "name": "Utrecht",
+    "level": "province",
+    "category": "total",
+    "type": "total",
+    "period": "last quarter",
+    "values": {
+      "waste": {
+        "percentage": {
+          "value": -21.35,
+          "unit": "%"
+        },
+        "weight": {
+          "value": -259536.16,
+          "unit": "t"
+        }
+      }
+    }
+  }]
+}

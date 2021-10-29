@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # routings.to_csv('data/network/routings.csv', index=False, sep=';')
 
     # import network
-    with open('data/network/network.geojson') as f:
+    with open('../data/network/network.geojson') as f:
         geojson = json.load(f)
         for feat in geojson['features']:
             id = str(feat['properties']['id'])
@@ -162,5 +162,5 @@ if __name__ == "__main__":
             'amount': round(ways[id] / 10**6, 2),  # grams -> tn
             'period': f'{year}'
         })
-    with open('test/co2_network.json', 'w') as outfile:
+    with open('../test/co2_network.json', 'w') as outfile:
         json.dump(results, outfile, indent=4)

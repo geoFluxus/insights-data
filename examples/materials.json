@@ -1,0 +1,271 @@
+{
+  "sankey": [{
+    "name": "Utrecht",
+    "materials": {
+      "nodes": [{
+        "id": "BioticMaterial"
+      },{
+        "id": "Unknown"
+      },{
+        "id": "Gips"
+      },{
+        "id": "Total"
+      },{
+        "id": "GlasMaterial"
+      },{
+        "id": "MetalMaterial"
+      },{
+        "id": "PlantOrganicMaterial"
+      },{
+        "id": "FerroMateriaal (Other)"
+      },{
+        "id": "AbioticMaterial"
+      },{
+        "id": "Mixed"
+      },{
+        "id": "BioticPolymerMaterial"
+      },{
+        "id": "InorganicMaterial"
+      },{
+        "id": "Hout"
+      },{
+        "id": "FerroMateriaal"
+      },{
+        "id": "FerroMateriaal (Mixed)"
+      },{
+        "id": "Aluminium"
+      },{
+        "id": "MetalMaterial (Other)"
+      },{
+        "id": "InorganicMaterial (Other)"
+      },{
+        "id": "BioticPolymerMaterial (Mixed)"
+      },{
+        "id": "InorganicMaterial (Mixed)"
+      },{
+        "id": "OrganicMaterial"
+      },{
+        "id": "MineralMaterial (Mixed)"
+      },{
+        "id": "FoodOrganicMaterial"
+      },{
+        "id": "MineralMaterial"
+      },{
+        "id": "FoodOrganicMaterial (Mixed)"
+      },{
+        "id": "NonFerroMateriaal (Other)"
+      },{
+        "id": "Stenen"
+      },{
+        "id": "NonFerroMateriaal"
+      },{
+        "id": "BioticMaterial (Other)"
+      }],
+      "links": [{
+        "source": "MineralMaterial",
+        "target": "GlasMaterial",
+        "value": 287510
+      },{
+        "source": "AbioticMaterial",
+        "target": "InorganicMaterial",
+        "value": 11239089
+      },{
+        "source": "Total",
+        "target": "OrganicMaterial",
+        "value": 6841530
+      },{
+        "source": "InorganicMaterial",
+        "target": "InorganicMaterial (Mixed)",
+        "value": 8164
+      },{
+        "source": "MineralMaterial",
+        "target": "Stenen",
+        "value": 90098
+      },{
+        "source": "MetalMaterial",
+        "target": "NonFerroMateriaal",
+        "value": 39280
+      },{
+        "source": "Total",
+        "target": "Mixed",
+        "value": 12726361
+      },{
+        "source": "InorganicMaterial",
+        "target": "MetalMaterial",
+        "value": 1010014
+      },{
+        "source": "FerroMateriaal",
+        "target": "FerroMateriaal (Mixed)",
+        "value": 511128
+      },{
+        "source": "BioticMaterial",
+        "target": "PlantOrganicMaterial",
+        "value": 196240
+      },{
+        "source": "MetalMaterial",
+        "target": "FerroMateriaal",
+        "value": 795358
+      },{
+        "source": "MineralMaterial",
+        "target": "Gips",
+        "value": 34660
+      },{
+        "source": "BioticPolymerMaterial",
+        "target": "Hout",
+        "value": 4987105
+      },{
+        "source": "BioticPolymerMaterial",
+        "target": "BioticPolymerMaterial (Mixed)",
+        "value": 288880
+      },{
+        "source": "Total",
+        "target": "Unknown",
+        "value": 2100439
+      },{
+        "source": "FerroMateriaal",
+        "target": "FerroMateriaal (Other)",
+        "value": 284230
+      },{
+        "source": "NonFerroMateriaal",
+        "target": "NonFerroMateriaal (Other)",
+        "value": 34787
+      },{
+        "source": "BioticMaterial",
+        "target": "BioticMaterial (Other)",
+        "value": 1352065
+      },{
+        "source": "FoodOrganicMaterial",
+        "target": "FoodOrganicMaterial (Mixed)",
+        "value": 17240
+      },{
+        "source": "BioticMaterial",
+        "target": "FoodOrganicMaterial",
+        "value": 17240
+      },{
+        "source": "Total",
+        "target": "AbioticMaterial",
+        "value": 11239089
+      },{
+        "source": "InorganicMaterial",
+        "target": "MineralMaterial",
+        "value": 10190688
+      },{
+        "source": "MetalMaterial",
+        "target": "MetalMaterial (Other)",
+        "value": 175376
+      },{
+        "source": "NonFerroMateriaal",
+        "target": "Aluminium",
+        "value": 4493
+      },{
+        "source": "MineralMaterial",
+        "target": "MineralMaterial (Mixed)",
+        "value": 9778420
+      },{
+        "source": "InorganicMaterial",
+        "target": "InorganicMaterial (Other)",
+        "value": 30223
+      },{
+        "source": "OrganicMaterial",
+        "target": "BioticMaterial",
+        "value": 6841530
+      },{
+        "source": "BioticMaterial",
+        "target": "BioticPolymerMaterial",
+        "value": 5275985
+      }]
+    },
+    "level": "province",
+    "period": "2019",
+    "type": "primary waste"
+  },{
+    "name": "Utrecht",
+    "materials": {
+      "nodes": [{
+        "id": "OrganicMaterial"
+      },{
+        "id": "BioticMaterial (Mixed)"
+      },{
+        "id": "FossilOrganicMaterial (Mixed)"
+      },{
+        "id": "BioticMaterial"
+      },{
+        "id": "Unknown"
+      },{
+        "id": "AbioticMaterial"
+      },{
+        "id": "Total"
+      },{
+        "id": "FossilOrganicMaterial"
+      },{
+        "id": "MetalMaterial (Mixed)"
+      },{
+        "id": "Mixed"
+      },{
+        "id": "MetalMaterial"
+      },{
+        "id": "PlantOrganicMaterial"
+      },{
+        "id": "AbioticMaterial (Mixed)"
+      },{
+        "id": "InorganicMaterial"
+      }],
+      "links": [{
+        "source": "Total",
+        "target": "Unknown",
+        "value": 8487244195
+      },{
+        "source": "Total",
+        "target": "Mixed",
+        "value": 23465586999
+      },{
+        "source": "InorganicMaterial",
+        "target": "MetalMaterial",
+        "value": 27200786
+      },{
+        "source": "BioticMaterial",
+        "target": "BioticMaterial (Mixed)",
+        "value": 19758711597
+      },{
+        "source": "AbioticMaterial",
+        "target": "AbioticMaterial (Mixed)",
+        "value": 9703368634
+      },{
+        "source": "BioticMaterial",
+        "target": "PlantOrganicMaterial",
+        "value": 288677098
+      },{
+        "source": "AbioticMaterial",
+        "target": "InorganicMaterial",
+        "value": 27200786
+      },{
+        "source": "AbioticMaterial",
+        "target": "FossilOrganicMaterial",
+        "value": 56267664
+      },{
+        "source": "FossilOrganicMaterial",
+        "target": "FossilOrganicMaterial (Mixed)",
+        "value": 56267664
+      },{
+        "source": "MetalMaterial",
+        "target": "MetalMaterial (Mixed)",
+        "value": 27200786
+      },{
+        "source": "Total",
+        "target": "OrganicMaterial",
+        "value": 20047388695
+      },{
+        "source": "OrganicMaterial",
+        "target": "BioticMaterial",
+        "value": 20047388695
+      },{
+        "source": "Total",
+        "target": "AbioticMaterial",
+        "value": 9786837084
+      }]
+    },
+    "level": "province",
+    "period": "2019",
+    "type": "materials"
+  }]
+}

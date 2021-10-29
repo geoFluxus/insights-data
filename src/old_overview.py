@@ -48,25 +48,25 @@ PROCESSES = None
 
 def import_areas():
     # municipalities
-    gemeenten = gpd.read_file('data/areas/gemeenten.shp')
+    gemeenten = gpd.read_file('../data/areas/gemeenten.shp')
     gemeenten['centroid'] = gemeenten['geometry'].centroid
     # gemeenten['centroid'] = gemeenten['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Gemeente'] = gemeenten
 
     # provinces
-    provincies = gpd.read_file('data/areas/provincies.shp')
+    provincies = gpd.read_file('../data/areas/provincies.shp')
     provincies['centroid'] = provincies['geometry'].centroid
     # provincies['centroid'] = provincies['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Provincie'] = provincies
 
     # continents
-    continents = gpd.read_file('data/areas/continents.shp')
+    continents = gpd.read_file('../data/areas/continents.shp')
     continents['centroid'] = continents['geometry'].centroid
     # continents['centroid'] = continents['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Continent'] = continents
 
     # countries
-    countries = gpd.read_file('data/areas/countries.shp')
+    countries = gpd.read_file('../data/areas/countries.shp')
     countries['country_nl'] = countries['country_nl'].str.upper()
     countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
     AREAS['Country'] = countries
@@ -557,7 +557,7 @@ if __name__ == "__main__":
     PROCESSES['name'] = PROCESSES['name'].str.lower().str.capitalize()
 
     # import network
-    with open('data/network/network.geojson') as f:
+    with open('../data/network/network.geojson') as f:
         geojson = json.load(f)
         for feat in geojson['features']:
             id = str(feat['properties']['id'])

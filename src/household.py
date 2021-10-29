@@ -196,7 +196,7 @@ def compute_cbs_waste(input, apply=None, year=None, unit=None):
 if __name__ == '__main__':
     logging.basicConfig(filename="logs.txt",  # file name
                         filemode="w",  # overwrite
-                        level=logging.INFO, # lowest warning level
+                        level=logging.INFO,  # lowest warning level
                         format="%(message)s"
                         )
 
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     provincie_gemeenten = gemeenten[gemeenten['Provincie'] == var.PROVINCE]['Gemeente (post 2019)'].to_list()
 
     # import population data
-    population = pd.read_csv('./data/areas/populationNL.csv', delimiter=';')
+    population = pd.read_csv('../data/areas/populationNL.csv', delimiter=';')
 
     # import household data
     print('Import household data...\n')
@@ -222,7 +222,10 @@ if __name__ == '__main__':
         CBS_FLOWS = household_data[household_data['Perioden'] == int(year)]
 
         # process for province & municipalities
-        for level in ['Provincie', 'Gemeente']:
+        for level in [
+            'Provincie',
+            # 'Gemeente'
+        ]:
             areas = [var.PROVINCE, alias] if level == 'Provincie' else provincie_gemeenten
 
             # copy initial dataframes
@@ -422,7 +425,7 @@ if __name__ == '__main__':
         results[field] = json.loads(df[columns].to_json(orient="records"))
 
     final = {}
-    with open('test/household.json', 'w') as outfile:
+    with open('../test/household.json', 'w') as outfile:
         for key, value in results.items():
             level, field, unit = key.split('\t')
             for item in value:

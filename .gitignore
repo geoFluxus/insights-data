@@ -2,5 +2,5 @@ venv
 .idea
 data
 __pycache__
-logs.txt
+src/logs.txt
 test
