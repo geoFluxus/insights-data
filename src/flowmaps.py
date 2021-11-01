@@ -244,6 +244,7 @@ if __name__ == "__main__":
             target = ROLES[typ]['target']  # target role
             activity = ROLES[typ]['activity']  # activity role (ontvangst: 'ontdoener')
             for role, level in itertools.product([source, target], ['Provincie', 'Gemeente']):
+                print(role, level)
                 areas = AREAS[level]
                 df = add_areas(df, areas=areas, role=role, admin_level=level)
 
