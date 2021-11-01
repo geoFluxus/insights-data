@@ -1,10 +1,19 @@
-PROVINCE = 'Utrecht'
+ROLES = {
+    'Ontvangst': {
+        'source': 'Herkomst',
+        'target': 'Verwerker',
+        'activity': 'Ontdoener'
+    },
+    'Afgifte': {
+        'source': 'EerstAfnemer',
+        'target': 'Verwerker',
+        'activity': 'EerstAfnemer'
+    }
+}
 
-YEARS = [
-    2016,
-    2017,
-    2018,
-    2019,
-]
-
-QUARTER = 2
+PREFIXES = {
+    'Provincie': 'province',
+    'Gemeente': 'municipality',
+    'Ontvangst': 'primary',
+    'Afgifte': 'secondary',
+}

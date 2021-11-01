@@ -1,8 +1,6 @@
 import utils
 import pandas as pd
-import json
-import _make_iterencode
-
+import variables as var
 
 # INPUTS
 PROVINCE = 'Utrecht'
@@ -11,48 +9,15 @@ COROPS = [
     'Utrecht'
 ]
 
-ROLES = {
-    'Ontvangst': {
-        'source': 'Herkomst',
-        'target': 'Verwerker',
-        'activity': 'Ontdoener'
-    },
-    'Afgifte': {
-        'source': 'EerstAfnemer',
-        'target': 'Verwerker',
-        'activity': 'EerstAfnemer'
-    }
-}
-PREFIXES = {
-    'Provincie': 'province',
-    'Gemeente': 'municipality',
-    'Ontvangst': 'primary',
-    'Afgifte': 'secondary',
-}
 DATA = {}
 
 
-if __name__ == "__main__":
-    # import areas
-    print('Import areas...')
-
-    # import province polygon
-    polygon = utils.import_areas(level='provincies')
-    polygon = polygon[polygon['name'] == PROVINCE]
-    assert len(polygon) == 1
-
-    # import ewc classifications
-    ewc_classifs = {}
-    for classif in ['chains']:
-        ewc_classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv',
-                                            low_memory=False,
-                                            sep=';')
-
-    # start analysis
-    print(f'YEAR: {YEAR}')
-
+def process_lma():
     # process LMA ontvangst & afgifte
     for typ in ['Ontvangst', 'Afgifte']:
+        # data prefix
+        prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} waste"
+
         # import file
         print()
         print(f'Import {typ}...')
@@ -98,7 +63,6 @@ if __name__ == "__main__":
         # SUPPLY CHAIN
         # only on primary waste (Ontvangst)
         if PREFIXES[typ] == 'primary':
-            prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} waste"
             DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
                 utils.get_classification_graphs(df,
                                                 source=source,
@@ -106,7 +70,8 @@ if __name__ == "__main__":
                                                 area=PROVINCE,
                                                 klass='chains')
 
-    # process CBS data
+
+def process_cbs():
     # stromen -> million kg
     path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
     df = pd.read_csv(path, low_memory=False, sep=';')
@@ -127,38 +92,59 @@ if __name__ == "__main__":
     for stroom in stromen:
         print(f"{stroom}: {df[df['Stroom'] == stroom]['Brutogew'].sum() / 10**3}")
 
-    # SUPPLY CHAIN
-    # # import cbs classifications
-    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
+    # import cbs classifications
     cbs_classifs = {}
     for classif in ['chains']:
         cbs_classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+
     # add classifications
     for name, classif in cbs_classifs.items():
         df = utils.add_classification(df, classif, name=name,
                                       left_on='Goederengroep_nr',
                                       right_on='cbs')
 
+    # SUPPLY CHAIN
+    # filter CBS input
+    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
+    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
+    input_df = df[df['Stroom'].isin([
+        'Aanbod_eigen_regio',
+        'Invoer_internationaal',
+        'Invoer_regionaal'
+    ])]
     prefix = f"{PREFIXES['Provincie']}\tmaterial"
     DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
-        utils.get_classification_graphs(df,
+        utils.get_classification_graphs(input_df,
                                         area=PROVINCE,
                                         klass='chains')
 
-    # GRAPHS
-    with open('./test/overview.json', 'w') as outfile:
-        # preprocess
-        results = {}
-        for key, items in DATA.items():
-            level, type, field, period = key.split('\t')
-            for item in items:
-                item['level'] = level
-                item['period'] = period
-                item['type'] = type
-                results.setdefault(field, []).append(item)
 
-        json.encoder._make_iterencode = _make_iterencode._make_iterencode
-        indent = (2, None)
-        json.dump(results, outfile, indent=indent)
+if __name__ == "__main__":
+    ROLES = var.ROLES
+    PREFIXES = var.PREFIXES
+
+    # import province polygon
+    polygon = utils.import_areas(level='provincies')
+    polygon = polygon[polygon['name'] == PROVINCE]
+    assert len(polygon) == 1
+
+    # import ewc classifications
+    ewc_classifs = {}
+    for classif in ['chains']:
+        ewc_classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv',
+                                            low_memory=False,
+                                            sep=';')
+
+    # start analysis
+    print(f'YEAR: {YEAR}')
+
+    # process LMA data
+    process_lma()
+
+    # process CBS data
+    process_cbs()
+
+    # GRAPHS
+    utils.export_graphs('./test/overview.json', data=DATA)
 
 
