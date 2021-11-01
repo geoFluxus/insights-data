@@ -2,6 +2,7 @@ import utils
 import pandas as pd
 import variables as var
 
+
 # INPUTS
 PROVINCE = 'Utrecht'
 YEAR = 2019

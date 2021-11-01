@@ -1,7 +1,7 @@
 import utils
 import pandas as pd
 import variables as var
-import json
+
 
 # INPUTS
 PROVINCE = "Utrecht"
@@ -31,12 +31,10 @@ def process_lma():
         # add areas to roles
         print('Add areas to roles...')
         source = ROLES[typ]['source']  # source role
-        target = ROLES[typ]['target']  # target role
-        for role in [source, target]:
-            df = utils.add_areas(df,
-                                 areas=polygon,
-                                 role=role,
-                                 admin_level='Provincie')
+        df = utils.add_areas(df,
+                             areas=polygon,
+                             role=source,
+                             admin_level='Provincie')
 
         # add classifications
         for name, classif in ewc_classifs.items():
