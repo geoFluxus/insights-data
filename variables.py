@@ -16,6 +16,8 @@ PREFIXES = {
     'Gemeente': 'municipality',
     'Ontvangst': 'primary',
     'Afgifte': 'secondary',
+    'Herkomst': 'production',
+    'Verwerker': 'treatment',
 }
 
 TREATMENT_METHODS = {
