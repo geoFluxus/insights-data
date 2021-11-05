@@ -28,14 +28,14 @@ def add_identifiers(df, type=None):
 
 def add_routings(flows):
     # join with routings
-    flows = pd.merge(flows, routings, how='left', on=['origin', 'destination'])
-    unmatched = len(flows[flows['origin'].isnull()])
-    if unmatched:
-        print(f'No routings for {unmatched.index} flows...')
+    flows = pd.merge(flows, routings, how='left', on=['origin', 'destination'], indicator=True)
+    unmatched = flows[flows._merge=='left_only']
+    if len(unmatched):
+        print(f'No routings for {len(unmatched)} flows...')
 
     # average payload per trip
     vehicles = pd.read_excel('data/network/vehicle.xlsx')
-    flows['tn'] = flows['Gewicht_KG'] / 10 ** 3
+    flows['tn'] = flows['Gewicht_KG'] / 10**3
     flows['average'] = flows['tn'] / flows['Aantal_vrachten']
 
     # compute co2 emissions

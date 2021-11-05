@@ -61,10 +61,13 @@ def add_classification(df, classif, name=None,
     Add ontology classifications
     to LMA & CBS data
     """
+    columns = list(df.columns)
     classif[right_on] = classif[right_on].astype(str).str.zfill(6)
     df[left_on] = df[left_on].astype(str).str.zfill(6)
     df = pd.merge(df, classif, how='left', left_on=left_on, right_on=right_on)
     df.loc[df[name].isnull(), name] = 'Unknown'
+    columns.append(name)
+    df = df[columns]
     return df
 
 
