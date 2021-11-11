@@ -65,7 +65,7 @@ def add_classification(df, classif, name=None,
     classif[right_on] = classif[right_on].astype(str).str.zfill(6)
     df[left_on] = df[left_on].astype(str).str.zfill(6)
     df = pd.merge(df, classif, how='left', left_on=left_on, right_on=right_on)
-    df.loc[df[name].isnull(), name] = 'Unknown'
+    df.loc[df[name].isnull(), name] = 'Onbekend'
     columns.append(name)
     df = df[columns]
     return df
@@ -106,7 +106,7 @@ def get_classification_graphs(df, source=None,
             'secundair',
             'tertiair',
             'quartair',
-            'unknown'
+            'onbekend'
         ]
     }
 
@@ -236,7 +236,7 @@ def get_hierarchy(df):
                     new.append(item)
             levels = new
         if len(materials) > 1:
-            value = f'{levels[-1]} (Mixed)' if len(levels) else 'Mixed'
+            value = f'{levels[-1]} (Gemengd)' if len(levels) else 'Gemengd'
             levels.append(value)
 
         # convert into hierarchy
@@ -249,14 +249,14 @@ def get_hierarchy(df):
         sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
 
     # populate hierarchy with amounts
-    hierarchy = {"Total": hierarchy}
+    hierarchy = {"Totaal": hierarchy}
     for material in sums.keys():
         obj = search_nested(material, hierarchy)
         if not len(obj):
             update_nested(hierarchy, material, sums[material])
         else:
             obj = search_nested(material, hierarchy)
-            obj[f'{material} (Other)'] = sums[material]
+            obj[f'{material} (Andere)'] = sums[material]
             update_nested(hierarchy, material, obj)
 
     return hierarchy
@@ -298,6 +298,7 @@ def get_sankey(hierarchy):
     } for source, target in nivo['links']]
     for link in nivo['links']:
         link['value'] = sums[link['target']]
+        # print(f'{link["source"]}[{sums[link["target"]]}]{link["target"]}')
 
     return nivo, sums
 

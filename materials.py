@@ -145,7 +145,8 @@ def merge_material_trees():
             tree.setdefault("children", []).append(item)
         return tree
 
-    DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [update_tree({}, hierarchy)]
+    tree = update_tree({}, hierarchy)["children"][0]
+    DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [{"data": tree}]
 
 
 if __name__ == "__main__":
