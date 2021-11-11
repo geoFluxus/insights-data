@@ -3,6 +3,7 @@ import geopandas as gpd
 import json
 import variables as var
 import numpy as np
+import utils
 
 
 # INPUTS
@@ -12,6 +13,8 @@ YEAR = 2019
 NETWORK = {}
 
 MAP = {} # map data
+
+DATA = {}
 
 
 def add_identifiers(df, type=None):
@@ -65,8 +68,54 @@ def get_network(df):
     return ways
 
 
+def get_emissions(df,
+                  source=None, source_in=True,
+                  target=None, target_in=True,
+                  level=None, areas=[]):
+    results = []
+
+    # filter dataframe
+    conditions = []
+    for node, node_in in zip([source, target], [source_in, target_in]):
+        condition = df[f'{node}_{level}'].isin(areas)
+        if not node_in: condition = ~condition
+        conditions.append(condition)
+    flows = df[np.bitwise_and.reduce(conditions)]
+
+    # totals
+    area = f'{source}_{level}' if source_in else f'{target}_{level}'
+    groupby = [
+        area,
+        'co2'
+    ]
+    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
+    groups = groups.rename(columns={area: 'area'})
+
+    # add missing values
+    for area in areas:
+        search = groups[groups['area'] == area]
+        if len(search) == 0:
+            groups.loc[len(groups)] = [area, 0]
+    groups = groups.sort_values(by=['area'])
+
+    # write results
+    for idx, item in groups.iterrows():
+        results.append({
+            'name': item['area'],
+            'values': {
+                'weight': {
+                    'value': round(item['co2'] / 10**9, 2),
+                    'unit': 'kt'
+                }
+            }
+        })
+
+    return results
+
+
 if __name__ == "__main__":
     PREFIXES = var.PREFIXES
+    ROLES = var.ROLES
 
     # import routings
     print('Import routings...')
@@ -83,6 +132,12 @@ if __name__ == "__main__":
         for feat in geojson['features']:
             id = str(feat['properties']['id'])
             NETWORK[id] = feat['geometry']
+
+    # import areas
+    # import province polygon
+    polygon = utils.import_areas(level='provincies')
+    polygon = polygon[polygon['name'] == PROVINCE]
+    assert len(polygon) == 1
 
     # start analysis
     print(f'YEAR: {YEAR}')
@@ -104,8 +159,42 @@ if __name__ == "__main__":
         print('Add routings to flows...')
         df = add_routings(df)
 
+        # add areas to roles
+        print('Add areas to roles...')
+        source = ROLES[typ]['source']  # source role
+        target = ROLES[typ]['target']  # target role
+        for role in [source, target]:
+            df = utils.add_areas(df,
+                                 areas=polygon,
+                                 role=role,
+                                 admin_level='Provincie')
+
+        # compute emissions
+        # import emissions (source out, target in)
+        DATA[f'{PREFIXES[typ]}_import_co2\t{YEAR}'] = \
+            get_emissions(df,
+                          source=source, source_in=False,
+                          target=target, target_in=True,
+                          level='Provincie', areas=['Utrecht'])
+
+        # export emissions (source in, target out)
+        DATA[f'{PREFIXES[typ]}_export_co2\t{YEAR}'] = \
+            get_emissions(df,
+                          source=source, source_in=True,
+                          target=target, target_in=False,
+                          level='Provincie', areas=['Utrecht'])
+
+        # internal emissions (source in, target in)
+        DATA[f'{PREFIXES[typ]}_internal_co2\t{YEAR}'] = \
+            get_emissions(df,
+                          source=source, source_in=True,
+                          target=target, target_in=True,
+                          level='Provincie', areas=['Utrecht'])
+
         # CO2 NETWORK MAP (all levels)
         MAP.setdefault('transport', {})[f'{PREFIXES[typ]}_waste\tco2'] = get_network(df)
+
+    print(json.dumps(DATA, indent=4))
 
     # NETWORK MAP
     data = MAP.pop('transport', {})
