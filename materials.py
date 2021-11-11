@@ -1,6 +1,7 @@
 import utils
 import pandas as pd
 import variables as var
+import json
 
 
 # INPUTS
@@ -90,7 +91,7 @@ def process_cbs():
 
     # TRANSITION AGENDAS
     # filter CBS input
-    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
+    df['Gewicht_KG'] = df['Brutogew'] * 10**6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
     input_df = df[df['Stroom'].isin([
         'Aanbod_eigen_regio',
@@ -117,10 +118,21 @@ def process_cbs():
 
 
 def merge_material_trees():
+    # reset dic to only nested dics
+    # to allow merge
+    def reset_nested(dic):
+        for key in dic.keys():
+            if isinstance(dic[key], dict):
+                reset_nested(dic[key])
+            else:
+                dic[key] = {}
+        return dic
+
     # merge material tree hierarchies
     hierarchy = {}
     for typ, item in MATERIAL_TREE.items():
-        hierarchy = utils.merge_nested(item['hierarchy'], hierarchy)
+        new_hierarchy = reset_nested(item['hierarchy'])
+        hierarchy = utils.merge_nested(new_hierarchy, hierarchy)
 
     # add up amounts for each hierarchy level
     sums = {}
@@ -144,9 +156,30 @@ def merge_material_trees():
                 item = update_tree(item, dic[key])
             tree.setdefault("children", []).append(item)
         return tree
-
     tree = update_tree({}, hierarchy)["children"][0]
     DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [{"data": tree}]
+
+    # convert tree to table
+    terms = {
+        'EWC': 'amount_waste',
+        'CBS': 'amount_goods'
+    }
+    def tree_to_table(dic, parent=None, table=[], id=1):
+        for key in dic.keys():
+            item = {
+                'key': id,
+                'material': key,
+                'parent': parent
+            }
+            for sum in sums[key]:
+                item[terms[sum['type']]] = sum['value']
+            table.append(item)
+            id += 1
+            if isinstance(dic[key], dict):
+                table, id = tree_to_table(dic[key], parent=key, table=table, id=id)
+        return table, id
+    table, id = tree_to_table(hierarchy)
+    DATA[f'province\tall\tmaterial_table\t{YEAR}'] = [{"data": table}]
 
 
 if __name__ == "__main__":
