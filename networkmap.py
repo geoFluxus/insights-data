@@ -55,7 +55,7 @@ def get_network(df):
     # distribute along network
     ways = {}
     for idx, flow in df.iterrows():
-        seq, amount = flow['seq'], flow['co2']
+        seq, amount = flow['seq'], flow['co2'] / (flow['distance'] / 10**3)
         if type(seq) == str:
             seq = [id for id in seq.split('@')]
             if np.isnan(amount): amount = 0
@@ -131,7 +131,8 @@ if __name__ == "__main__":
         geojson = json.load(f)
         for feat in geojson['features']:
             id = str(feat['properties']['id'])
-            NETWORK[id] = feat['geometry']
+            distance = feat['properties']['distance']
+            NETWORK[id] = (feat['geometry'], distance)
 
     # import areas
     # import province polygon
@@ -206,13 +207,14 @@ if __name__ == "__main__":
     # load to segments
     results = []
     for way in NETWORK.items():
-        id, geometry = way
+        id, props = way
+        geometry, distance = props
         id = str(id)
         if id not in ways: ways[id] = 0
         results.append({
             'id': id,
             'geometry': geometry,
-            'amount': round(ways[id] / 10**6, 2),  # grams -> tn
+            'amount': round(ways[id] * (distance / 10**3) / 10**6, 2),  # grams -> tn
             'period': f'{YEAR}'
         })
     with open('./test/co2_network.json', 'w') as outfile:
