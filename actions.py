@@ -150,11 +150,11 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
             # overall change (tn)
-            change = Y_final - Y_initial
+            change = (Y_final - Y_initial) / len(YEARS)
             DATA.setdefault(f'{prop}\tall years\tt', {})[area] = to_json(change)
 
             # overall change (%)
-            change = (Y_final - Y_initial) / abs(Y_initial) * 100 if Y_initial else np.nan
+            change = ((Y_final - Y_initial) / abs(Y_initial)) / len(YEARS) * 100 if Y_initial else np.nan
             DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
 
             # change to same quarter, last year (tn)
