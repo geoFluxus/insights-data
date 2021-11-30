@@ -185,7 +185,7 @@ def compute_cbs_goal(input, apply=None, year=None, unit=None):
     df_total['area'] = df_total['Provincie']
     df_total[year] = df_total['Gewicht_KG']
     df.reset_index(inplace=True)
-    DATA.setdefault(f'province\t{title}', []).append(df_total[['area', year]])
+    DATA.setdefault(f'provincie\t{title}', []).append(df_total[['area', year]])
 
 
 if __name__ == '__main__':
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
 
     # import data for each year
-    ALIAS = 'Other provinces'
+    ALIAS = 'Andere provincies'
     for year in YEARS:
         print(f'Analyse {year}...')
         LMA_FLOWS = import_lma_flows(areas=postcodes, year=year)
@@ -259,7 +259,7 @@ if __name__ == '__main__':
 
             # incineration waste (LMA) -> weight
             def incineration_waste(df):
-                process_codes = TREATMENT_METHODS['incineration']
+                process_codes = TREATMENT_METHODS['verbranden']
                 return df[df['VerwerkingsmethodeCode'].isin(process_codes)]
             compute_lma_goal(lma_flows,
                               role='Herkomst',
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 
             # landfill waste -> weight
             def landfill_waste(df):
-                process_codes = TREATMENT_METHODS['landfill']
+                process_codes = TREATMENT_METHODS['storten']
                 return df[df['VerwerkingsmethodeCode'].isin(process_codes)]
             compute_lma_goal(lma_flows,
                               role='Herkomst',
@@ -281,7 +281,7 @@ if __name__ == '__main__':
 
             # reuse of primary waste -> percentage (primary waste: company)
             def reuse_primary_waste(df):
-                process_codes = TREATMENT_METHODS['reuse']
+                process_codes = TREATMENT_METHODS['hergebruiken']
                 return df[(df['EuralCode'].str[:2] != '19') &
                           (df['VerwerkingsmethodeCode'].isin(process_codes))]
             compute_lma_goal(lma_flows,
@@ -294,7 +294,7 @@ if __name__ == '__main__':
 
             # recycling of primary waste -> percentage (primary waste: company)
             def recycling_primary_waste(df):
-                process_codes = TREATMENT_METHODS['recycling']
+                process_codes = TREATMENT_METHODS['recyclen']
                 return df[(df['EuralCode'].str[:2] != '19') &
                           (df['VerwerkingsmethodeCode'].isin(process_codes))]
             compute_lma_goal(lma_flows,
@@ -356,7 +356,7 @@ if __name__ == '__main__':
 
             # reuse of construction & demolition waste -> percentage (primary waste: company construction waste)
             def reuse_construction_waste(df):
-                process_codes = TREATMENT_METHODS['reuse']
+                process_codes = TREATMENT_METHODS['hergebruiken']
                 return df[(df['EuralCode'].str[:2] == '17') &
                           (df['VerwerkingsmethodeCode'].isin(process_codes))]
             compute_lma_goal(lma_flows,
@@ -369,7 +369,7 @@ if __name__ == '__main__':
 
             # recycling of construction & demolition waste -> percentage (primary waste: company construction waste)
             def recycling_construction_waste(df):
-                process_codes = TREATMENT_METHODS['recycling']
+                process_codes = TREATMENT_METHODS['recyclen']
                 return df[(df['EuralCode'].str[:2] == '17') &
                           (df['VerwerkingsmethodeCode'].isin(process_codes))]
             compute_lma_goal(lma_flows,

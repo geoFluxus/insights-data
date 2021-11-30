@@ -63,7 +63,7 @@ def process_lma():
 
         # SUPPLY CHAIN
         # only on primary waste (Ontvangst)
-        if PREFIXES[typ] == 'primary':
+        if PREFIXES[typ] == 'primair':
             DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
                 utils.get_classification_graphs(df,
                                                 source=source,
@@ -113,7 +113,7 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    prefix = f"{PREFIXES['Provincie']}\tmaterial"
+    prefix = f"{PREFIXES['Provincie']}\tgoederen"
     DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
         utils.get_classification_graphs(input_df,
                                         area=PROVINCE,

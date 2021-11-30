@@ -20,7 +20,7 @@ def process_lma():
     # process LMA ontvangst
     for typ in ['Ontvangst']:
         # data prefix
-        prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} waste"
+        prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} afval"
 
         # import file
         print()
@@ -71,7 +71,7 @@ def process_cbs():
     print('Import CBS data...')
 
     # stromen -> million kg
-    prefix = f"{PREFIXES['Provincie']}\tmaterial"
+    prefix = f"{PREFIXES['Provincie']}\tgoederen"
     path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
     df = pd.read_csv(path, low_memory=False, sep=';')
 

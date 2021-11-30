@@ -13,6 +13,9 @@ import utils
 PROVINCE = 'Utrecht'
 YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
 QUARTER = 2
+ALL_YEARS = f'sinds {YEARS[0]}'
+LAST_QUARTER = f'vergeleken met Q{QUARTER} {YEARS[-2]}'
+UNKNOWN = 'Onbekend'
 
 DATA = {}
 
@@ -151,20 +154,20 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
 
             # overall change (tn)
             change = (Y_final - Y_initial) / len(YEARS)
-            DATA.setdefault(f'{prop}\tall years\tt', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\t{ALL_YEARS}\tt', {})[area] = to_json(change)
 
             # overall change (%)
             change = ((Y_final - Y_initial) / abs(Y_initial)) / len(YEARS) * 100 if Y_initial else np.nan
-            DATA.setdefault(f'{prop}\tall years\t%', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\t{ALL_YEARS}\t%', {})[area] = to_json(change)
 
             # change to same quarter, last year (tn)
             Y_final, Y_initial = Y[-1], Y[-5]
             change = Y_final - Y_initial
-            DATA.setdefault(f'{prop}\tlast quarter\tt', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\t{LAST_QUARTER}\tt', {})[area] = to_json(change)
 
             # change to same quarter, last year (%)
             change = (Y_final - Y_initial) / Y_initial * 100 if Y_initial else np.nan
-            DATA.setdefault(f'{prop}\tlast quarter\t%', {})[area] = to_json(change)
+            DATA.setdefault(f'{prop}\t{LAST_QUARTER}\t%', {})[area] = to_json(change)
 
 
 if __name__ == '__main__':
@@ -209,14 +212,14 @@ if __name__ == '__main__':
 
     # import activities
     ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
-    ACTIVITIES['name'] = ACTIVITIES['name'].str.lower().str.capitalize()
+    ACTIVITIES['name'] = ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # import industries
     industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
     flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')
-    flows.loc[flows['industries'].isnull(), 'industries'] = 'Unknown'
+    flows.loc[flows['industries'].isnull(), 'industries'] = UNKNOWN
     industry_groups = flows['industries'].drop_duplicates().to_list()
 
     # get names of provincie gemeenten
@@ -242,7 +245,7 @@ if __name__ == '__main__':
             compute_trends(flows,
                            on=[on, 'Ontdoener_AG'],
                            values=[areas, [activity['code']]],
-                           per_months=3, prop=f'{prefix}\tactivity\t{activity["code"]} - {activity["name"]}',
+                           per_months=3, prop=f'{prefix}\teconomische sector\t{activity["code"]} - {activity["name"]}',
                            add_graph=False)
 
         # average quarterly change in TREATMENT METHODS
@@ -250,7 +253,7 @@ if __name__ == '__main__':
             compute_trends(flows,
                            on=[on, 'VerwerkingsmethodeCode'],
                            values=[areas, codes],
-                           per_months=3, prop=f'{prefix}\tprocessing\t{method}',
+                           per_months=3, prop=f'{prefix}\tverwerkingsmethode\t{method}',
                            add_graph=False)
 
         # average quarterly change in INDUSTRIES per TREATMENT method
@@ -259,7 +262,7 @@ if __name__ == '__main__':
                 compute_trends(flows,
                                on=[on, 'industries', 'VerwerkingsmethodeCode'],
                                values=[areas, [group], codes],
-                               per_months=3, prop=f'{prefix}\tindustry\t{group}_{method}',
+                               per_months=3, prop=f'{prefix}\tindustrie\t{group}_{method}',
                                add_trends=False)
 
     with open('./test/actions.json', 'w') as outfile:

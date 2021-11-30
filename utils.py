@@ -3,6 +3,23 @@ import geopandas as gpd
 import numpy as np
 import json
 import _make_iterencode
+import re
+
+
+def format_name(name):
+    exclude = [
+        'TransitieAgenda',
+        'Materiaal'
+    ]
+    def replace(name):
+        for e in exclude:
+            name = name.replace(e, '')
+        return name
+    name = " ".join(
+        re.findall('[A-Z&][^A-Z&]*', replace(name))
+    ) \
+        if any(char.isupper() for char in name) else name.capitalize().replace('_', ' ')
+    return name
 
 
 def export_graphs(fil, data=None):
@@ -139,6 +156,7 @@ def get_classification_graphs(df, source=None,
         row = groups[groups[klass] == cat]
         value = row['Gewicht_KG'].values[0] if len(row) else 0
         values.append(round(value / 10**9, 2))  # kg -> Mt
+    cats = [format_name(cat) for cat in cats]
 
     # add to results
     results.append({
@@ -236,8 +254,9 @@ def get_hierarchy(df):
                     new.append(item)
             levels = new
         if len(materials) > 1:
-            value = f'{levels[-1]} (Gemengd)' if len(levels) else 'Gemengd'
+            value = f'{levels[-1]} (gemengd)' if len(levels) else 'Gemengd'
             levels.append(value)
+        levels = [format_name(lvl) for lvl in levels]
 
         # convert into hierarchy
         tree = build_nested(levels)
@@ -249,6 +268,7 @@ def get_hierarchy(df):
         sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
 
     # populate hierarchy with amounts
+    print(json.dumps(hierarchy, indent=4))
     hierarchy = {"Totaal": hierarchy}
     for material in sums.keys():
         obj = search_nested(material, hierarchy)
@@ -256,7 +276,7 @@ def get_hierarchy(df):
             update_nested(hierarchy, material, sums[material])
         else:
             obj = search_nested(material, hierarchy)
-            obj[f'{material} (Andere)'] = sums[material]
+            obj[f'{material} (andere)'] = sums[material]
             update_nested(hierarchy, material, obj)
 
     return hierarchy
