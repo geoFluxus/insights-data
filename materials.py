@@ -49,7 +49,8 @@ def process_lma():
                                             source=source,
                                             level='Provincie',
                                             area=PROVINCE,
-                                            klass='agendas')
+                                            klass='agendas',
+                                            unit='kt')
 
         # MATERIAL SANKEY
         # also retrieve data for material tree
@@ -101,7 +102,8 @@ def process_cbs():
     DATA[f'{prefix}\ttransition_agendas\t{YEAR}'] = \
         utils.get_classification_graphs(input_df,
                                         area=PROVINCE,
-                                        klass='agendas')
+                                        klass='agendas',
+                                        unit='kt')
 
     # MATERIAL SANKEY
     # also retrieve data for material tree
@@ -140,7 +142,10 @@ def merge_material_trees():
         for k in utils.flatten_nested(hierarchy):
             sums.setdefault(k, []).append({
                 "type": typ,
-                "value": item['sums'].get(k, 0)
+                "value": utils.kg_to_unit(
+                    item['sums'].get(k, 0),
+                    unit='t'
+                )
                 # "value": round(item['sums'].get(k, 0) / total[k] * 100)
             })
 

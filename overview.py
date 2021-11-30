@@ -69,7 +69,8 @@ def process_lma():
                                                 source=source,
                                                 level='Provincie',
                                                 area=PROVINCE,
-                                                klass='chains')
+                                                klass='chains',
+                                                unit='kt')
 
 
 def process_cbs():
@@ -117,7 +118,8 @@ def process_cbs():
     DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
         utils.get_classification_graphs(input_df,
                                         area=PROVINCE,
-                                        klass='chains')
+                                        klass='chains',
+                                        unit='kt')
 
 
 if __name__ == "__main__":

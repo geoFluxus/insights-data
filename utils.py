@@ -6,6 +6,19 @@ import _make_iterencode
 import re
 
 
+def kg_to_unit(value, unit='kg', decimals=2):
+    """
+    converts kg to the desired unit
+    """
+    converters = {
+        'kg': 1,
+        't': 10**3,
+        'kt': 10**6,
+        'Mt': 10**9
+    }
+    return round(value / converters[unit], 2)
+
+
 def format_name(name):
     exclude = [
         'TransitieAgenda',
@@ -112,7 +125,7 @@ def compute_sankey_branch(flows,
 
 
 def get_classification_graphs(df, source=None,
-                              level=None, area=None, klass=None):
+                              level=None, area=None, klass=None, unit='kg'):
     """
     Create graphs based on ontology classifications
     for LMA & CBS data
@@ -155,7 +168,7 @@ def get_classification_graphs(df, source=None,
     for cat in cats:
         row = groups[groups[klass] == cat]
         value = row['Gewicht_KG'].values[0] if len(row) else 0
-        values.append(round(value / 10**9, 2))  # kg -> Mt
+        values.append(kg_to_unit(value, unit=unit))
     cats = [format_name(cat) for cat in cats]
 
     # add to results
@@ -165,7 +178,7 @@ def get_classification_graphs(df, source=None,
         "values": {
             "weight": {
                 "value": values,
-                "unit": "Mt"
+                "unit": unit
             }
         }
     })
@@ -268,7 +281,6 @@ def get_hierarchy(df):
         sums[levels[-1]] = sums.get(levels[-1], 0) + row['Gewicht_KG']
 
     # populate hierarchy with amounts
-    print(json.dumps(hierarchy, indent=4))
     hierarchy = {"Totaal": hierarchy}
     for material in sums.keys():
         obj = search_nested(material, hierarchy)
@@ -317,7 +329,7 @@ def get_sankey(hierarchy):
         'target': target
     } for source, target in nivo['links']]
     for link in nivo['links']:
-        link['value'] = sums[link['target']]
+        link['value'] = kg_to_unit(sums[link['target']], unit='t')
         # print(f'{link["source"]}[{sums[link["target"]]}]{link["target"]}')
 
     return nivo, sums
