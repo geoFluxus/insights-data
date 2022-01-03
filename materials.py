@@ -50,7 +50,7 @@ def process_lma():
                                             level='Provincie',
                                             area=PROVINCE,
                                             klass='agendas',
-                                            unit='kt')
+                                            unit='Mt')
 
         # MATERIAL SANKEY
         # also retrieve data for material tree
@@ -58,10 +58,11 @@ def process_lma():
             utils.get_material_sankey(df,
                                       source=source,
                                       level='Provincie',
-                                      area=PROVINCE)
+                                      area=PROVINCE,
+                                      unit='t')
 
         # store material tree data
-        MATERIAL_TREE['EWC'] = {
+        MATERIAL_TREE['afval'] = {
             'hierarchy': hierarchy,
             'sums': sums
         }
@@ -77,7 +78,12 @@ def process_cbs():
     df = pd.read_csv(path, low_memory=False, sep=';')
 
     # filter by year & COROPS
-    df = df[(df['Jaar'] == YEAR) & (df['COROP_naam'].isin(COROPS))]
+    # exclude chapter 24 (Afval)
+    df = df[
+        (df['Jaar'] == YEAR) &
+        (df['COROP_naam'].isin(COROPS)) &
+        (df['Goederengroep_nr'] != 24)
+    ]
 
     # import cbs classifications
     cbs_classifs = {}
@@ -103,23 +109,24 @@ def process_cbs():
         utils.get_classification_graphs(input_df,
                                         area=PROVINCE,
                                         klass='agendas',
-                                        unit='kt')
+                                        unit='Mt')
 
     # MATERIAL SANKEY
     # also retrieve data for material tree
     DATA[f'{prefix}\tmaterial_sankey\t{YEAR}'], hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level='Provincie',
-                                  area=PROVINCE)
+                                  area=PROVINCE,
+                                  unit='t')
 
     # store material tree data
-    MATERIAL_TREE['CBS'] = {
+    MATERIAL_TREE['goederen'] = {
         'hierarchy': hierarchy,
         'sums': sums
     }
 
 
-def merge_material_trees():
+def merge_material_trees(unit='kg'):
     # reset dic to only nested dics
     # to allow merge
     def reset_nested(dic):
@@ -144,7 +151,7 @@ def merge_material_trees():
                 "type": typ,
                 "value": utils.kg_to_unit(
                     item['sums'].get(k, 0),
-                    unit='t'
+                    unit=unit
                 )
                 # "value": round(item['sums'].get(k, 0) / total[k] * 100)
             })
@@ -154,7 +161,8 @@ def merge_material_trees():
         for key in dic.keys():
             item = {
                 "name": key,
-                'values': sums[key]
+                'values': sums[key],
+                "unit": unit
             }
             if isinstance(dic[key], dict):
                 item["children"] = []
@@ -162,19 +170,22 @@ def merge_material_trees():
             tree.setdefault("children", []).append(item)
         return tree
     tree = update_tree({}, hierarchy)["children"][0]
-    DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [{"data": tree}]
+    DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [{
+        "data": tree
+    }]
 
     # convert tree to table
     terms = {
-        'EWC': 'amount_waste',
-        'CBS': 'amount_goods'
+        'afval': 'amount_waste',
+        'goederen': 'amount_goods'
     }
     def tree_to_table(dic, parent=None, table=[], id=1):
         for key in dic.keys():
             item = {
                 'key': id,
                 'material': key,
-                'parent': parent
+                'parent': parent,
+                "unit": unit
             }
             for sum in sums[key]:
                 item[terms[sum['type']]] = sum['value']
@@ -184,7 +195,9 @@ def merge_material_trees():
                 table, id = tree_to_table(dic[key], parent=key, table=table, id=id)
         return table, id
     table, id = tree_to_table(hierarchy)
-    DATA[f'province\tall\tmaterial_table\t{YEAR}'] = [{"data": table}]
+    DATA[f'province\tall\tmaterial_table\t{YEAR}'] = [{
+        "data": table,
+    }]
 
 
 if __name__ == "__main__":
@@ -214,7 +227,7 @@ if __name__ == "__main__":
     process_cbs()
 
     # merge material trees
-    merge_material_trees()
+    merge_material_trees(unit='t')
 
     # GRAPHS
     utils.export_graphs('./test/materials.json', data=DATA)

@@ -7,6 +7,7 @@ import itertools
 import json
 import itertools
 import utils
+import re
 
 
 # INPUTS
@@ -212,7 +213,7 @@ if __name__ == '__main__':
 
     # import activities
     ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
-    ACTIVITIES['name'] = ACTIVITIES['name_nl'].str.lower().str.capitalize()
+    ACTIVITIES['name'] = ACTIVITIES['code'] + ' - ' + ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # import industries
     industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
@@ -245,7 +246,7 @@ if __name__ == '__main__':
             compute_trends(flows,
                            on=[on, 'Ontdoener_AG'],
                            values=[areas, [activity['code']]],
-                           per_months=3, prop=f'{prefix}\teconomische sector\t{activity["code"]} - {activity["name"]}',
+                           per_months=3, prop=f'{prefix}\teconomische sector\t{activity["name"]}',
                            add_graph=False)
 
         # average quarterly change in TREATMENT METHODS
@@ -259,10 +260,17 @@ if __name__ == '__main__':
         # average quarterly change in INDUSTRIES per TREATMENT method
         for group in industry_groups:
             for method, codes in TREATMENT_METHODS.items():
+                formatted_name = " ".join(
+                    re.findall('[A-Z][^A-Z]*',
+                               group.replace('Industrie', '')
+                                    .replace('Industry', '')
+                               )
+                )
                 compute_trends(flows,
                                on=[on, 'industries', 'VerwerkingsmethodeCode'],
                                values=[areas, [group], codes],
-                               per_months=3, prop=f'{prefix}\tindustrie\t{group}_{method}',
+                               per_months=3,
+                               prop=f'{prefix}\tindustrie\t{formatted_name} - {method}',
                                add_trends=False)
 
     with open('./test/actions.json', 'w') as outfile:

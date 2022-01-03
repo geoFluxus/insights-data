@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # import activities
     ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
-    ACTIVITIES['name'] = ACTIVITIES['name'].str.lower().str.capitalize()
+    ACTIVITIES['name'] = ACTIVITIES['code'] + ' - ' + ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # start analysis
     print(f'YEAR: {YEAR}')
@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
         # add process names
         for name, codes in TREATMENT_METHODS.items():
-            df.loc[df['VerwerkingsmethodeCode'].isin(codes), 'Process'] = name
+            df.loc[df['VerwerkingsmethodeCode'].isin(codes), 'Process'] = name.capitalize()
 
         # analyse on municipal level
         print('Analyse...')

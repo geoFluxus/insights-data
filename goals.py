@@ -181,7 +181,7 @@ def compute_cbs_goal(input, apply=None, year=None, unit=None):
     df['area'] = df['Gemeente']
     df[year] = df['Gewicht_KG']
     df.reset_index(inplace=True)
-    DATA.setdefault(f'municipality\t{title}', []).append(df[['area', year]])
+    # DATA.setdefault(f'municipality\t{title}', []).append(df[['area', year]])
     df_total['area'] = df_total['Provincie']
     df_total[year] = df_total['Gewicht_KG']
     df.reset_index(inplace=True)
@@ -305,31 +305,35 @@ if __name__ == '__main__':
                               year=year,
                               reference=total_company_primary)
 
+            # retrieve cbs flows for province municipalities
+            # (to be used for per_inhabitant goals)
+            gemeenten_cbs_flows = cbs_flows.copy()
+            gemeenten_cbs_flows = gemeenten_cbs_flows[gemeenten_cbs_flows['Provincie'] == PROVINCE]
+
             # total household waste per inhabitant -> kg
-            if level == 'Gemeente':
-                def household_waste_per_inhabitant(df):
-                    return df["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"]
-                compute_cbs_goal(cbs_flows,
-                                  apply=household_waste_per_inhabitant,
-                                  year=year,
-                                  unit='kg')
+            def household_waste_per_inhabitant(df):
+                return df["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"]
+            compute_cbs_goal(gemeenten_cbs_flows,
+                              apply=household_waste_per_inhabitant,
+                              year=year,
+                              unit='kg')
 
-                # household residual waste per inhabitant -> kg
-                def residual_waste_per_inhabitant(df):
-                    return df["Hoeveelheid fijn huishoudelijk restafval [Kilo's per inwoner]"] + \
-                           df["Hoeveelheid grof huishoudelijk restafval [Kilo's per inwoner]"]
-                compute_cbs_goal(cbs_flows,
-                                  apply=residual_waste_per_inhabitant,
-                                  year=year,
-                                  unit='kg')
+            # household residual waste per inhabitant -> kg
+            def residual_waste_per_inhabitant(df):
+                return df["Hoeveelheid fijn huishoudelijk restafval [Kilo's per inwoner]"] + \
+                       df["Hoeveelheid grof huishoudelijk restafval [Kilo's per inwoner]"]
+            compute_cbs_goal(gemeenten_cbs_flows,
+                              apply=residual_waste_per_inhabitant,
+                              year=year,
+                              unit='kg')
 
-                # separation of household waste (as % of household waste) -> %
-                def separation_waste_per_inhabitant(df):
-                    return df['Scheidingspercentage totaal huishoudelijk afval [Percentage]'] * 100
-                compute_cbs_goal(cbs_flows,
-                                  apply=separation_waste_per_inhabitant,
-                                  year=year,
-                                  unit='%')
+            # separation of household waste (as % of household waste) -> %
+            def separation_waste_per_inhabitant(df):
+                return df['Scheidingspercentage totaal huishoudelijk afval [Percentage]'] * 100
+            compute_cbs_goal(gemeenten_cbs_flows,
+                              apply=separation_waste_per_inhabitant,
+                              year=year,
+                              unit='%')
 
             # residual waste of companies, organisations & governments -> weight
             def residual_company_waste(df):

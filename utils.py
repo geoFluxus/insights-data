@@ -113,6 +113,7 @@ def compute_sankey_branch(flows,
         True: 'binnen',
         False: 'buiten'
     }
+
     conditions = []
     for area in areas:
         for role, is_in in zip([source, target], [source_in, target_in]):
@@ -120,8 +121,8 @@ def compute_sankey_branch(flows,
             if not is_in: condition = ~condition
             conditions.append(condition)
         new_flows = flows[np.bitwise_and.reduce(conditions)]
-        new_flows = new_flows['Gewicht_KG'].sum() / 10**9  # megatonnes
-        print(f'{source} ({binnen[source_in]} {area}) -> {target} ({binnen[target_in]} {area}): {new_flows} Mtn')
+        amount = round(new_flows['Gewicht_KG'].sum() / 10**9, 2)  # megatonnes
+        return amount
 
 
 def get_classification_graphs(df, source=None,
@@ -135,8 +136,16 @@ def get_classification_graphs(df, source=None,
             'primair',
             'secundair',
             'tertiair',
-            'quartair',
-            'onbekend'
+            'quaternair',
+            'Onbekend'
+        ],
+        'agendas': [
+            'BiomassaVoedselTransitieAgenda',
+            'BouwTransitieAgenda',
+            'ConsumptiegoederenTransitieAgenda',
+            'MaakindustrieTransitieAgenda',
+            'NonSpecifiekTransitieAgenda',
+            'KunststoffenTransitieAgenda'
         ]
     }
 
@@ -159,8 +168,14 @@ def get_classification_graphs(df, source=None,
 
     # specify categories
     cats = categories.get(klass, None)
-    if cats is None:
-        cats = groups['agendas'].drop_duplicates().to_list()
+    if klass == 'agendas':
+        extra = []
+        for i in range(len(cats)):
+            for j in range(i+1, len(cats)):
+                extra.append(f'{cats[i]}&{cats[j]}')
+        extra.append('Onbekend')
+        cats.extend(extra)
+        cats = sorted(cats)
 
     # get results for categories
     results = []
@@ -312,7 +327,7 @@ def close_sankey_sums(nivo, dic, sums):
     return nivo, sums
 
 
-def get_sankey(hierarchy):
+def get_sankey(hierarchy, unit='kg'):
     """
     Convert material hierarchy to nivo sankey
     """
@@ -329,14 +344,15 @@ def get_sankey(hierarchy):
         'target': target
     } for source, target in nivo['links']]
     for link in nivo['links']:
-        link['value'] = kg_to_unit(sums[link['target']], unit='t')
+        link['value'] = kg_to_unit(sums[link['target']], unit=unit)
+        link['unit'] = unit
         # print(f'{link["source"]}[{sums[link["target"]]}]{link["target"]}')
 
     return nivo, sums
 
 
 def get_material_sankey(df, source=None,
-                        level=None, area=None):
+                        level=None, area=None, unit='kg'):
     """
     Create material sankey based on
     material ontology for LMA data
@@ -362,12 +378,12 @@ def get_material_sankey(df, source=None,
     hierarchy = get_hierarchy(groups)
 
     # convert hierarchy to nivo sankey
-    sankey, sums = get_sankey(hierarchy)
+    sankey, sums = get_sankey(hierarchy, unit=unit)
 
     sankeys = []
     sankeys.append({
         "name": area,
-        "materials": sankey
+        "materials": sankey,
     })
 
     return sankeys, hierarchy, sums

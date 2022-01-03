@@ -14,10 +14,19 @@ DATA = {}
 
 
 def process_lma():
+    STROMEN = {
+        ('Herkomst', True, 'Verwerker', True): 'Productie van afval binnen de provincie',
+        ('Herkomst', True, 'Verwerker', False): 'Export van afval',
+        ('Herkomst', False, 'Verwerker', True): 'Import van afval',
+        ('EerstAfnemer', True, 'Verwerker', True): 'Hergebruik van afval binnen de provincie',
+        ('EerstAfnemer', True, 'Verwerker', False): 'Hergebruik van afval buiten de provincie',
+        ('EerstAfnemer', False, 'Verwerker', True): 'Hergebruik van afval van elders binnen de provincie'
+    }
+
     # process LMA ontvangst & afgifte
     for typ in ['Ontvangst', 'Afgifte']:
         # data prefix
-        prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} waste"
+        prefix = f"{PREFIXES['Provincie']}\t{typ.lower()}meldingen"
 
         # import file
         print()
@@ -44,22 +53,37 @@ def process_lma():
 
         # SANKEY
         # source in / target in
-        utils.compute_sankey_branch(df,
+        flows, amounts = [], []
+        flows.append(STROMEN[(source, True, target, True)])
+        amounts.append(utils.compute_sankey_branch(df,
                                     source=source, source_in=True,
                                     target=target, target_in=True,
-                                    level='Provincie', areas=[PROVINCE])
+                                    level='Provincie', areas=[PROVINCE]))
 
         # source in / target out
-        utils.compute_sankey_branch(df,
+        flows.append(STROMEN[(source, True, target, False)])
+        amounts.append(utils.compute_sankey_branch(df,
                                     source=source, source_in=True,
                                     target=target, target_in=False,
-                                    level='Provincie', areas=[PROVINCE])
+                                    level='Provincie', areas=[PROVINCE]))
 
         # source out / target in
-        utils.compute_sankey_branch(df,
+        flows.append(STROMEN[(source, False, target, True)])
+        amounts.append(utils.compute_sankey_branch(df,
                                     source=source, source_in=False,
                                     target=target, target_in=True,
-                                    level='Provincie', areas=[PROVINCE])
+                                    level='Provincie', areas=[PROVINCE]))
+
+        DATA.setdefault(f'{prefix}\toverview_sankey\t{YEAR}', []).append({
+            "name": PROVINCE,
+            "flows": flows,
+            "values": {
+                "weight": {
+                    "value": amounts,
+                    "unit": 'Mt'
+                }
+            }
+        })
 
         # SUPPLY CHAIN
         # only on primary waste (Ontvangst)
@@ -79,7 +103,12 @@ def process_cbs():
     df = pd.read_csv(path, low_memory=False, sep=';')
 
     # filter by year & COROPS
-    df = df[(df['Jaar'] == YEAR) & (df['COROP_naam'].isin(COROPS))]
+    # exclude chapter 24 (Afval)
+    df = df[
+        (df['Jaar'] == YEAR) &
+        (df['COROP_naam'].isin(COROPS)) &
+        (df['Goederengroep_nr'] != 24)
+    ]
     stromen = [
         'Aanbod_eigen_regio',
         'Distributie',
@@ -90,9 +119,24 @@ def process_cbs():
         'Uitvoer_regionaal'
     ]
 
+    prefix = f"{PREFIXES['Provincie']}\tgoederen"
+
     # SANKEY
+    amounts = []
     for stroom in stromen:
-        print(f"{stroom}: {df[df['Stroom'] == stroom]['Brutogew'].sum() / 10**3}")
+        amount = round(df[df['Stroom'] == stroom]['Brutogew'].sum() / 10**3, 2)
+        amounts.append(amount)
+        print(f"{stroom}: {amount} Mt")
+    DATA.setdefault(f'{prefix}\toverview_sankey\t{YEAR}', []).append({
+        "name": PROVINCE,
+        "flows": stromen,
+        "values": {
+            "weight": {
+                "value": amounts,
+                "unit": 'Mt'
+            }
+        }
+    })
 
     # import cbs classifications
     cbs_classifs = {}
@@ -114,7 +158,6 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    prefix = f"{PREFIXES['Provincie']}\tgoederen"
     DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
         utils.get_classification_graphs(input_df,
                                         area=PROVINCE,
