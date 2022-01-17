@@ -1,3 +1,12 @@
+# INPUTS
+DIRECTORY = 'W:/My Documents'
+AREA = 'Utrecht'
+LEVEL = 'Provincie'
+YEAR = 2019
+COROPS = [
+    'Utrecht'
+]
+
 ROLES = {
     'Ontvangst': {
         'source': 'Herkomst',

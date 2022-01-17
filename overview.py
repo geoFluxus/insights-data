@@ -4,11 +4,12 @@ import variables as var
 
 
 # INPUTS
-PROVINCE = 'Utrecht'
-YEAR = 2019
-COROPS = [
-    'Utrecht'
-]
+DIRECTORY = var.DIRECTORY
+AREA = var.AREA
+LEVEL = var.LEVEL
+YEAR = var.YEAR
+COROPS = var.COROPS
+
 
 DATA = {}
 
@@ -31,8 +32,8 @@ def process_lma():
         # import file
         print()
         print(f'Import {typ}...')
-        path = f'../../../../../media/geofluxus/DATA/national/{PROVINCE.lower()}/processed'
-        filename = f'{path}/{typ.lower()}_{PROVINCE.lower()}_{YEAR}.csv'
+        path = f'{DIRECTORY}/{AREA}/LMA/processed'
+        filename = f'{path}/{typ.lower()}_{AREA.lower()}_{YEAR}.csv'
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles
@@ -56,26 +57,26 @@ def process_lma():
         flows, amounts = [], []
         flows.append(STROMEN[(source, True, target, True)])
         amounts.append(utils.compute_sankey_branch(df,
-                                    source=source, source_in=True,
-                                    target=target, target_in=True,
-                                    level='Provincie', areas=[PROVINCE]))
+                                                   source=source, source_in=True,
+                                                   target=target, target_in=True,
+                                                   level='Provincie', areas=[AREA]))
 
         # source in / target out
         flows.append(STROMEN[(source, True, target, False)])
         amounts.append(utils.compute_sankey_branch(df,
-                                    source=source, source_in=True,
-                                    target=target, target_in=False,
-                                    level='Provincie', areas=[PROVINCE]))
+                                                   source=source, source_in=True,
+                                                   target=target, target_in=False,
+                                                   level='Provincie', areas=[AREA]))
 
         # source out / target in
         flows.append(STROMEN[(source, False, target, True)])
         amounts.append(utils.compute_sankey_branch(df,
-                                    source=source, source_in=False,
-                                    target=target, target_in=True,
-                                    level='Provincie', areas=[PROVINCE]))
+                                                   source=source, source_in=False,
+                                                   target=target, target_in=True,
+                                                   level='Provincie', areas=[AREA]))
 
         DATA.setdefault(f'{prefix}\toverview_sankey\t{YEAR}', []).append({
-            "name": PROVINCE,
+            "name": AREA,
             "flows": flows,
             "values": {
                 "weight": {
@@ -92,14 +93,14 @@ def process_lma():
                 utils.get_classification_graphs(df,
                                                 source=source,
                                                 level='Provincie',
-                                                area=PROVINCE,
+                                                area=AREA,
                                                 klass='chains',
                                                 unit='kt')
 
 
 def process_cbs():
     # stromen -> million kg
-    path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
+    path = f'{DIRECTORY}/{AREA}/CBS/Tabel Regionale stromen 2015-2019.csv'
     df = pd.read_csv(path, low_memory=False, sep=';')
 
     # filter by year & COROPS
@@ -128,7 +129,7 @@ def process_cbs():
         amounts.append(amount)
         print(f"{stroom}: {amount} Mt")
     DATA.setdefault(f'{prefix}\toverview_sankey\t{YEAR}', []).append({
-        "name": PROVINCE,
+        "name": AREA,
         "flows": stromen,
         "values": {
             "weight": {
@@ -141,7 +142,8 @@ def process_cbs():
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['chains']:
-        cbs_classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+        cbs_classifs[classif] = pd.read_csv(
+            f'{DIRECTORY}/DATA/ontology/cbs_{classif}.csv', low_memory=False, sep=';')
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -160,7 +162,7 @@ def process_cbs():
     ])]
     DATA[f'{prefix}\tsupply_chains\t{YEAR}'] = \
         utils.get_classification_graphs(input_df,
-                                        area=PROVINCE,
+                                        area=AREA,
                                         klass='chains',
                                         unit='kt')
 
@@ -170,14 +172,14 @@ if __name__ == "__main__":
     PREFIXES = var.PREFIXES
 
     # import province polygon
-    polygon = utils.import_areas(level='provincies')
-    polygon = polygon[polygon['name'] == PROVINCE]
+    polygon = utils.import_areas(level=LEVEL)
+    polygon = polygon[polygon['name'] == AREA]
     assert len(polygon) == 1
 
     # import ewc classifications
     ewc_classifs = {}
     for classif in ['chains']:
-        ewc_classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv',
+        ewc_classifs[classif] = pd.read_csv(f'{DIRECTORY}/DATA/ontology/ewc_{classif}.csv',
                                             low_memory=False,
                                             sep=';')
 
@@ -191,6 +193,4 @@ if __name__ == "__main__":
     process_cbs()
 
     # GRAPHS
-    utils.export_graphs('./test/overview.json', data=DATA)
-
-
+    utils.export_graphs('./json/overview.json', data=DATA)

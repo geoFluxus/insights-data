@@ -1,9 +1,15 @@
 import pandas as pd
+import fiona
 import geopandas as gpd
 import numpy as np
 import json
 import _make_iterencode
 import re
+import variables as var
+
+
+# parameters
+DIRECTORY = var.DIRECTORY
 
 
 def kg_to_unit(value, unit='kg', decimals=2):
@@ -58,8 +64,14 @@ def import_areas(level=None):
     for different administration level
     (municipalities, provinces etc.)
     """
+    LEVELS = {
+        'Provincie': 'provincies',
+        'Gemeente': 'gemeenten'
+    }
+    level = LEVELS[level]
+
     # load geometries
-    areas = gpd.read_file(f'./data/areas/{level}.shp')
+    areas = gpd.read_file(f'{DIRECTORY}/GEODATA/areas/{level}/{level}.shp')
     areas['centroid'] = areas['geometry'].centroid
 
     return areas

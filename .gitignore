@@ -1,6 +1,6 @@
 venv
 .idea
-data
+json
 __pycache__
 src/logs.txt
 test
