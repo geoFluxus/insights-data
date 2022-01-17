@@ -9,7 +9,7 @@ import variables as var
 
 
 # parameters
-DIRECTORY = var.DIRECTORY
+INPUT_DIR = var.INPUT_DIR
 
 
 def kg_to_unit(value, unit='kg', decimals=2):
@@ -71,7 +71,7 @@ def import_areas(level=None):
     level = LEVELS[level]
 
     # load geometries
-    areas = gpd.read_file(f'{DIRECTORY}/GEODATA/areas/{level}/{level}.shp')
+    areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}.shp')
     areas['centroid'] = areas['geometry'].centroid
 
     return areas
@@ -116,7 +116,8 @@ def add_classification(df, classif, name=None,
 def compute_sankey_branch(flows,
                           source=None, source_in=True,
                           target=None, target_in=True,
-                          level=None, areas=[]):
+                          level=None, areas=[],
+                          unit='kg'):
     """
     Compute sankey brances
     for LMA & CBS data
@@ -133,7 +134,7 @@ def compute_sankey_branch(flows,
             if not is_in: condition = ~condition
             conditions.append(condition)
         new_flows = flows[np.bitwise_and.reduce(conditions)]
-        amount = round(new_flows['Gewicht_KG'].sum() / 10**9, 2)  # megatonnes
+        amount = kg_to_unit(new_flows['Gewicht_KG'].sum(), unit=unit)
         return amount
 
 

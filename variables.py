@@ -1,11 +1,20 @@
-# INPUTS
-DIRECTORY = 'W:/My Documents'
+# VARIABLES
+INPUT_DIR = 'W:/My Documents'
 AREA = 'Utrecht'
 LEVEL = 'Provincie'
 YEAR = 2019
 COROPS = [
     'Utrecht'
 ]
+OUTPUT_DIR = './json'
+
+# UNITS
+UNITS = {
+    'OVERVIEW': {
+        'OVERVIEW_SANKEY': 'Mt',
+        'SUPPLY_CHAINS': 'kt'
+    }
+}
 
 ROLES = {
     'Ontvangst': {
