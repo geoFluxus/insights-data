@@ -13,6 +13,10 @@ UNITS = {
     'OVERVIEW': {
         'OVERVIEW_SANKEY': 'Mt',
         'SUPPLY_CHAINS': 'kt'
+    },
+    'MATERIALS': {
+        'TRANSITION_AGENDAS': 'Mt',
+        'MATERIAL_TREE': 'Mt'
     }
 }
 

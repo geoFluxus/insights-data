@@ -4,12 +4,17 @@ import variables as var
 import json
 
 
-# INPUTS
-PROVINCE = "Utrecht"
-YEAR = 2019
-COROPS = [
-    'Utrecht'
-]
+# VARIABLES
+VARS = {
+    'INPUT_DIR': var.INPUT_DIR,
+    'AREA': var.AREA,
+    'LEVEL': var.LEVEL,
+    'YEAR': var.YEAR,
+    'COROPS': var.COROPS,
+    'OUTPUT_DIR': var.OUTPUT_DIR,
+    'TRANSITION_AGENDAS_UNIT': var.UNITS['MATERIALS']['TRANSITION_AGENDAS'],
+    'MATERIAL_TREE_UNIT': var.UNITS['MATERIALS']['MATERIAL_TREE']
+}
 
 DATA = {}
 
@@ -25,8 +30,8 @@ def process_lma():
         # import file
         print()
         print(f'Import {typ}...')
-        path = f'../../../../../media/geofluxus/DATA/national/{PROVINCE.lower()}/processed'
-        filename = f'{path}/{typ.lower()}_{PROVINCE.lower()}_{YEAR}.csv'
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles
@@ -44,22 +49,22 @@ def process_lma():
                                           right_on='ewc')
 
         # TRANSITION AGENDAS
-        DATA[f'{prefix}\ttransition_agendas\t{YEAR}'] = \
+        DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
             utils.get_classification_graphs(df,
                                             source=source,
                                             level='Provincie',
-                                            area=PROVINCE,
+                                            area=VARS['AREA'],
                                             klass='agendas',
-                                            unit='Mt')
+                                            unit=VARS['TRANSITION_AGENDAS_UNIT'])
 
         # MATERIAL SANKEY
         # also retrieve data for material tree
-        DATA[f'{prefix}\tmaterial_sankey\t{YEAR}'], hierarchy, sums = \
+        DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
             utils.get_material_sankey(df,
                                       source=source,
                                       level='Provincie',
-                                      area=PROVINCE,
-                                      unit='t')
+                                      area=VARS['AREA'],
+                                      unit=VARS['MATERIAL_TREE_UNIT'])
 
         # store material tree data
         MATERIAL_TREE['afval'] = {
@@ -74,21 +79,23 @@ def process_cbs():
 
     # stromen -> million kg
     prefix = f"{PREFIXES['Provincie']}\tgoederen"
-    path = './data/cbs/Tabel Regionale stromen 2015-2019.csv'
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Tabel Regionale stromen 2015-2019.csv"
     df = pd.read_csv(path, low_memory=False, sep=';')
+    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
+    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
     # exclude chapter 24 (Afval)
     df = df[
-        (df['Jaar'] == YEAR) &
-        (df['COROP_naam'].isin(COROPS)) &
+        (df['Jaar'] == VARS['YEAR']) &
+        (df['COROP_naam'].isin(VARS['COROPS'])) &
         (df['Goederengroep_nr'] != 24)
     ]
 
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['agendas', 'materials']:
-        cbs_classifs[classif] = pd.read_csv(f'./data/materials/cbs_{classif}.csv', low_memory=False, sep=';')
+        cbs_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv", low_memory=False, sep=';')
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -98,26 +105,24 @@ def process_cbs():
 
     # TRANSITION AGENDAS
     # filter CBS input
-    df['Gewicht_KG'] = df['Brutogew'] * 10**6
-    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
     input_df = df[df['Stroom'].isin([
         'Aanbod_eigen_regio',
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    DATA[f'{prefix}\ttransition_agendas\t{YEAR}'] = \
+    DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
-                                        area=PROVINCE,
+                                        area=VARS['AREA'],
                                         klass='agendas',
-                                        unit='Mt')
+                                        unit=VARS['TRANSITION_AGENDAS_UNIT'])
 
     # MATERIAL SANKEY
     # also retrieve data for material tree
-    DATA[f'{prefix}\tmaterial_sankey\t{YEAR}'], hierarchy, sums = \
+    DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level='Provincie',
-                                  area=PROVINCE,
-                                  unit='t')
+                                  area=VARS['AREA'],
+                                  unit=VARS['MATERIAL_TREE_UNIT'])
 
     # store material tree data
     MATERIAL_TREE['goederen'] = {
@@ -170,7 +175,7 @@ def merge_material_trees(unit='kg'):
             tree.setdefault("children", []).append(item)
         return tree
     tree = update_tree({}, hierarchy)["children"][0]
-    DATA[f'province\tall\tmaterial_tree\t{YEAR}'] = [{
+    DATA[f"province\tall\tmaterial_tree\t{VARS['YEAR']}"] = [{
         "data": tree
     }]
 
@@ -195,7 +200,7 @@ def merge_material_trees(unit='kg'):
                 table, id = tree_to_table(dic[key], parent=key, table=table, id=id)
         return table, id
     table, id = tree_to_table(hierarchy)
-    DATA[f'province\tall\tmaterial_table\t{YEAR}'] = [{
+    DATA[f"province\tall\tmaterial_table\t{VARS['YEAR']}"] = [{
         "data": table,
     }]
 
@@ -204,21 +209,23 @@ if __name__ == "__main__":
     ROLES = var.ROLES
     PREFIXES = var.PREFIXES
 
+    # start analysis
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
     # import areas
     # import province polygon
-    polygon = utils.import_areas(level='provincies')
-    polygon = polygon[polygon['name'] == PROVINCE]
+    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = polygon[polygon['name'] == VARS['AREA']]
     assert len(polygon) == 1
 
     # import ewc classifications
     ewc_classifs = {}
     for classif in ['agendas', 'materials']:
-        ewc_classifs[classif] = pd.read_csv(f'./data/materials/ewc_{classif}.csv',
+        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv",
                                             low_memory=False,
                                             sep=';')
-
-    # start analysis
-    print(f'YEAR: {YEAR}')
 
     # process LMA data
     process_lma()
@@ -227,8 +234,8 @@ if __name__ == "__main__":
     process_cbs()
 
     # merge material trees
-    merge_material_trees(unit='t')
+    merge_material_trees(unit=VARS['MATERIAL_TREE_UNIT'])
 
     # GRAPHS
-    utils.export_graphs('./test/materials.json', data=DATA)
+    utils.export_graphs(f"{VARS['OUTPUT_DIR']}/materials.json", data=DATA)
 
