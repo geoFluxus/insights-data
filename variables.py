@@ -1,11 +1,13 @@
 # VARIABLES
-INPUT_DIR = 'W:/My Documents'
+INPUT_DIR = 'W:/My Documents/VASILIS'
 AREA = 'Utrecht'
 LEVEL = 'Provincie'
 YEAR = 2019
+GOALS_YEARS = [2016, 2017, 2018, 2019]
 COROPS = [
     'Utrecht'
 ]
+POSTCODES = 'postcodes_per_gemeenten_2021'
 OUTPUT_DIR = './json'
 
 # UNITS

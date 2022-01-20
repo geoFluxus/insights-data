@@ -5,9 +5,15 @@ import json
 import variables as var
 
 
-# INPUTS
-PROVINCE = 'Utrecht'
-YEARS = [2016, 2017, 2018, 2019]
+# VARIABLES
+VARS = {
+    'INPUT_DIR': var.INPUT_DIR,
+    'YEARS': var.GOALS_YEARS,
+    'AREA': var.AREA,
+    'LEVEL': var.LEVEL,
+    'POSTCODES': var.POSTCODES,
+    'OUTPUT_DIR': var.OUTPUT_DIR
+}
 
 
 DATA = {}
@@ -19,15 +25,15 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    df = pd.read_excel('./data/household/Huishoudelijk_Gemeenten.xlsx', sheet_name='Data')
+    df = pd.read_excel(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)
-    df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente (post 2019)', how='left')
+    df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente', how='left')
     columns.append('Provincie')
     df = df[columns]
 
     # import population data
-    population = pd.read_csv('./data/areas/populationNL.csv', delimiter=';')
+    population = pd.read_csv(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/populationNL.csv", delimiter=';')
 
     # add population
     def add_population(row):
@@ -73,7 +79,7 @@ def import_lma_flows(areas=None, year=None):
     ]
 
     # import file
-    path = '../../../../../media/geofluxus/DATA/national/ontvangst/processed'
+    path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
     print(f'Import {year} data...')
     df = pd.read_csv(f'{path}/ontvangst_{year}_full.csv', usecols=columns, low_memory=False)
 
@@ -192,12 +198,18 @@ if __name__ == '__main__':
     PREFIXES = var.PREFIXES
     TREATMENT_METHODS = var.TREATMENT_METHODS
 
+    # start analysis
+    print('GOALS ANALYSIS')
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
     # import postcodes
-    postcodes = pd.read_excel('./data/areas/postcodesNL.xlsx')
+    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
     postcodes['PC4'] = postcodes['PC4'].astype(str)
-    gemeenten = postcodes[['Gemeente (post 2019)', 'Provincie']].drop_duplicates()
-    provincie_gemeenten = gemeenten[gemeenten['Provincie'] == PROVINCE]['Gemeente (post 2019)'].to_list()
-    print(f'PROVINCIE GEMEENTEN ({len(provincie_gemeenten)}): {sorted(provincie_gemeenten)}')
+    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
+    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
+    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}')
 
     # import household data
     print()
@@ -207,7 +219,7 @@ if __name__ == '__main__':
 
     # import data for each year
     ALIAS = 'Andere provincies'
-    for year in YEARS:
+    for year in VARS['YEARS']:
         print(f'Analyse {year}...')
         LMA_FLOWS = import_lma_flows(areas=postcodes, year=year)
         CBS_FLOWS = household_data[household_data['Perioden'] == int(year)]
@@ -217,7 +229,7 @@ if __name__ == '__main__':
             'Provincie',
             # 'Gemeente'
         ]:
-            areas = [PROVINCE, ALIAS] if level == 'Provincie' else provincie_gemeenten
+            areas = [VARS['AREA'], ALIAS] if level == 'Provincie' else area_gemeenten
 
             # copy initial dataframes
             lma_flows = LMA_FLOWS.copy()
@@ -225,13 +237,13 @@ if __name__ == '__main__':
 
             # if level == 'Provincie', divide between current area & others
             if level == 'Provincie':
-                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != PROVINCE, f'Herkomst_{level}'] = ALIAS
-                cbs_flows.loc[cbs_flows['Provincie'] != PROVINCE, 'Provincie'] = ALIAS
+                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != VARS['AREA'], f'Herkomst_{level}'] = ALIAS
+                cbs_flows.loc[cbs_flows['Provincie'] != VARS['AREA'], 'Provincie'] = ALIAS
 
             # if level == 'Gemeente', get only province data
             if level == 'Gemeente':
-                lma_flows = lma_flows[lma_flows[f'Herkomst_Provincie'] == PROVINCE]
-                cbs_flows = cbs_flows[cbs_flows['Provincie'] == PROVINCE]
+                lma_flows = lma_flows[lma_flows[f'Herkomst_Provincie'] == VARS['AREA']]
+                cbs_flows = cbs_flows[cbs_flows['Provincie'] == VARS['AREA']]
 
             # total company primary waste (LMA) -> weight
             def total_company_primary_waste(df):
@@ -308,7 +320,7 @@ if __name__ == '__main__':
             # retrieve cbs flows for province municipalities
             # (to be used for per_inhabitant goals)
             gemeenten_cbs_flows = cbs_flows.copy()
-            gemeenten_cbs_flows = gemeenten_cbs_flows[gemeenten_cbs_flows['Provincie'] == PROVINCE]
+            gemeenten_cbs_flows = gemeenten_cbs_flows[gemeenten_cbs_flows['Provincie'] == VARS['AREA']]
 
             # total household waste per inhabitant -> kg
             def household_waste_per_inhabitant(df):
@@ -418,7 +430,7 @@ if __name__ == '__main__':
         results[field] = json.loads(df[columns].to_json(orient="records"))
 
     final = {}
-    with open('./test/household.json', 'w') as outfile:
+    with open(f"{VARS['OUTPUT_DIR']}/household.json", 'w') as outfile:
         for key, value in results.items():
             level, field, unit = key.split('\t')
             for item in value:

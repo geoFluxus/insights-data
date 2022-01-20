@@ -210,6 +210,7 @@ if __name__ == "__main__":
     PREFIXES = var.PREFIXES
 
     # start analysis
+    print('MATERIALS ANALYSIS')
     print('VARIABLES:')
     for name, value in VARS.items():
         print(f'{name}={value}')
