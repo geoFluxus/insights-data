@@ -22,6 +22,9 @@ UNITS = {
     },
     'GOALS': {
         'NATIONAL_GOALS': 'Mt'
+    },
+    'HIGHLIGHTS': {
+        'COMPANY_WASTE': 'Mt'
     }
 }
 
