@@ -3,6 +3,7 @@ import numpy as np
 import gc
 import json
 import variables as var
+import utils
 
 
 # VARIABLES
@@ -12,7 +13,8 @@ VARS = {
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'POSTCODES': var.POSTCODES,
-    'OUTPUT_DIR': var.OUTPUT_DIR
+    'OUTPUT_DIR': var.OUTPUT_DIR,
+    'NATIONAL_GOALS_UNIT': var.UNITS['GOALS']['NATIONAL_GOALS']
 }
 
 
@@ -105,7 +107,7 @@ def compute_lma_goal(df,
     """
     Compute LMA waste
     """
-    unit = '%' if reference is not None else 'Mt'
+    unit = '%' if reference is not None else VARS['NATIONAL_GOALS_UNIT']
     title = f'{PREFIXES[level]}\t{apply.__name__}\t{unit}'
     print(title)
 
@@ -127,7 +129,7 @@ def compute_lma_goal(df,
             df.loc[len(df)] = [area, 0]
 
     # add to data
-    df[year] = df['Gewicht_KG'] / 10**9
+    df[year] = utils.kg_to_unit(df['Gewicht_KG'], unit=VARS['NATIONAL_GOALS_UNIT'])
     df['area'] = df[f'{role}_{level}']
     result = df[['area', year]].sort_values(by='area')
     if reference is not None:
@@ -150,7 +152,7 @@ def cbs_primary_waste(input, level=None, year=None, title=None):
     df = df[columns].groupby(f"{level}").sum().reset_index()
 
     # add to data
-    df[year] = df['Gewicht_KG'] / 10**9
+    df[year] = utils.kg_to_unit(df['Gewicht_KG'], unit=VARS['NATIONAL_GOALS_UNIT'])
     df['area'] = df[f'{level}']
     result = df[['area', year]].sort_values(by='area')
     DATA.setdefault(title, []).append(result)
@@ -237,7 +239,11 @@ if __name__ == '__main__':
 
             # if level == 'Provincie', divide between current area & others
             if level == 'Provincie':
-                lma_flows.loc[lma_flows[f'Herkomst_{level}'] != VARS['AREA'], f'Herkomst_{level}'] = ALIAS
+                lma_flows.loc[
+                    (lma_flows[f'Herkomst_{level}'] != VARS['AREA']) &
+                    (lma_flows[f'Herkomst_Land'] == 'NEDERLAND'),
+                    f'Herkomst_{level}'
+                ] = ALIAS
                 cbs_flows.loc[cbs_flows['Provincie'] != VARS['AREA'], 'Provincie'] = ALIAS
 
             # if level == 'Gemeente', get only province data
@@ -258,7 +264,7 @@ if __name__ == '__main__':
 
             # total household primary waste (CBS) -> weight
             prefix = PREFIXES[level]
-            title = f'{prefix}\ttotal_household_primary_waste\tMt'
+            title = f"{prefix}\ttotal_household_primary_waste\t{VARS['NATIONAL_GOALS_UNIT']}"
             total_household_primary =\
                 cbs_primary_waste(cbs_flows,
                                   level=level,

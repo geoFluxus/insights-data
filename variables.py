@@ -19,6 +19,9 @@ UNITS = {
     'MATERIALS': {
         'TRANSITION_AGENDAS': 'Mt',
         'MATERIAL_TREE': 'Mt'
+    },
+    'GOALS': {
+        'NATIONAL_GOALS': 'Mt'
     }
 }
 
