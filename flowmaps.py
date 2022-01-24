@@ -7,9 +7,12 @@ import numpy as np
 import utils
 
 
-# INPUTS
-PROVINCE = "Utrecht"
-YEAR = 2019
+VARS = {
+    'INPUT_DIR': var.INPUT_DIR,
+    'AREA': var.AREA,
+    'YEAR': var.YEAR,
+    'OUTPUT_DIR': var.OUTPUT_DIR
+}
 
 AREAS = {}
 
@@ -20,34 +23,35 @@ MAP = {} # map data
 
 def import_areas():
     # municipalities
-    gemeenten = gpd.read_file('./data/areas/gemeenten.shp')
+    gemeenten = gpd.read_file(f"{VARS['INPUT_DIR']}/GEODATA/areas/gemeenten/gemeenten.shp")
     gemeenten['centroid'] = gemeenten['geometry'].centroid
     # gemeenten['centroid'] = gemeenten['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Gemeente'] = gemeenten
 
-    # continents
-    continents = gpd.read_file('./data/areas/continents.shp')
-    continents['centroid'] = continents['geometry'].centroid
-    # continents['centroid'] = continents['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
-    AREAS['Continent'] = continents
+    # # continents
+    # continents = gpd.read_file('./data/areas/continents.shp')
+    # continents['centroid'] = continents['geometry'].centroid
+    # # continents['centroid'] = continents['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
+    # AREAS['Continent'] = continents
 
     # countries
-    countries = gpd.read_file('./data/areas/countries.shp')
-    countries['country_nl'] = countries['country_nl'].str.upper()
-    countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
-    AREAS['Country'] = countries
+    # countries = gpd.read_file(f"{VARS['INPUT_DIR']}/GEODATA/areas/countries/countries.shp")
+    # countries['country_nl'] = countries['country_nl'].str.upper()
+    # countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
+    # AREAS['Country'] = countries
 
-    # list of province municipalities
-    provincie_gemeenten = gemeenten[gemeenten['parent'] == PROVINCE]['name'].to_list()
+    # list of area municipalities
+    area_gemeenten = gemeenten[gemeenten['parent'] == VARS['AREA']]['name'].to_list()
 
-    return provincie_gemeenten
+    return area_gemeenten
 
 
 def to_flowmap(df, level=None, extra=[]):
     level_areas = AREAS[level]
-    continents = AREAS['Continent']
+    # continents = AREAS['Continent']
 
-    for field, areas in zip(['name', 'cont_nl'], [level_areas, continents]):
+    # for field, areas in zip(['name', 'cont_nl'], [level_areas, continents]):
+    for field, areas in zip(['name'], [level_areas]):
         for node in ['source', 'target']:
             columns = list(df.columns)
             df = pd.merge(df, areas, how='left', left_on=node, right_on=field)
@@ -111,16 +115,18 @@ def get_flows(df,
         f'{target}_{level}': 'target',
     }
 
-    # split to flows with source/target in/out Netherlands
-    for node in [source, target]:
-        condition = (flows[f'{node}_Land'] == 'NEDERLAND') |\
-                    (flows[f'{node}_Land'] == 'NAN')
-        flows.loc[condition, f'{node}_in'] = True
-        flows.loc[~condition, f'{node}_in'] = False
-        flows.loc[flows[f'{node}_in'] == True, columns[f'{node}_{level}']] = flows[f'{node}_{level}']
-        flows.loc[flows[f'{node}_in'] == False, columns[f'{node}_{level}']] = flows[f'{node}_Continent']
+    # # split to flows with source/target in/out Netherlands
+    # for node in [source, target]:
+    #     condition = (flows[f'{node}_Land'] == 'NEDERLAND') |\
+    #                 (flows[f'{node}_Land'] == 'NAN')
+    #     flows.loc[condition, f'{node}_in'] = True
+    #     flows.loc[~condition, f'{node}_in'] = False
+    #     flows.loc[flows[f'{node}_in'] == True, columns[f'{node}_{level}']] = flows[f'{node}_{level}']
+    #     flows.loc[flows[f'{node}_in'] == False, columns[f'{node}_{level}']] = flows[f'{node}_Continent']
 
     # aggregate
+    for node in [source, target]:
+        flows[columns[f'{node}_{level}']] = flows[f'{node}_{level}']
     groups = flows[_groupby].groupby(_groupby[:-1]).sum().reset_index()
     groups = groups.rename(columns=rename)
 
@@ -132,25 +138,32 @@ if __name__ == "__main__":
     PREFIXES = var.PREFIXES
     TREATMENT_METHODS = var.TREATMENT_METHODS
 
+    # start analysis
+    print('FLOWMAP ANALYSIS')
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
     # import areas
+    print()
     print('Import areas...')
-    provincie_gemeenten = import_areas()
-    print(f'PROVINCIE GEMEENTE ({len(provincie_gemeenten)}): {provincie_gemeenten}')
+    area_gemeenten = import_areas()
+    print(f'AREA GEMEENTE ({len(area_gemeenten)}): {area_gemeenten}')
 
     # import activities
-    ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
+    ACTIVITIES = pd.read_excel(f"{VARS['INPUT_DIR']}/DATA/descriptions/activitygroup.xlsx")
     ACTIVITIES['name'] = ACTIVITIES['code'] + ' - ' + ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # start analysis
-    print(f'YEAR: {YEAR}')
+    print(f"YEAR: {VARS['YEAR']}")
 
     # LMA Ontvangst
     for typ in ['Ontvangst']:
         # import file
-        print('')
+        print()
         print(f'Import {typ}....')
-        path = f'../../../../../media/geofluxus/DATA/national/{PROVINCE.lower()}/processed'
-        filename = f'{path}/{typ.lower()}_{PROVINCE.lower()}_{YEAR}.csv'
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles
@@ -162,15 +175,15 @@ if __name__ == "__main__":
             areas = AREAS[level]
             df = utils.add_areas(df, areas=areas, role=role, admin_level=level)
 
-        # add continents based on countries to roles
-        countries = AREAS['Country']
-        countries = countries[['country_nl', 'cont_nl']]
-        for role in [source, target]:
-            columns = list(df.columns)
-            df = pd.merge(df, countries, how='left', left_on=f'{role}_Land', right_on='country_nl')
-            df[f'{role}_Continent'] = df['cont_nl']
-            columns.append(f'{role}_Continent')
-            df = df[columns]
+        # # add continents based on countries to roles
+        # countries = AREAS['Country']
+        # countries = countries[['country_nl', 'cont_nl']]
+        # for role in [source, target]:
+        #     columns = list(df.columns)
+        #     df = pd.merge(df, countries, how='left', left_on=f'{role}_Land', right_on='country_nl')
+        #     df[f'{role}_Continent'] = df['cont_nl']
+        #     columns.append(f'{role}_Continent')
+        #     df = df[columns]
 
         # add activity names
         columns = list(df.columns)
@@ -186,13 +199,13 @@ if __name__ == "__main__":
         # analyse on municipal level
         print('Analyse...')
         for level in ['Gemeente']:
-            areas = [PROVINCE] if level == 'Provincie' else provincie_gemeenten
+            areas = [VARS['AREA']] if level == 'Provincie' else area_gemeenten
 
             # data prefix
             prefix = f'{PREFIXES[level]}\t{PREFIXES[typ]}_waste'
 
             # economic activities (Herkomst in)
-            MAP.setdefault('economic_sectors', {})[f'{prefix}_activity\t{YEAR}'] = \
+            MAP.setdefault('economic_sectors', {})[f"{prefix}_activity\t{VARS['YEAR']}"] = \
                 get_flows(df,
                           source=source, source_in=True,
                           target=target,
@@ -201,7 +214,7 @@ if __name__ == "__main__":
                           rename={'Activity': 'activity'})
 
             # waste processes (Herkomst in)
-            MAP.setdefault('treatment_methods', {})[f'{prefix}_process\t{YEAR}'] = \
+            MAP.setdefault('treatment_methods', {})[f"{prefix}_process\t{VARS['YEAR']}"] = \
                 get_flows(df,
                           source=source, source_in=True,
                           target=target,
@@ -211,7 +224,7 @@ if __name__ == "__main__":
 
     # FLOWMAPS
     for section, data in MAP.items():
-        with open(f'test/{section}_flowmap.json', 'w') as outfile:
+        with open(f"{VARS['OUTPUT_DIR']}/{section}_flowmap.json", 'w') as outfile:
             results = []
             for key, items in data.items():
                 level, field, period = key.split('\t')
