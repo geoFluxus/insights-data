@@ -4,6 +4,8 @@ AREA = 'Utrecht'
 LEVEL = 'Provincie'
 YEAR = 2019
 GOALS_YEARS = [2016, 2017, 2018, 2019]
+ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
+QUARTER = 2
 COROPS = [
     'Utrecht'
 ]

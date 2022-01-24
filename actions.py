@@ -10,12 +10,18 @@ import utils
 import re
 
 
-# INPUTS
-PROVINCE = 'Utrecht'
-YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
-QUARTER = 2
-ALL_YEARS = f'sinds {YEARS[0]}'
-LAST_QUARTER = f'vergeleken met Q{QUARTER} {YEARS[-2]}'
+VARS = {
+    'INPUT_DIR': var.INPUT_DIR,
+    'AREA': var.AREA,
+    'LEVEL': var.LEVEL,
+    'YEARS': var.ACTIONS_YEARS,
+    'QUARTER': var.QUARTER,
+    'OUTPUT_DIR': var.OUTPUT_DIR
+}
+
+
+ALL_YEARS = f"sinds {VARS['YEARS'][0]}"
+LAST_QUARTER = f"vergeleken met Q{VARS['QUARTER']} {VARS['YEARS'][-2]}"
 UNKNOWN = 'Onbekend'
 
 DATA = {}
@@ -32,8 +38,8 @@ def get_flows(year=None):
     """
     Import flows from 'data/flows'
     """
-    path = f'../../../../../media/geofluxus/DATA/national/{PROVINCE.lower()}/processed'
-    filename = f'{path}/ontvangst_{PROVINCE.lower()}_{year}.csv'
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+    filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}.csv"
 
     return pd.read_csv(filename, low_memory=False)
 
@@ -86,7 +92,7 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
 
     # aggregate into periods of months for each year
     df_new = []
-    for year in YEARS:
+    for year in VARS['YEARS']:
         # aggregate per period & store to new df
         for idx, period in enumerate(periods):
             df_q = df[
@@ -121,9 +127,9 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
         # add individual data to RESULTS
         if add_graph:
             to_save = {}
-            for year in YEARS:
+            for year in VARS['YEARS']:
                 for period in range(1, len(periods) + 1):
-                    if year < YEARS[-1] or period <= QUARTER:
+                    if year < VARS['YEARS'][-1] or period <= VARS['QUARTER']:
                         amount = flows[(flows['MeldPeriodeJAAR'] == year) &
                                        (flows['Periode'] == period)]['Gewicht_TN']
                         amount = amount.values[0] if len(amount) else 0
@@ -135,9 +141,9 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
         if add_trends:
             # prepare data
             X, Y = [], []
-            for year in YEARS:
+            for year in VARS['YEARS']:
                 for period in range(1, len(periods) + 1):
-                    if year < YEARS[-1] or period <= QUARTER:
+                    if year < VARS['YEARS'][-1] or period <= VARS['QUARTER']:
                         time = year * 12 + period * per_months
                         amount = flows[(flows['MeldPeriodeJAAR'] == year) &
                                        (flows['Periode'] == period)]['Gewicht_TN']
@@ -154,11 +160,11 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
             # overall change (tn)
-            change = (Y_final - Y_initial) / len(YEARS)
+            change = (Y_final - Y_initial) / len(VARS['YEARS'])
             DATA.setdefault(f'{prop}\t{ALL_YEARS}\tt', {})[area] = to_json(change)
 
             # overall change (%)
-            change = ((Y_final - Y_initial) / abs(Y_initial)) / len(YEARS) * 100 if Y_initial else np.nan
+            change = ((Y_final - Y_initial) / abs(Y_initial)) / len(VARS['YEARS']) * 100 if Y_initial else np.nan
             DATA.setdefault(f'{prop}\t{ALL_YEARS}\t%', {})[area] = to_json(change)
 
             # change to same quarter, last year (tn)
@@ -183,16 +189,22 @@ if __name__ == '__main__':
         # 'Gemeente'
     ]
 
+    # start analysis
+    print('ACTIONS ANALYSIS')
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
     # import areas
     AREAS = {}
-    print("Import areas...\n")
+    print()
+    print("Import areas...")
     for level in LEVELS:
-        name = 'provincies' if level == 'Provincie' else 'gemeenten'
-        AREAS[level] = utils.import_areas(level=name)
+        AREAS[level] = utils.import_areas(level=VARS['LEVEL'])
 
     # start analysis
     all_years = []
-    for year in YEARS:
+    for year in VARS['YEARS']:
         print()
         print(f"Load {year} flows...")
         flows = get_flows(year=year)
@@ -212,11 +224,11 @@ if __name__ == '__main__':
     print(f"Total flows: {len(flows)}\n")
 
     # import activities
-    ACTIVITIES = pd.read_excel('data/flows/activitygroup.xlsx')
+    ACTIVITIES = pd.read_excel(f"{VARS['INPUT_DIR']}/DATA/descriptions/activitygroup.xlsx")
     ACTIVITIES['name'] = ACTIVITIES['code'] + ' - ' + ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # import industries
-    industries = pd.read_csv('./data/materials/ewc_industries.csv', low_memory=False, sep=';')
+    industries = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
     flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')
@@ -226,13 +238,13 @@ if __name__ == '__main__':
     # get names of provincie gemeenten
     if 'gemeenten' in LEVELS:
         gemeenten = AREAS['gemeenten']
-        provincie_gemeenten = gemeenten[gemeenten['parent'] == PROVINCE]['name'].to_list()
+        provincie_gemeenten = gemeenten[gemeenten['parent'] == VARS['AREA']]['name'].to_list()
 
     # TRENDS (All amounts in tonnes) -> ONLY PRODUCTION
     for role, level in itertools.product(['Herkomst'], LEVELS):
         on = f'{role}_{level}'
         prefix = f'{PREFIXES[level]}\t{PREFIXES[role]}'
-        areas = [PROVINCE] if level == 'Provincie' else provincie_gemeenten
+        areas = [VARS['AREA']] if level == 'Provincie' else provincie_gemeenten
 
         # average quarterly change on GENERAL waste
         compute_trends(flows,
@@ -273,7 +285,7 @@ if __name__ == '__main__':
                                prop=f'{prefix}\tindustrie\t{formatted_name} - {method}',
                                add_trends=False)
 
-    with open('./test/actions.json', 'w') as outfile:
+    with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
         fields = sorted(list(DATA.keys()))
         fields = zip(*[iter(fields)] * 2)
 
