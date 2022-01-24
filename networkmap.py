@@ -6,9 +6,13 @@ import numpy as np
 import utils
 
 
-# INPUTS
-PROVINCE = "Utrecht"
-YEAR = 2019
+VARS = {
+    'INPUT_DIR': var.INPUT_DIR,
+    'AREA': var.AREA,
+    'LEVEL': var.LEVEL,
+    'YEAR': var.YEAR,
+    'OUTPUT_DIR': var.OUTPUT_DIR
+}
 
 NETWORK = {}
 
@@ -37,7 +41,7 @@ def add_routings(flows):
         print(f'No routings for {len(unmatched)} flows...')
 
     # average payload per trip
-    vehicles = pd.read_excel('data/network/vehicle.xlsx')
+    vehicles = pd.read_excel(f"{VARS['INPUT_DIR']}/GEODATA/network/vehicle.xlsx")
     flows['tn'] = flows['Gewicht_KG'] / 10**3
     flows['average'] = flows['tn'] / flows['Aantal_vrachten']
 
@@ -117,9 +121,15 @@ if __name__ == "__main__":
     PREFIXES = var.PREFIXES
     ROLES = var.ROLES
 
+    # start analysis
+    print('NETWORKMAP ANALYSIS')
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
     # import routings
     print('Import routings...')
-    routings = pd.read_csv(f'../../../../../media/geofluxus/DATA/national/routings.csv', low_memory=False, sep=';')
+    routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
     routings['distance'] = gpd.GeoSeries.from_wkt(routings[routings['wkt'].notnull()]['wkt'])\
                                         .set_crs('epsg:4326')\
                                         .to_crs('epsg:3857')\
@@ -127,7 +137,7 @@ if __name__ == "__main__":
     # routings.to_csv('data/network/routings.csv', index=False, sep=';')
 
     # import network
-    with open('./data/network/network.geojson') as f:
+    with open(f"{VARS['INPUT_DIR']}/GEODATA/network/network.geojson") as f:
         geojson = json.load(f)
         for feat in geojson['features']:
             id = str(feat['properties']['id'])
@@ -136,20 +146,20 @@ if __name__ == "__main__":
 
     # import areas
     # import province polygon
-    polygon = utils.import_areas(level='provincies')
-    polygon = polygon[polygon['name'] == PROVINCE]
+    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = polygon[polygon['name'] == VARS['AREA']]
     assert len(polygon) == 1
 
     # start analysis
-    print(f'YEAR: {YEAR}')
+    print(f"YEAR: {VARS['YEAR']}")
 
     # iterate all flow types
     for typ in ['Ontvangst', 'Afgifte']:
         # import file
         print()
         print(f'Import {typ}....')
-        path = f'../../../../../media/geofluxus/DATA/national/{PROVINCE.lower()}/processed'
-        filename = f'{path}/{typ.lower()}_{PROVINCE.lower()}_{YEAR}.csv'
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add identifiers
@@ -172,30 +182,30 @@ if __name__ == "__main__":
 
         # compute emissions
         # import emissions (source out, target in)
-        DATA[f'{PREFIXES[typ]}_import_co2\t{YEAR}'] = \
+        DATA[f"{PREFIXES[typ]}_import_co2\t{VARS['YEAR']}"] = \
             get_emissions(df,
                           source=source, source_in=False,
                           target=target, target_in=True,
-                          level='Provincie', areas=['Utrecht'])
+                          level='Provincie', areas=[VARS['AREA']])
 
         # export emissions (source in, target out)
-        DATA[f'{PREFIXES[typ]}_export_co2\t{YEAR}'] = \
+        DATA[f"{PREFIXES[typ]}_export_co2\t{VARS['YEAR']}"] = \
             get_emissions(df,
                           source=source, source_in=True,
                           target=target, target_in=False,
-                          level='Provincie', areas=['Utrecht'])
+                          level='Provincie', areas=[VARS['AREA']])
 
         # internal emissions (source in, target in)
-        DATA[f'{PREFIXES[typ]}_internal_co2\t{YEAR}'] = \
+        DATA[f"{PREFIXES[typ]}_internal_co2\t{VARS['YEAR']}"] = \
             get_emissions(df,
                           source=source, source_in=True,
                           target=target, target_in=True,
-                          level='Provincie', areas=['Utrecht'])
+                          level='Provincie', areas=[VARS['AREA']])
 
         # CO2 NETWORK MAP (all levels)
         MAP.setdefault('transport', {})[f'{PREFIXES[typ]}_waste\tco2'] = get_network(df)
 
-    print(json.dumps(DATA, indent=4))
+    # print(json.dumps(DATA, indent=4))
 
     # NETWORK MAP
     data = MAP.pop('transport', {})
@@ -215,7 +225,7 @@ if __name__ == "__main__":
             'id': id,
             'geometry': geometry,
             'amount': round(ways[id] * (distance / 10**3) / 10**6, 2),  # grams -> tn
-            'period': f'{YEAR}'
+            'period': f"{VARS['YEAR']}"
         })
-    with open('./test/co2_network.json', 'w') as outfile:
+    with open(f"{VARS['OUTPUT_DIR']}/co2_network.json", 'w') as outfile:
         json.dump(results, outfile, indent=4)
