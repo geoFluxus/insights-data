@@ -205,7 +205,7 @@ if __name__ == "__main__":
             prefix = f'{PREFIXES[level]}\t{PREFIXES[typ]}_waste'
 
             # economic activities (Herkomst in)
-            MAP.setdefault('economic_sectors', {})[f"{prefix}_activity\t{VARS['YEAR']}"] = \
+            MAP.setdefault('overview_activities', {})[f"{prefix}_activity\t{VARS['YEAR']}"] = \
                 get_flows(df,
                           source=source, source_in=True,
                           target=target,
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                           rename={'Activity': 'activity'})
 
             # waste processes (Herkomst in)
-            MAP.setdefault('treatment_methods', {})[f"{prefix}_process\t{VARS['YEAR']}"] = \
+            MAP.setdefault('overview_processes', {})[f"{prefix}_process\t{VARS['YEAR']}"] = \
                 get_flows(df,
                           source=source, source_in=True,
                           target=target,

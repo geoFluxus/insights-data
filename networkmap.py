@@ -227,5 +227,5 @@ if __name__ == "__main__":
             'amount': round(ways[id] * (distance / 10**3) / 10**6, 2),  # grams -> tn
             'period': f"{VARS['YEAR']}"
         })
-    with open(f"{VARS['OUTPUT_DIR']}/co2_network.json", 'w') as outfile:
+    with open(f"{VARS['OUTPUT_DIR']}/overview_co2_network.json", 'w') as outfile:
         json.dump(results, outfile, indent=4)
