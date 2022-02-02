@@ -1,6 +1,7 @@
 import utils
 import pandas as pd
 import variables as var
+import numpy as np
 
 
 # VARIABLES
@@ -8,6 +9,7 @@ VARS = {
     'INPUT_DIR': var.INPUT_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
+    'POSTCODES': var.POSTCODES,
     'YEAR': var.YEAR,
     'COROPS': var.COROPS,
     'OUTPUT_DIR': var.OUTPUT_DIR,
@@ -169,11 +171,77 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
+    prefix = f"{PREFIXES['Provincie']}\tgoederen"
     DATA[f"{prefix}\tsupply_chains\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
                                         area=VARS['AREA'],
                                         klass='chains',
                                         unit=VARS['SUPPLY_CHAINS_UNIT'])
+
+
+def import_household_data(areas=None):
+    """
+    Import & ready CBS household data for processing
+    """
+
+    # add gemeente & provincie
+    df = pd.read_excel(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
+    columns = list(df.columns)
+    df = df.replace('?', np.nan)
+    df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente', how='left')
+    columns.append('Provincie')
+    df = df[columns]
+
+    # import population data
+    population = pd.read_csv(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/populationNL.csv", delimiter=';')
+
+    # add population
+    def add_population(row):
+        gemeente, year = row['Gebieden'], row['Perioden']
+        res = population[population['Gemeente'] == gemeente][str(year)]
+        if not res.empty:
+            res = res.values[0]
+            return res
+        return np.nan
+    df['Inwoners'] = df.apply(lambda x: add_population(x), axis=1)
+
+    return df
+
+
+def process_household():
+    # import postcodes
+    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
+    postcodes['PC4'] = postcodes['PC4'].astype(str)
+    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
+    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
+    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}')
+
+    # import household data
+    print()
+    print('Import household data...\n')
+    household_data = import_household_data(areas=gemeenten)
+    household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
+    household_data = household_data[household_data['Perioden'] == int(VARS['YEAR'])]
+    household_data = household_data[household_data['Provincie'] == VARS['AREA']]
+
+    # total household waste
+    household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
+                                   * household_data['Inwoners']
+    household_data = household_data['Gewicht_KG'].sum()
+    prefix = f"{PREFIXES['Provincie']}\thuishoudenlijk"
+    DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
+        "name": VARS['AREA'],
+        "flows": ['Huishoudenlijke afval'],
+        "values": {
+            "weight": {
+                "value": utils.kg_to_unit(
+                    household_data,
+                    unit=VARS['OVERVIEW_SANKEY_UNIT']
+                ),
+                "unit": VARS['OVERVIEW_SANKEY_UNIT']
+            }
+        }
+    })
 
 
 if __name__ == "__main__":
@@ -203,6 +271,9 @@ if __name__ == "__main__":
 
     # process CBS data
     process_cbs()
+
+    # processe household data
+    process_household()
 
     # GRAPHS
     utils.export_graphs(f"{VARS['OUTPUT_DIR']}/overview.json", data=DATA)

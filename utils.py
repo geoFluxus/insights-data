@@ -22,7 +22,7 @@ def kg_to_unit(value, unit='kg', decimals=2):
         'kt': 10**6,
         'Mt': 10**9
     }
-    return round(value / converters[unit], 2)
+    return value / converters[unit]
 
 
 def format_name(name):
