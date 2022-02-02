@@ -31,7 +31,7 @@ RESULTS = {}
 
 def to_json(value):
     if np.isnan(value): return 0
-    return round(value, 2)
+    return value
 
 
 def get_flows(year=None):

@@ -234,10 +234,10 @@ def process_household():
         "flows": ['Huishoudenlijke afval'],
         "values": {
             "weight": {
-                "value": utils.kg_to_unit(
+                "value": [utils.kg_to_unit(
                     household_data,
                     unit=VARS['OVERVIEW_SANKEY_UNIT']
-                ),
+                )],
                 "unit": VARS['OVERVIEW_SANKEY_UNIT']
             }
         }

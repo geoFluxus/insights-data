@@ -444,7 +444,7 @@ if __name__ == '__main__':
                 period, value = [],  []
                 for year, amount in item.items():
                     period.append(year)
-                    value.append(round(amount, 2) if type(amount) == float else 0)
+                    value.append(amount if type(amount) == float else 0)
                 final.setdefault(field, []).append({
                     'name': name,
                     'level': level,
