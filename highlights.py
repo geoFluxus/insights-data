@@ -9,6 +9,7 @@ VARS = {
     'INPUT_DIR': var.INPUT_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
+    'COROPS': var.COROPS,
     'POSTCODES': var.POSTCODES,
     'YEAR': var.YEAR,
     'OUTPUT_DIR': var.OUTPUT_DIR,
@@ -64,55 +65,41 @@ def cbs_primary_waste(input):
     return result
 
 
-if __name__ == "__main__":
-    ROLES = var.ROLES
-
-    # start analysis
-    print('HIGHLIGHTS ANALYSIS')
-    print('VARIABLES:')
-    for name, value in VARS.items():
-        print(f'{name}={value}')
-
-    # import postcodes
-    # import postcodes
-    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
-    postcodes['PC4'] = postcodes['PC4'].astype(str)
-    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
-    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
-    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}\n')
-
-    # import province polygon
-    polygon = utils.import_areas(level=VARS['LEVEL'])
-    polygon = polygon[polygon['name'] == VARS['AREA']]
-    assert len(polygon) == 1
-
-    # import CBS household data
-    print('Import CBS household data...\n')
-    CBS = import_household_data(areas=gemeenten)
-    CBS = CBS.rename(columns={'Gebieden': 'Gemeente'})
-    CBS = CBS[
-        (CBS['Provincie'] == VARS['AREA']) &
-        (CBS['Perioden'] == VARS['YEAR'])
-    ]
-
-    # import LMA data
-    print('Import LMA Ontvangst...')
-    typ = 'Ontvangst'
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-    filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
-    LMA = pd.read_csv(filename, low_memory=False)
-    # add areas to roles
-    print('Add areas to roles...')
-    source = ROLES[typ]['source']  # source role
-    target = ROLES[typ]['target']  # target role
-    for role in [source, target]:
-        LMA = utils.add_areas(LMA,
-                             areas=polygon,
-                             role=role,
-                             admin_level='Provincie')
-
+def overview_highlights():
     # HIGHLIGHTS
-    print('HIGHLIGHTS')
+    print('OVERVIEW HIGHLIGHTS')
+
+    # total imported machine & apparatus
+    imported_goods = GOODS[
+        GOODS['Stroom'].isin([
+            'Invoer_internationaal',
+            'Invoer_regionaal'
+        ])
+    ]
+    machines = imported_goods[
+        imported_goods['Goederengroep_nr'].isin([17, 18])
+    ]
+    machines_worth = machines['Waarde'].sum()
+    imported_goods_worth = imported_goods['Waarde'].sum()
+    perc = machines_worth / imported_goods_worth * 100
+    print(f"{to_dec(perc)}% ({to_dec(machines_worth / 10 ** 3)} md) "
+          f"van de total importwaarde waren machines en apparaten")
+
+    # total exported food
+    exported_goods = GOODS[
+        GOODS['Stroom'].isin([
+            'Uitvoer_internationaal',
+            'Uitvoer_regionaal'
+        ])
+    ]
+    food = exported_goods[
+        exported_goods['Goederengroep_nr'].isin([4, 5, 6])
+    ]
+    food_worth = food['Waarde'].sum()
+    exported_goods_worth = exported_goods['Waarde'].sum()
+    perc = food_worth / exported_goods_worth * 100
+    print(f"{to_dec(perc)}% ({to_dec(food_worth / 10 ** 3)} md) "
+          f"van de total exportwaarde was van voedsel")
 
     # waste produced by companies
     lma = LMA.copy()
@@ -122,11 +109,11 @@ if __name__ == "__main__":
         (lma['EC2'] != '19')
     ]  # all waste produced except chapter 19
     company_amount = lma['Gewicht_KG'].sum()
-    total_amount = company_amount + cbs_primary_waste(CBS)
+    total_amount = company_amount + cbs_primary_waste(HOUSEHOLD)
     perc = company_amount / total_amount * 100
     print(f"{to_dec(perc)}% "
           f"({utils.kg_to_unit(company_amount, unit=VARS['COMPANY_WASTE_UNIT'])} {VARS['COMPANY_WASTE_UNIT']}) "
-          f"was produced by companies")
+          f"afval geproduceerd door bedrijven")
 
     # X% of waste produced by X% of companies
     print()
@@ -156,8 +143,89 @@ if __name__ == "__main__":
     amount_perc = company_amount / companies['Gewicht_KG'].sum() * 100
     print(f"{to_dec(amount_perc)}% "
           f"({utils.kg_to_unit(company_amount, unit=VARS['COMPANY_WASTE_UNIT'])} {VARS['COMPANY_WASTE_UNIT']}) "
-          f" of company waste produced by "
-          f"{company_perc}% of companies")
+          f" afval geproduceerd door "
+          f"{company_perc}% van de bedrijven")
+
+
+def materials_highlights():
+    # HIGHLIGHTS
+    print('MATERIALS HIGHLIGHTS')
+
+    # renewable goods
+    print("van de goederen bevatten voornamelijk hernieuwbare materialen:\n"
+          "Check material tree: Organisch -> Biotisch (goederen)")
+
+    # renewable waste
+    print("van het afval bevatten voornamelijk niet-hernieuwbare materialen:\n"
+          "Check material tree: Abiotisch (afval)")
+
+    # renewable
+
+
+if __name__ == "__main__":
+    ROLES = var.ROLES
+
+    # start analysis
+    print('HIGHLIGHTS ANALYSIS')
+    print('VARIABLES:')
+    for name, value in VARS.items():
+        print(f'{name}={value}')
+
+    # import postcodes
+    # import postcodes
+    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
+    postcodes['PC4'] = postcodes['PC4'].astype(str)
+    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
+    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
+    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}\n')
+
+    # import province polygon
+    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = polygon[polygon['name'] == VARS['AREA']]
+    assert len(polygon) == 1
+
+    # import CBS household data
+    print('Import CBS household data...\n')
+    HOUSEHOLD = import_household_data(areas=gemeenten)
+    HOUSEHOLD = HOUSEHOLD.rename(columns={'Gebieden': 'Gemeente'})
+    HOUSEHOLD = HOUSEHOLD[
+        (HOUSEHOLD['Provincie'] == VARS['AREA']) &
+        (HOUSEHOLD['Perioden'] == VARS['YEAR'])
+    ]
+
+    # import CBS goods data
+    print('Import CBS goods data... \n')
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Tabel Regionale stromen 2015-2019.csv"
+    GOODS = pd.read_csv(path, low_memory=False, sep=';')
+    # stromen -> million kg
+    GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
+    GOODS['Gewicht_KG'] = GOODS['Gewicht_KG'].astype('int64')
+    # filter by year & COROPS
+    GOODS = GOODS[
+        (GOODS['Jaar'] == VARS['YEAR']) &
+        (GOODS['COROP_naam'].isin(VARS['COROPS']))
+    ]
+
+    # # import LMA data
+    # print('Import LMA Ontvangst...')
+    # typ = 'Ontvangst'
+    # path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+    # filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+    # LMA = pd.read_csv(filename, low_memory=False)
+    # # add areas to roles
+    # print('Add areas to roles...')
+    # source = ROLES[typ]['source']  # source role
+    # target = ROLES[typ]['target']  # target role
+    # for role in [source, target]:
+    #     LMA = utils.add_areas(LMA,
+    #                          areas=polygon,
+    #                          role=role,
+    #                          admin_level='Provincie')
+
+    # compute highlights
+    # overview_highlights()
+    materials_highlights()
+
 
 
 

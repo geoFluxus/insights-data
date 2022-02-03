@@ -17,11 +17,11 @@ OUTPUT_DIR = './json'
 UNITS = {
     'OVERVIEW': {
         'OVERVIEW_SANKEY': 'Mt',
-        'SUPPLY_CHAINS': 'kt'
+        'SUPPLY_CHAINS': 'Mt'
     },
     'MATERIALS': {
         'TRANSITION_AGENDAS': 'Mt',
-        'MATERIAL_TREE': 'Mt'
+        'MATERIAL_TREE': 't'
     },
     'GOALS': {
         'NATIONAL_GOALS': 'Mt'
