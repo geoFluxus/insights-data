@@ -122,6 +122,8 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
         for key, val in zip(on[1:], new_values[1:]):
             conditions.append(df_new[key].isin(val))
         flows = df_new.loc[np.bitwise_and.reduce(conditions)]
+        flows = flows[['MeldPeriodeJAAR', 'Periode', 'Gewicht_TN']]\
+            .groupby(['MeldPeriodeJAAR', 'Periode']).sum().reset_index()
 
         # save data for graphs
         # add individual data to RESULTS
