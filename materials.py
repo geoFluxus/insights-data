@@ -25,7 +25,7 @@ def process_lma():
     # process LMA ontvangst
     for typ in ['Ontvangst']:
         # data prefix
-        prefix = f"{PREFIXES['Provincie']}\t{PREFIXES[typ]} afval"
+        prefix = f"{PREFIXES[VARS['LEVEL']]}\t{PREFIXES[typ]} afval"
 
         # import file
         print()
@@ -40,7 +40,7 @@ def process_lma():
         df = utils.add_areas(df,
                              areas=polygon,
                              role=source,
-                             admin_level='Provincie')
+                             admin_level=VARS['LEVEL'])
 
         # add classifications
         for name, classif in ewc_classifs.items():
@@ -52,7 +52,7 @@ def process_lma():
         DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
             utils.get_classification_graphs(df,
                                             source=source,
-                                            level='Provincie',
+                                            level=VARS['LEVEL'],
                                             area=VARS['AREA'],
                                             klass='agendas',
                                             unit=VARS['TRANSITION_AGENDAS_UNIT'])
@@ -62,7 +62,7 @@ def process_lma():
         DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
             utils.get_material_sankey(df,
                                       source=source,
-                                      level='Provincie',
+                                      level=VARS['LEVEL'],
                                       area=VARS['AREA'],
                                       unit=VARS['MATERIAL_TREE_UNIT'])
 
@@ -78,7 +78,7 @@ def process_cbs():
     print('Import CBS data...')
 
     # stromen -> million kg
-    prefix = f"{PREFIXES['Provincie']}\tgoederen"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
     path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
     filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
     df = pd.read_csv(filename, low_memory=False, sep=';')
@@ -123,7 +123,7 @@ def process_cbs():
     # also retrieve data for material tree
     DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
         utils.get_material_sankey(input_df,
-                                  level='Provincie',
+                                  level=VARS['LEVEL'],
                                   area=VARS['AREA'],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
 

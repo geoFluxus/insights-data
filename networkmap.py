@@ -130,9 +130,9 @@ if __name__ == "__main__":
     # import routings
     print('Import routings...')
     routings = pd.read_csv(f"./json/routings.csv", low_memory=False, sep=';')
+    # routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
     routings.loc[routings['distance'] == 'None', 'distance'] = np.nan
     routings['distance'] = routings['distance'].astype('float')
-    # routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
 
     # import network
     with open(f"{VARS['INPUT_DIR']}/GEODATA/network/network.geojson") as f:
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         # CO2 NETWORK MAP (all levels)
         MAP.setdefault('transport', {})[f'{PREFIXES[typ]}_waste\tco2'] = get_network(df)
 
-    # print(json.dumps(DATA, indent=4))
+    print(json.dumps(DATA, indent=4))
 
     # NETWORK MAP
     data = MAP.pop('transport', {})

@@ -16,13 +16,6 @@ VARS = {
     'COMPANY_WASTE_UNIT': var.UNITS['HIGHLIGHTS']['COMPANY_WASTE']
 }
 
-# # INPUTS
-# PROVINCE = "Utrecht"
-# YEAR = 2019
-# COROPS = [
-#     'Utrecht'
-# ]
-
 
 def to_dec(num):
     return round(num, 1)
@@ -34,7 +27,8 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    df = pd.read_excel(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)
     df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente', how='left')
@@ -42,7 +36,7 @@ def import_household_data(areas=None):
     df = df[columns]
 
     # import population data
-    population = pd.read_csv(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/populationNL.csv", delimiter=';')
+    population = pd.read_csv(f"{path}/populationNL.csv", delimiter=';')
 
     # add population
     def add_population(row):
@@ -83,7 +77,7 @@ def overview_highlights():
     imported_goods_worth = imported_goods['Waarde'].sum()
     perc = machines_worth / imported_goods_worth * 100
     print(f"{to_dec(perc)}% ({to_dec(machines_worth / 10 ** 3)} md) "
-          f"van de total importwaarde waren machines en apparaten")
+          f"van de totale importwaarde waren machines en apparaten")
 
     # total exported food
     exported_goods = GOODS[
@@ -99,7 +93,7 @@ def overview_highlights():
     exported_goods_worth = exported_goods['Waarde'].sum()
     perc = food_worth / exported_goods_worth * 100
     print(f"{to_dec(perc)}% ({to_dec(food_worth / 10 ** 3)} md) "
-          f"van de total exportwaarde was van voedsel")
+          f"van de totale exportwaarde was van voedsel")
 
     # waste produced by companies
     lma = LMA.copy()
@@ -172,7 +166,6 @@ if __name__ == "__main__":
         print(f'{name}={value}')
 
     # import postcodes
-    # import postcodes
     postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
     postcodes['PC4'] = postcodes['PC4'].astype(str)
     gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
@@ -195,8 +188,9 @@ if __name__ == "__main__":
 
     # import CBS goods data
     print('Import CBS goods data... \n')
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Tabel Regionale stromen 2015-2019.csv"
-    GOODS = pd.read_csv(path, low_memory=False, sep=';')
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
+    GOODS = pd.read_csv(filename, low_memory=False, sep=';')
     # stromen -> million kg
     GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
     GOODS['Gewicht_KG'] = GOODS['Gewicht_KG'].astype('int64')
@@ -209,8 +203,8 @@ if __name__ == "__main__":
     # import LMA data
     print('Import LMA Ontvangst...')
     typ = 'Ontvangst'
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-    filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+    filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
     LMA = pd.read_csv(filename, low_memory=False)
     # add areas to roles
     print('Add areas to roles...')
@@ -223,7 +217,7 @@ if __name__ == "__main__":
                              admin_level='Provincie')
 
     # compute highlights
-    # overview_highlights()
+    overview_highlights()
     materials_highlights()
 
 

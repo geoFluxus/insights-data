@@ -33,7 +33,7 @@ def process_lma():
     # process LMA ontvangst & afgifte
     for typ in ['Ontvangst', 'Afgifte']:
         # data prefix
-        prefix = f"{PREFIXES['Provincie']}\t{typ.lower()}meldingen"
+        prefix = f"{PREFIXES[VARS['LEVEL']]}\t{typ.lower()}meldingen"
 
         # import file
         print()
@@ -50,7 +50,7 @@ def process_lma():
             df = utils.add_areas(df,
                                  areas=polygon,
                                  role=role,
-                                 admin_level='Provincie')
+                                 admin_level=VARS['LEVEL'])
 
         # add classifications
         for name, classif in ewc_classifs.items():
@@ -65,7 +65,7 @@ def process_lma():
         amounts.append(utils.compute_sankey_branch(df,
                                                    source=source, source_in=True,
                                                    target=target, target_in=True,
-                                                   level='Provincie', areas=[VARS['AREA']],
+                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
                                                    unit=VARS['OVERVIEW_SANKEY_UNIT']))
 
         # source in / target out
@@ -73,7 +73,7 @@ def process_lma():
         amounts.append(utils.compute_sankey_branch(df,
                                                    source=source, source_in=True,
                                                    target=target, target_in=False,
-                                                   level='Provincie', areas=[VARS['AREA']],
+                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
                                                    unit=VARS['OVERVIEW_SANKEY_UNIT']))
 
         # source out / target in
@@ -81,7 +81,7 @@ def process_lma():
         amounts.append(utils.compute_sankey_branch(df,
                                                    source=source, source_in=False,
                                                    target=target, target_in=True,
-                                                   level='Provincie', areas=[VARS['AREA']],
+                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
                                                    unit=VARS['OVERVIEW_SANKEY_UNIT']))
 
         DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
@@ -101,7 +101,7 @@ def process_lma():
             DATA[f"{prefix}\tsupply_chains\t{VARS['YEAR']}"] = \
                 utils.get_classification_graphs(df,
                                                 source=source,
-                                                level='Provincie',
+                                                level=VARS['LEVEL'],
                                                 area=VARS['AREA'],
                                                 klass='chains',
                                                 unit=VARS['SUPPLY_CHAINS_UNIT'])
@@ -132,7 +132,7 @@ def process_cbs():
         'Uitvoer_regionaal'
     ]
 
-    prefix = f"{PREFIXES['Provincie']}\tgoederen"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
 
     # SANKEY
     amounts = []
@@ -233,7 +233,7 @@ def process_household():
     household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
                                    * household_data['Inwoners']
     household_data = household_data['Gewicht_KG'].sum()
-    prefix = f"{PREFIXES['Provincie']}\thuishoudenlijk"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\thuishoudenlijk"
     DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
         "name": VARS['AREA'],
         "flows": ['Huishoudenlijke afval'],
