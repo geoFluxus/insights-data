@@ -172,7 +172,7 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    prefix = f"{PREFIXES['Provincie']}\tgoederen"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
     DATA[f"{prefix}\tsupply_chains\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
                                         area=VARS['AREA'],
