@@ -30,8 +30,8 @@ def process_lma():
         # import file
         print()
         print(f'Import {typ}...')
-        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles
@@ -79,8 +79,9 @@ def process_cbs():
 
     # stromen -> million kg
     prefix = f"{PREFIXES['Provincie']}\tgoederen"
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Tabel Regionale stromen 2015-2019.csv"
-    df = pd.read_csv(path, low_memory=False, sep=';')
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
+    df = pd.read_csv(filename, low_memory=False, sep=';')
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
@@ -95,7 +96,9 @@ def process_cbs():
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['agendas', 'materials']:
-        cbs_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv", low_memory=False, sep=';')
+        cbs_classifs[classif] = pd.read_csv(
+            f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv", low_memory=False, sep=';'
+        )
 
     # add classifications
     for name, classif in cbs_classifs.items():

@@ -38,8 +38,8 @@ def process_lma():
         # import file
         print()
         print(f'Import {typ}...')
-        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles
@@ -109,8 +109,9 @@ def process_lma():
 
 def process_cbs():
     # stromen -> million kg
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Tabel Regionale stromen 2015-2019.csv"
-    df = pd.read_csv(path, low_memory=False, sep=';')
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
+    df = pd.read_csv(filename, low_memory=False, sep=';')
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
@@ -185,7 +186,8 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    df = pd.read_excel(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)
     df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente', how='left')
@@ -193,7 +195,7 @@ def import_household_data(areas=None):
     df = df[columns]
 
     # import population data
-    population = pd.read_csv(f"{VARS['INPUT_DIR']}/{VARS['AREA']}/CBS/populationNL.csv", delimiter=';')
+    population = pd.read_csv(f"{path}/populationNL.csv", delimiter=';')
 
     # add population
     def add_population(row):
@@ -210,7 +212,10 @@ def import_household_data(areas=None):
 
 def process_household():
     # import postcodes
-    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
+    postcodes = pd.read_csv(
+        f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv",
+        low_memory=False
+    )
     postcodes['PC4'] = postcodes['PC4'].astype(str)
     gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
     area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
@@ -222,7 +227,7 @@ def process_household():
     household_data = import_household_data(areas=gemeenten)
     household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
     household_data = household_data[household_data['Perioden'] == int(VARS['YEAR'])]
-    household_data = household_data[household_data['Provincie'] == VARS['AREA']]
+    household_data = household_data[household_data[VARS['LEVEL']] == VARS['AREA']]
 
     # total household waste
     household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \

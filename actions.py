@@ -38,8 +38,8 @@ def get_flows(year=None):
     """
     Import flows from 'data/flows'
     """
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-    filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}.csv"
+    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+    filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}_full.csv"
 
     return pd.read_csv(filename, low_memory=False)
 
@@ -186,10 +186,7 @@ if __name__ == '__main__':
     ROLES = var.ROLES
     PREFIXES = var.PREFIXES
     TREATMENT_METHODS = var.TREATMENT_METHODS
-    LEVELS = [
-        'Provincie',
-        # 'Gemeente'
-    ]
+    LEVELS = [f"{VARS['LEVEL']}"]
 
     # start analysis
     print('ACTIONS ANALYSIS')
@@ -237,16 +234,11 @@ if __name__ == '__main__':
     flows.loc[flows['industries'].isnull(), 'industries'] = UNKNOWN
     industry_groups = flows['industries'].drop_duplicates().to_list()
 
-    # get names of provincie gemeenten
-    if 'gemeenten' in LEVELS:
-        gemeenten = AREAS['gemeenten']
-        provincie_gemeenten = gemeenten[gemeenten['parent'] == VARS['AREA']]['name'].to_list()
-
     # TRENDS (All amounts in tonnes) -> ONLY PRODUCTION
     for role, level in itertools.product(['Herkomst'], LEVELS):
         on = f'{role}_{level}'
         prefix = f'{PREFIXES[level]}\t{PREFIXES[role]}'
-        areas = [VARS['AREA']] if level == 'Provincie' else provincie_gemeenten
+        areas = [VARS['AREA']]
 
         # average quarterly change on GENERAL waste
         compute_trends(flows,

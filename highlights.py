@@ -206,21 +206,21 @@ if __name__ == "__main__":
         (GOODS['COROP_naam'].isin(VARS['COROPS']))
     ]
 
-    # # import LMA data
-    # print('Import LMA Ontvangst...')
-    # typ = 'Ontvangst'
-    # path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-    # filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
-    # LMA = pd.read_csv(filename, low_memory=False)
-    # # add areas to roles
-    # print('Add areas to roles...')
-    # source = ROLES[typ]['source']  # source role
-    # target = ROLES[typ]['target']  # target role
-    # for role in [source, target]:
-    #     LMA = utils.add_areas(LMA,
-    #                          areas=polygon,
-    #                          role=role,
-    #                          admin_level='Provincie')
+    # import LMA data
+    print('Import LMA Ontvangst...')
+    typ = 'Ontvangst'
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
+    filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+    LMA = pd.read_csv(filename, low_memory=False)
+    # add areas to roles
+    print('Add areas to roles...')
+    source = ROLES[typ]['source']  # source role
+    target = ROLES[typ]['target']  # target role
+    for role in [source, target]:
+        LMA = utils.add_areas(LMA,
+                             areas=polygon,
+                             role=role,
+                             admin_level='Provincie')
 
     # compute highlights
     # overview_highlights()

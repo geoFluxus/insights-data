@@ -10,8 +10,10 @@ import utils
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
     'AREA': var.AREA,
+    'LEVEL': var.LEVEL,
+    'POSTCODES': var.POSTCODES,
     'YEAR': var.YEAR,
-    'OUTPUT_DIR': var.OUTPUT_DIR
+    'OUTPUT_DIR': var.OUTPUT_DIR,
 }
 
 AREAS = {}
@@ -40,8 +42,15 @@ def import_areas():
     # countries = pd.merge(countries, continents[['cont_en', 'cont_nl']], how='left', on='cont_en')
     # AREAS['Country'] = countries
 
+    # import postcodes
+    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
+    postcodes['PC4'] = postcodes['PC4'].astype(str)
+    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
+    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
+
     # list of area municipalities
-    area_gemeenten = gemeenten[gemeenten['parent'] == VARS['AREA']]['name'].to_list()
+    gemeenten = AREAS['Gemeente']
+    area_gemeenten = gemeenten[gemeenten['name'].isin(area_gemeenten)]['name'].to_list()
 
     return area_gemeenten
 
@@ -148,7 +157,7 @@ if __name__ == "__main__":
     print()
     print('Import areas...')
     area_gemeenten = import_areas()
-    print(f'AREA GEMEENTE ({len(area_gemeenten)}): {area_gemeenten}')
+    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {area_gemeenten}')
 
     # import activities
     ACTIVITIES = pd.read_excel(f"{VARS['INPUT_DIR']}/DATA/descriptions/activitygroup.xlsx")
@@ -162,8 +171,8 @@ if __name__ == "__main__":
         # import file
         print()
         print(f'Import {typ}....')
-        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-        filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add areas to roles

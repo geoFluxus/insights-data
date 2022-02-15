@@ -129,12 +129,10 @@ if __name__ == "__main__":
 
     # import routings
     print('Import routings...')
-    routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
-    routings['distance'] = gpd.GeoSeries.from_wkt(routings[routings['wkt'].notnull()]['wkt'])\
-                                        .set_crs('epsg:4326')\
-                                        .to_crs('epsg:3857')\
-                                        .length
-    # routings.to_csv('data/network/routings.csv', index=False, sep=';')
+    routings = pd.read_csv(f"./json/routings.csv", low_memory=False, sep=';')
+    routings.loc[routings['distance'] == 'None', 'distance'] = np.nan
+    routings['distance'] = routings['distance'].astype('float')
+    # routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
 
     # import network
     with open(f"{VARS['INPUT_DIR']}/GEODATA/network/network.geojson") as f:
@@ -158,8 +156,8 @@ if __name__ == "__main__":
         # import file
         print()
         print(f'Import {typ}....')
-        path = f"{VARS['INPUT_DIR']}/{VARS['AREA']}/LMA/processed"
-        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}.csv"
+        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
         # add identifiers
@@ -178,7 +176,7 @@ if __name__ == "__main__":
             df = utils.add_areas(df,
                                  areas=polygon,
                                  role=role,
-                                 admin_level='Provincie')
+                                 admin_level=VARS['LEVEL'])
 
         # compute emissions
         # import emissions (source out, target in)
@@ -186,21 +184,21 @@ if __name__ == "__main__":
             get_emissions(df,
                           source=source, source_in=False,
                           target=target, target_in=True,
-                          level='Provincie', areas=[VARS['AREA']])
+                          level=VARS['LEVEL'], areas=[VARS['AREA']])
 
         # export emissions (source in, target out)
         DATA[f"{PREFIXES[typ]}_export_co2\t{VARS['YEAR']}"] = \
             get_emissions(df,
                           source=source, source_in=True,
                           target=target, target_in=False,
-                          level='Provincie', areas=[VARS['AREA']])
+                          level=VARS['LEVEL'], areas=[VARS['AREA']])
 
         # internal emissions (source in, target in)
         DATA[f"{PREFIXES[typ]}_internal_co2\t{VARS['YEAR']}"] = \
             get_emissions(df,
                           source=source, source_in=True,
                           target=target, target_in=True,
-                          level='Provincie', areas=[VARS['AREA']])
+                          level=VARS['LEVEL'], areas=[VARS['AREA']])
 
         # CO2 NETWORK MAP (all levels)
         MAP.setdefault('transport', {})[f'{PREFIXES[typ]}_waste\tco2'] = get_network(df)

@@ -1,14 +1,13 @@
 # VARIABLES
-# INPUT_DIR = 'W:/My Documents'
-INPUT_DIR = '/Users/rusnesileryte/Amazon WorkDocs Drive/Shared With Me/VASILIS'
-AREA = 'Utrecht'
-LEVEL = 'Provincie'
+INPUT_DIR = 'W:/My Documents/VASILIS'
+AREA = 'Zaanstad'
+LEVEL = 'Gemeente'
 YEAR = 2019
 GOALS_YEARS = [2016, 2017, 2018, 2019]
 ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
-QUARTER = 2
+QUARTER = 4
 COROPS = [
-    'Utrecht'
+    'Zaanstreek'
 ]
 POSTCODES = 'postcodes_per_gemeenten_2021'
 OUTPUT_DIR = './json'
@@ -16,18 +15,18 @@ OUTPUT_DIR = './json'
 # UNITS
 UNITS = {
     'OVERVIEW': {
-        'OVERVIEW_SANKEY': 'Mt',
-        'SUPPLY_CHAINS': 'Mt'
+        'OVERVIEW_SANKEY': 'kt',
+        'SUPPLY_CHAINS': 'kt'
     },
     'MATERIALS': {
-        'TRANSITION_AGENDAS': 'Mt',
+        'TRANSITION_AGENDAS': 'kt',
         'MATERIAL_TREE': 't'
     },
     'GOALS': {
         'NATIONAL_GOALS': 'Mt'
     },
     'HIGHLIGHTS': {
-        'COMPANY_WASTE': 'Mt'
+        'COMPANY_WASTE': 'kt'
     }
 }
 
