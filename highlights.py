@@ -99,7 +99,7 @@ def overview_highlights():
     lma = LMA.copy()
     lma['EC2'] = lma['EuralCode'].astype(str).str.zfill(6).str[:2]
     lma = lma[
-        (lma['Herkomst_Provincie'] == VARS['AREA']) &
+        (lma[f"Herkomst_{VARS['LEVEL']}"] == VARS['AREA']) &
         (lma['EC2'] != '19')
     ]  # all waste produced except chapter 19
     company_amount = lma['Gewicht_KG'].sum()
@@ -114,7 +114,7 @@ def overview_highlights():
     lma = LMA.copy()
     lma['EC2'] = lma['EuralCode'].astype(str).str.zfill(6).str[:2]
     lma = lma[
-        (lma['Herkomst_Provincie'] == VARS['AREA']) &
+        (lma[f"Herkomst_{VARS['LEVEL']}"] == VARS['AREA']) &
         (lma['EC2'] != '19')
     ]  # all waste produced except chapter 19
     groupby = [
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     HOUSEHOLD = import_household_data(areas=gemeenten)
     HOUSEHOLD = HOUSEHOLD.rename(columns={'Gebieden': 'Gemeente'})
     HOUSEHOLD = HOUSEHOLD[
-        (HOUSEHOLD['Provincie'] == VARS['AREA']) &
+        (HOUSEHOLD[VARS['LEVEL']] == VARS['AREA']) &
         (HOUSEHOLD['Perioden'] == VARS['YEAR'])
     ]
 
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         LMA = utils.add_areas(LMA,
                              areas=polygon,
                              role=role,
-                             admin_level='Provincie')
+                             admin_level=VARS['LEVEL'])
 
     # compute highlights
     overview_highlights()

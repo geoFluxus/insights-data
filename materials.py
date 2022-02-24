@@ -235,7 +235,8 @@ if __name__ == "__main__":
     process_lma()
 
     # process CBS data
-    process_cbs()
+    if len(VARS['COROPS']):
+        process_cbs()
 
     # merge material trees
     merge_material_trees(unit=VARS['MATERIAL_TREE_UNIT'])
