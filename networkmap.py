@@ -129,8 +129,7 @@ if __name__ == "__main__":
 
     # import routings
     print('Import routings...')
-    routings = pd.read_csv(f"./json/routings.csv", low_memory=False, sep=';')
-    # routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
+    routings = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/network/routings.csv", low_memory=False, sep=';')
     routings.loc[routings['distance'] == 'None', 'distance'] = np.nan
     routings['distance'] = routings['distance'].astype('float')
 
