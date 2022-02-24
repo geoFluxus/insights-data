@@ -82,8 +82,7 @@ def import_lma_flows(areas=None, year=None):
     ]
 
     # import file
-    # path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
-    path = "C:/Users/vasil/Downloads"
+    path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
     print(f'Import {year} data...')
     df = pd.read_csv(f'{path}/ontvangst_{year}_full.csv', usecols=columns, low_memory=False)
 
