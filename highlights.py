@@ -63,37 +63,38 @@ def overview_highlights():
     # HIGHLIGHTS
     print('OVERVIEW HIGHLIGHTS')
 
-    # total imported machine & apparatus
-    imported_goods = GOODS[
-        GOODS['Stroom'].isin([
-            'Invoer_internationaal',
-            'Invoer_regionaal'
-        ])
-    ]
-    machines = imported_goods[
-        imported_goods['Goederengroep_nr'].isin([17, 18])
-    ]
-    machines_worth = machines['Waarde'].sum()
-    imported_goods_worth = imported_goods['Waarde'].sum()
-    perc = machines_worth / imported_goods_worth * 100
-    print(f"{to_dec(perc)}% ({to_dec(machines_worth / 10 ** 3)} md) "
-          f"van de totale importwaarde waren machines en apparaten")
+    if len(VARS['COROPS']):
+        # total imported machine & apparatus
+        imported_goods = GOODS[
+            GOODS['Stroom'].isin([
+                'Invoer_internationaal',
+                'Invoer_regionaal'
+            ])
+        ]
+        machines = imported_goods[
+            imported_goods['Goederengroep_nr'].isin([17, 18])
+        ]
+        machines_worth = machines['Waarde'].sum()
+        imported_goods_worth = imported_goods['Waarde'].sum()
+        perc = machines_worth / imported_goods_worth * 100
+        print(f"{to_dec(perc)}% ({to_dec(machines_worth / 10 ** 3)} md) "
+              f"van de totale importwaarde waren machines en apparaten")
 
-    # total exported food
-    exported_goods = GOODS[
-        GOODS['Stroom'].isin([
-            'Uitvoer_internationaal',
-            'Uitvoer_regionaal'
-        ])
-    ]
-    food = exported_goods[
-        exported_goods['Goederengroep_nr'].isin([4, 5, 6])
-    ]
-    food_worth = food['Waarde'].sum()
-    exported_goods_worth = exported_goods['Waarde'].sum()
-    perc = food_worth / exported_goods_worth * 100
-    print(f"{to_dec(perc)}% ({to_dec(food_worth / 10 ** 3)} md) "
-          f"van de totale exportwaarde was van voedsel")
+        # total exported food
+        exported_goods = GOODS[
+            GOODS['Stroom'].isin([
+                'Uitvoer_internationaal',
+                'Uitvoer_regionaal'
+            ])
+        ]
+        food = exported_goods[
+            exported_goods['Goederengroep_nr'].isin([4, 5, 6])
+        ]
+        food_worth = food['Waarde'].sum()
+        exported_goods_worth = exported_goods['Waarde'].sum()
+        perc = food_worth / exported_goods_worth * 100
+        print(f"{to_dec(perc)}% ({to_dec(food_worth / 10 ** 3)} md) "
+              f"van de totale exportwaarde was van voedsel")
 
     # waste produced by companies
     lma = LMA.copy()
@@ -187,18 +188,19 @@ if __name__ == "__main__":
     ]
 
     # import CBS goods data
-    print('Import CBS goods data... \n')
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
-    filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
-    GOODS = pd.read_csv(filename, low_memory=False, sep=';')
-    # stromen -> million kg
-    GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
-    GOODS['Gewicht_KG'] = GOODS['Gewicht_KG'].astype('int64')
-    # filter by year & COROPS
-    GOODS = GOODS[
-        (GOODS['Jaar'] == VARS['YEAR']) &
-        (GOODS['COROP_naam'].isin(VARS['COROPS']))
-    ]
+    if len(VARS['COROPS']):
+        print('Import CBS goods data... \n')
+        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+        filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
+        GOODS = pd.read_csv(filename, low_memory=False, sep=';')
+        # stromen -> million kg
+        GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
+        GOODS['Gewicht_KG'] = GOODS['Gewicht_KG'].astype('int64')
+        # filter by year & COROPS
+        GOODS = GOODS[
+            (GOODS['Jaar'] == VARS['YEAR']) &
+            (GOODS['COROP_naam'].isin(VARS['COROPS']))
+        ]
 
     # import LMA data
     print('Import LMA Ontvangst...')
