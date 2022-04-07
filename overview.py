@@ -22,12 +22,12 @@ DATA = {}
 
 def process_lma():
     STROMEN = {
-        ('Herkomst', True, 'Verwerker', True): 'Productie van afval binnen de provincie',
+        ('Herkomst', True, 'Verwerker', True): 'Productie van afval binnen de regio',
         ('Herkomst', True, 'Verwerker', False): 'Export van afval',
         ('Herkomst', False, 'Verwerker', True): 'Import van afval',
-        ('EerstAfnemer', True, 'Verwerker', True): 'Hergebruik van afval binnen de provincie',
-        ('EerstAfnemer', True, 'Verwerker', False): 'Hergebruik van afval buiten de provincie',
-        ('EerstAfnemer', False, 'Verwerker', True): 'Hergebruik van afval van elders binnen de provincie'
+        ('EerstAfnemer', True, 'Verwerker', True): 'Hergebruik van afval binnen de regio',
+        ('EerstAfnemer', True, 'Verwerker', False): 'Hergebruik van afval buiten de regio',
+        ('EerstAfnemer', False, 'Verwerker', True): 'Hergebruik van afval van elders binnen de regio'
     }
 
     # process LMA ontvangst & afgifte
@@ -233,10 +233,10 @@ def process_household():
     household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
                                    * household_data['Inwoners']
     household_data = household_data['Gewicht_KG'].sum()
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\thuishoudenlijk"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\thuishuidelijk"
     DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
         "name": VARS['AREA'],
-        "flows": ['Huishoudenlijke afval'],
+        "flows": ['Huishuidelijk afval'],
         "values": {
             "weight": {
                 "value": [utils.kg_to_unit(
