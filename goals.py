@@ -9,6 +9,7 @@ import utils
 # VARIABLES
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
+    'AREA_DIR': var.AREA_DIR,
     'YEARS': var.GOALS_YEARS,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
@@ -27,7 +28,7 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)
