@@ -12,6 +12,7 @@ import re
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
+    'AREA_DIR': var.AREA_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'YEARS': var.ACTIONS_YEARS,
@@ -38,7 +39,7 @@ def get_flows(year=None):
     """
     Import flows from 'data/flows'
     """
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
     filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}_full.csv"
 
     return pd.read_csv(filename, low_memory=False)

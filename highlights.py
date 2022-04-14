@@ -7,6 +7,7 @@ import matplotlib.pyplot as plot
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
+    'AREA_DIR': var.AREA_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'COROPS': var.COROPS,
@@ -27,7 +28,7 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)
@@ -190,7 +191,7 @@ if __name__ == "__main__":
     # import CBS goods data
     if len(VARS['COROPS']):
         print('Import CBS goods data... \n')
-        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
         filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
         GOODS = pd.read_csv(filename, low_memory=False, sep=';')
         # stromen -> million kg
@@ -205,7 +206,7 @@ if __name__ == "__main__":
     # import LMA data
     print('Import LMA Ontvangst...')
     typ = 'Ontvangst'
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
     filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
     LMA = pd.read_csv(filename, low_memory=False)
     # add areas to roles

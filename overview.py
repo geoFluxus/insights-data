@@ -7,6 +7,7 @@ import numpy as np
 # VARIABLES
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
+    'AREA_DIR': var.AREA_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'POSTCODES': var.POSTCODES,
@@ -16,6 +17,7 @@ VARS = {
     'OVERVIEW_SANKEY_UNIT': var.UNITS['OVERVIEW']['OVERVIEW_SANKEY'],
     'SUPPLY_CHAINS_UNIT': var.UNITS['OVERVIEW']['SUPPLY_CHAINS']
 }
+
 
 DATA = {}
 
@@ -38,7 +40,7 @@ def process_lma():
         # import file
         print()
         print(f'Import {typ}...')
-        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
         filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
@@ -109,7 +111,7 @@ def process_lma():
 
 def process_cbs():
     # stromen -> million kg
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
     df = pd.read_csv(filename, low_memory=False, sep=';')
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
@@ -186,7 +188,7 @@ def import_household_data(areas=None):
     """
 
     # add gemeente & provincie
-    path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/CBS"
+    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
     df = df.replace('?', np.nan)

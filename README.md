@@ -41,7 +41,7 @@ The analysis consists of the following scripts:
 <br/><br/>
 - **goals.py**: Exports data for the *Nationale doelen* section of the *Doelen en vooruitgang* to **household.json**
 <br/><br/>
-- **networkmap.py**: Exports data for the **Emissies* section of the *Doelen en vooruitgang* to **overview_co2_network.json**.
+- **networkmap.py**: Exports data for the *Emissies* section of the *Doelen en vooruitgang* to **overview_co2_network.json**.
   Provides also data on the section highlights.
 <br/><br/>
 - **actions.py**: Exports data for the *Handelingsperspectieven* page to **actions.json**

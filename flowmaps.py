@@ -9,6 +9,7 @@ import utils
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
+    'AREA_DIR': var.AREA_DIR,
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'POSTCODES': var.POSTCODES,
@@ -171,7 +172,7 @@ if __name__ == "__main__":
         # import file
         print()
         print(f'Import {typ}....')
-        path = f"{VARS['INPUT_DIR']}/{VARS['LEVEL']}{VARS['AREA']}/LMA/processed"
+        path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
         filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
 
