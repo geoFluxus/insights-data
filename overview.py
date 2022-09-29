@@ -112,8 +112,8 @@ def process_lma():
 def process_cbs():
     # stromen -> million kg
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-    filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
-    df = pd.read_csv(filename, low_memory=False, sep=';')
+    filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+    df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
@@ -121,7 +121,7 @@ def process_cbs():
     # exclude chapter 24 (Afval)
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
-        (df['COROP_naam'].isin(VARS['COROPS'])) &
+        (df['Provincienaam'].isin(VARS['COROPS'])) &
         (df['Goederengroep_nr'] != 24)
     ]
     stromen = [
