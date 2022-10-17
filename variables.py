@@ -1,33 +1,34 @@
 # VARIABLES
 INPUT_DIR = 'W:/Shared With Me/MASTER'
-AREA = 'Zaanstad'
-LEVEL = 'Gemeente'
+AREA = 'Flevoland'
+LEVEL = 'Provincie'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
-YEAR = 2019
-GOALS_YEARS = [2016, 2017, 2018, 2019]
+YEAR = 2020
+GOALS_YEARS = [2016, 2017, 2018, 2019, 2020]
 ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
 QUARTER = 4
 COROPS = [
-    'Zaanstreek'
+    'Flevoland'
 ]
 POSTCODES = 'postcodes_per_gemeenten_2021'
 OUTPUT_DIR = './json'
 
 # UNITS
+unit = 'Mt' if LEVEL == 'Provincie' else 'kt'
 UNITS = {
     'OVERVIEW': {
-        'OVERVIEW_SANKEY': 'kt',
-        'SUPPLY_CHAINS': 'kt'
+        'OVERVIEW_SANKEY': unit,
+        'SUPPLY_CHAINS': unit
     },
     'MATERIALS': {
-        'TRANSITION_AGENDAS': 'kt',
+        'TRANSITION_AGENDAS': unit,
         'MATERIAL_TREE': 't'
     },
     'GOALS': {
         'NATIONAL_GOALS': 'Mt'
     },
     'HIGHLIGHTS': {
-        'COMPANY_WASTE': 'kt'
+        'COMPANY_WASTE': unit
     }
 }
 

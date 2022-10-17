@@ -31,7 +31,7 @@ def import_household_data(areas=None):
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     df = pd.read_excel(f"{path}/Huishoudelijk_Gemeenten.xlsx", sheet_name='Data')
     columns = list(df.columns)
-    df = df.replace('?', np.nan)
+    df = df.replace('?', 0).replace('-', 0)
     df = pd.merge(df, areas, left_on='Gebieden', right_on='Gemeente', how='left')
     columns.append('Provincie')
     df = df[columns]
@@ -265,7 +265,7 @@ if __name__ == '__main__':
 
         # # total primary = company + household
         # total_primary = pd.concat([total_company_primary, total_household_primary])
-        # total_primary = total_primary.groupby('area').sum().reset_index()
+        # total_primary = total_primary.groupby('area').sum().reset_index()z
 
         # incineration waste (LMA) -> weight
         def incineration_waste(df):
