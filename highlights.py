@@ -192,15 +192,15 @@ if __name__ == "__main__":
     if len(VARS['COROPS']):
         print('Import CBS goods data... \n')
         path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-        filename = f"{path}/Tabel Regionale stromen 2015-2019.csv"
-        GOODS = pd.read_csv(filename, low_memory=False, sep=';')
+        filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+        GOODS = pd.read_csv(filename, low_memory=False)
         # stromen -> million kg
         GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
         GOODS['Gewicht_KG'] = GOODS['Gewicht_KG'].astype('int64')
         # filter by year & COROPS
         GOODS = GOODS[
             (GOODS['Jaar'] == VARS['YEAR']) &
-            (GOODS['COROP_naam'].isin(VARS['COROPS']))
+            (GOODS['Provincienaam'].isin(VARS['COROPS']))
         ]
 
     # import LMA data
