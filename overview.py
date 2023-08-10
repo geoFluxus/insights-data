@@ -235,10 +235,10 @@ def process_household():
     household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
                                    * household_data['Inwoners']
     household_data = household_data['Gewicht_KG'].sum()
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\thuishuidelijk"
+    prefix = f"{PREFIXES[VARS['LEVEL']]}\thuishoudelijk"
     DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
         "name": VARS['AREA'],
-        "flows": ['Huishuidelijk afval'],
+        "flows": ['Huishoudelijk afval'],
         "values": {
             "weight": {
                 "value": [utils.kg_to_unit(
