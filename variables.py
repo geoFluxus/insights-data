@@ -1,16 +1,16 @@
 # VARIABLES
-INPUT_DIR = 'W:/Shared With Me/MASTER'
-AREA = 'Flevoland'
-LEVEL = 'Provincie'
+# INPUT_DIR = 'W:/Shared With Me/MASTER'
+INPUT_DIR = '/Users/rusnesileryte/Amazon WorkDocs Drive/My Documents/MASTER'
+AREA = 'Zaanstad'
+LEVEL = 'Gemeente'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
-YEAR = 2020
-GOALS_YEARS = [2016, 2017, 2018, 2019, 2020]
-ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
+YEAR = 2021
+GOALS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
+ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022]
 QUARTER = 4
-COROPS = [
-    'Flevoland'
-]
-POSTCODES = 'postcodes_per_gemeenten_2021'
+COROPS = []
+
+POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
 OUTPUT_DIR = './json'
 
 # UNITS

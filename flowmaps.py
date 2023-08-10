@@ -26,7 +26,7 @@ MAP = {} # map data
 
 def import_areas():
     # municipalities
-    gemeenten = gpd.read_file(f"{VARS['INPUT_DIR']}/GEODATA/areas/gemeenten/gemeenten.shp")
+    gemeenten = gpd.read_file(f"{VARS['INPUT_DIR']}/GEODATA/areas/gemeenten/gemeenten_{var.YEAR}.shp")
     gemeenten['centroid'] = gemeenten['geometry'].centroid
     # gemeenten['centroid'] = gemeenten['geometry'].to_crs(epsg=3857).centroid.to_crs(epsg=4326)
     AREAS['Gemeente'] = gemeenten

@@ -71,8 +71,9 @@ def import_areas(level=None):
     level = LEVELS[level]
 
     # load geometries
-    areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}.shp')
+    areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}_{var.YEAR}.shp')
     areas['centroid'] = areas['geometry'].centroid
+    print(areas.crs)
 
     return areas
 

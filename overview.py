@@ -264,6 +264,7 @@ if __name__ == "__main__":
     # import province polygon
     polygon = utils.import_areas(level=VARS['LEVEL'])
     polygon = polygon[polygon['name'] == VARS['AREA']]
+    print(polygon.crs)
     assert len(polygon) == 1
 
     # import ewc classifications

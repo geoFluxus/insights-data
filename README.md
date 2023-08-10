@@ -37,7 +37,7 @@ For any issues on installing WorkDocs Drive on Windows, please check [here](http
 The analysis consists of the following scripts:
 - **overview.py**: Exports data for the *Overzicht* page to **overview.json**
 <br/><br/>
-- **matetials.py**: Exports data for the *Materialen* page to **materials.json**
+- **materials.py**: Exports data for the *Materialen* page to **materials.json**
 <br/><br/>
 - **goals.py**: Exports data for the *Nationale doelen* section of the *Doelen en vooruitgang* to **household.json**
 <br/><br/>

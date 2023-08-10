@@ -9,7 +9,6 @@ import itertools
 import utils
 import re
 
-
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
     'AREA_DIR': var.AREA_DIR,
