@@ -12,6 +12,7 @@ VARS = {
     'LEVEL': var.LEVEL,
     'POSTCODES': var.POSTCODES,
     'YEAR': var.YEAR,
+    'COROP_FILE': var.COROP_FILE,
     'COROPS': var.COROPS,
     'OUTPUT_DIR': var.OUTPUT_DIR,
     'OVERVIEW_SANKEY_UNIT': var.UNITS['OVERVIEW']['OVERVIEW_SANKEY'],
@@ -112,7 +113,7 @@ def process_lma():
 def process_cbs():
     # stromen -> million kg
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-    filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+    filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
@@ -121,7 +122,7 @@ def process_cbs():
     # exclude chapter 24 (Afval)
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
-        (df['Provincienaam'].isin(VARS['COROPS'])) &
+        (df['Regionaam'].isin(VARS['COROPS'])) &
         (df['Goederengroep_nr'] != 24)
     ]
     stromen = [
@@ -264,7 +265,6 @@ if __name__ == "__main__":
     # import province polygon
     polygon = utils.import_areas(level=VARS['LEVEL'])
     polygon = polygon[polygon['name'] == VARS['AREA']]
-    print(polygon.crs)
     assert len(polygon) == 1
 
     # import ewc classifications

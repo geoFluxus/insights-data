@@ -11,6 +11,7 @@ VARS = {
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'YEAR': var.YEAR,
+    'COROP_FILE': var.COROP_FILE,
     'COROPS': var.COROPS,
     'OUTPUT_DIR': var.OUTPUT_DIR,
     'TRANSITION_AGENDAS_UNIT': var.UNITS['MATERIALS']['TRANSITION_AGENDAS'],
@@ -81,7 +82,7 @@ def process_cbs():
     # stromen -> million kg
     prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-    filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+    filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
@@ -90,7 +91,7 @@ def process_cbs():
     # exclude chapter 24 (Afval)
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
-        (df['Provincienaam'].isin(VARS['COROPS'])) &
+        (df['Regionaam'].isin(VARS['COROPS'])) &
         (df['Goederengroep_nr'] != 24)
     ]
 

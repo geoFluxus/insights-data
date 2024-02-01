@@ -1,14 +1,15 @@
 # VARIABLES
-# INPUT_DIR = 'W:/Shared With Me/MASTER'
-INPUT_DIR = '/Users/rusnesileryte/Amazon WorkDocs Drive/My Documents/MASTER'
-AREA = 'Zaanstad'
+INPUT_DIR = 'W:/Shared With Me/MASTER'
+# INPUT_DIR = '/Users/rusnesileryte/Amazon WorkDocs Drive/My Documents/MASTER'
+AREA = 'Haarlem'
 LEVEL = 'Gemeente'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
-YEAR = 2021
-GOALS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021]
-ACTIONS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022]
+YEAR = 2022
+GOALS_YEARS = [2018, 2019, 2020, 2021]
+ACTIONS_YEARS = [2018, 2019, 2020, 2021, 2022, 2023]
 QUARTER = 4
-COROPS = []
+COROP_FILE = 'Tabel Regionale stromen 2015-2022'
+COROPS = ['Agglomeratie Haarlem']
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
 OUTPUT_DIR = './json'
