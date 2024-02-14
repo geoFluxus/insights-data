@@ -11,6 +11,7 @@ VARS = {
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'COROPS': var.COROPS,
+    'COROP_FILE': var.COROP_FILE,
     'POSTCODES': var.POSTCODES,
     'YEAR': var.YEAR,
     'OUTPUT_DIR': var.OUTPUT_DIR,
@@ -69,7 +70,7 @@ def overview_highlights():
         imported_goods = GOODS[
             GOODS['Stroom'].isin([
                 'Invoer_internationaal',
-                'Invoer_regionaal'
+                'Invoer_nationaal'
             ])
         ]
         machines = imported_goods[
@@ -85,7 +86,7 @@ def overview_highlights():
         exported_goods = GOODS[
             GOODS['Stroom'].isin([
                 'Uitvoer_internationaal',
-                'Uitvoer_regionaal'
+                'Uitvoer_nationaal'
             ])
         ]
         food = exported_goods[
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     if len(VARS['COROPS']):
         print('Import CBS goods data... \n')
         path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-        filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+        filename = f"{path}/{VARS['COROP_FILE']}.csv"
         GOODS = pd.read_csv(filename, low_memory=False)
         # stromen -> million kg
         GOODS['Gewicht_KG'] = GOODS['Brutogew'] * 10 ** 6  # mln kg -> kg
@@ -200,7 +201,7 @@ if __name__ == "__main__":
         # filter by year & COROPS
         GOODS = GOODS[
             (GOODS['Jaar'] == VARS['YEAR']) &
-            (GOODS['Provincienaam'].isin(VARS['COROPS']))
+            (GOODS['Regionaam'].isin(VARS['COROPS']))
         ]
 
     # import LMA data

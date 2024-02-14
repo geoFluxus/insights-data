@@ -113,7 +113,7 @@ def process_cbs():
     input_df = df[df['Stroom'].isin([
         'Aanbod_eigen_regio',
         'Invoer_internationaal',
-        'Invoer_regionaal'
+        'Invoer_nationaal'
     ])]
     DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
