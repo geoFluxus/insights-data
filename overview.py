@@ -130,9 +130,9 @@ def process_cbs():
         'Distributie',
         'Doorvoer',
         'Invoer_internationaal',
-        'Invoer_nationaal',
+        'Invoer_regionaal',
         'Uitvoer_internationaal',
-        'Uitvoer_nationaal'
+        'Uitvoer_regionaal'
     ]
 
     prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
@@ -173,7 +173,7 @@ def process_cbs():
     input_df = df[df['Stroom'].isin([
         'Aanbod_eigen_regio',
         'Invoer_internationaal',
-        'Invoer_nationaal'
+        'Invoer_regionaal'
     ])]
     prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
     DATA[f"{prefix}\tsupply_chains\t{VARS['YEAR']}"] = \

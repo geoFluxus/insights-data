@@ -70,7 +70,7 @@ def overview_highlights():
         imported_goods = GOODS[
             GOODS['Stroom'].isin([
                 'Invoer_internationaal',
-                'Invoer_nationaal'
+                'Invoer_regionaal'
             ])
         ]
         machines = imported_goods[
@@ -86,7 +86,7 @@ def overview_highlights():
         exported_goods = GOODS[
             GOODS['Stroom'].isin([
                 'Uitvoer_internationaal',
-                'Uitvoer_nationaal'
+                'Uitvoer_regionaal'
             ])
         ]
         food = exported_goods[
