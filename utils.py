@@ -296,9 +296,14 @@ def get_hierarchy(df):
                     new.append(item)
             levels = new
         if len(materials) > 1:
-            value = f'{levels[-1]} (gemengd)' if len(levels) else 'Gemengd'
-            levels.append(value)
+            if 'Goederengroep_naam' in df.columns:
+                if len(levels) == 0: levels.append('Gemengd')
+            else:
+                value = f'{levels[-1]} (gemengd)' if len(levels) else 'Gemengd'
+                levels.append(value)
         levels = [format_name(lvl) for lvl in levels]
+        if 'Goederengroep_naam' in df.columns:
+            levels.append(row['Goederengroep_naam'])
 
         # convert into hierarchy
         tree = build_nested(levels)
@@ -382,10 +387,17 @@ def get_material_sankey(df, source=None,
         groupby.append(f'{source}_{level}', )
 
     # groupby: source, materials
-    groupby.extend([
-        'materials',
-        'Gewicht_KG'
-    ])
+    if 'Goederengroep_naam' in flows.columns:
+        groupby.extend([
+            'materials',
+            'Goederengroep_naam',
+            'Gewicht_KG'
+        ])
+    else:
+        groupby.extend([
+            'materials',
+            'Gewicht_KG'
+        ])
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
     # get material hierarchy
