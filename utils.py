@@ -154,12 +154,34 @@ def get_classification_graphs(df, source=None,
             'Onbekend'
         ],
         'agendas': [
-            'BiomassaVoedselTransitieAgenda',
-            'BouwTransitieAgenda',
-            'ConsumptiegoederenTransitieAgenda',
-            'MaakindustrieTransitieAgenda',
-            'NonSpecifiekTransitieAgenda',
-            'KunststoffenTransitieAgenda'
+            'BiomassaVoedsel',
+            'BiomassaVoedsel&Bouw',
+            'BiomassaVoedsel&Kunststoffen',
+            'Bouw',
+            'Bouw&Consumptiegoederen',
+            'Bouw&Maakindustrie',
+            'Consumptiegoederen',
+            'Consumptiegoederen&Kunststoffen',
+            'Consumptiegoederen&Maakindustrie',
+            'Consumptiegoederen&NonSpecifiek',
+            'Kunststoffen',
+            'Maakindustrie',
+            'NonSpecifiek',
+            'Onbekend'
+            # 'Afval',
+            # 'Afval&Consumptiegoederen',
+            # 'Afval&Consumptiegoederen&Textiel',
+            # 'Bouw',
+            # 'Bouw&Consumptiegoederen',
+            # 'Consumptiegoederen',
+            # 'Consumptiegoederen&Eigen organisatie',
+            # 'Consumptiegoederen&Overig',
+            # 'Consumptiegoederen&Textiel',
+            # 'Eigen Organisatie',
+            # 'Overig',
+            # 'Overig&Textiel',
+            # 'Textiel',
+            # 'Voedsel',
         ]
     }
 
@@ -183,13 +205,9 @@ def get_classification_graphs(df, source=None,
     # specify categories
     cats = categories.get(klass, None)
     if klass == 'agendas':
-        extra = []
-        for i in range(len(cats)):
-            for j in range(i+1, len(cats)):
-                extra.append(f'{cats[i]}&{cats[j]}')
-        extra.append('Onbekend')
-        cats.extend(extra)
+        cats.append('Onbekend')
         cats = sorted(cats)
+        print(cats)
 
     # get results for categories
     results = []
