@@ -2,6 +2,7 @@ import utils
 import pandas as pd
 import variables as var
 import json
+import os
 
 
 # VARIABLES
@@ -98,9 +99,10 @@ def process_cbs():
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['agendas', 'materials']:
-        cbs_classifs[classif] = pd.read_csv(
-            f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv", low_memory=False, sep=';'
-        )
+        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
+        if not os.path.isfile(file_path):
+            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv"
+        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -229,9 +231,10 @@ if __name__ == "__main__":
     # import ewc classifications
     ewc_classifs = {}
     for classif in ['agendas', 'materials']:
-        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv",
-                                            low_memory=False,
-                                            sep=';')
+        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
+        if not os.path.isfile(file_path):
+            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv"
+        ewc_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # process LMA data
     process_lma()
