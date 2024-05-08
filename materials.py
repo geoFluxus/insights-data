@@ -81,7 +81,7 @@ def process_cbs():
     print('Import CBS data...')
 
     # stromen -> million kg
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
+    prefix = f"COROP\tgoederen"
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
@@ -119,7 +119,7 @@ def process_cbs():
     ])]
     DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
-                                        area=VARS['AREA'],
+                                        area=VARS['COROPS'][0],
                                         klass='agendas',
                                         unit=VARS['TRANSITION_AGENDAS_UNIT'])
 
@@ -128,7 +128,7 @@ def process_cbs():
     DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level=VARS['LEVEL'],
-                                  area=VARS['AREA'],
+                                  area=VARS['COROPS'][0],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
 
     # store material tree data

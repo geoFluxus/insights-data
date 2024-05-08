@@ -135,7 +135,7 @@ def process_cbs():
         'Uitvoer_regionaal'
     ]
 
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
+    prefix = f"COROP\tgoederen"
 
     # SANKEY
     amounts = []
@@ -146,7 +146,7 @@ def process_cbs():
         )
         amounts.append(amount)
     DATA.setdefault(f"{prefix}\toverview_sankey\t{VARS['YEAR']}", []).append({
-        "name": VARS['AREA'],
+        "name": VARS['COROPS'][0],
         "flows": stromen,
         "values": {
             "weight": {
@@ -175,10 +175,10 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
+    prefix = f"COROP\tgoederen"
     DATA[f"{prefix}\tsupply_chains\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
-                                        area=VARS['AREA'],
+                                        area=VARS['COROPS'][0],
                                         klass='chains',
                                         unit=VARS['SUPPLY_CHAINS_UNIT'])
 
