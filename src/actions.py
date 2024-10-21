@@ -235,6 +235,15 @@ if __name__ == '__main__':
                    prop='total',
                    add_graph=False)
 
+    # average quarterly change on GENERAL waste
+    compute_trends(flows,
+                   on=[on],
+                   values=[[AREA]],
+                   per_months=3,
+                   datatype='production_graph',
+                   prop='total',
+                   add_trends=False)
+
     # average quarterly change in INDUSTRIES per TREATMENT method
     for group in industry_groups:
         for method, codes in TREATMENT_METHODS.items():
@@ -244,12 +253,13 @@ if __name__ == '__main__':
                                 .replace('Industry', '')
                            )
             )
+            prop = f'{formatted_name}_{method}'.lower().replace(' ', '_')
             compute_trends(flows,
                            on=[on, 'industries', 'VerwerkingsmethodeCode'],
                            values=[[AREA], [group], codes],
                            per_months=3,
                            datatype='process_trends',
-                           prop=f'{formatted_name} - {method}',
+                           prop=prop,
                            add_trends=False)
 
     with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
