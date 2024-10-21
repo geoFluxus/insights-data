@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import utils
+from src import utils
 import variables as var
 import matplotlib.pyplot as plot
 
@@ -134,7 +134,7 @@ def overview_highlights():
     print('Enter company percent:')
     company_perc = int(input())
     idx = int(len(companies) * company_perc / 100)
-    # print(companies[:100].to_csv('greatest_producers.csv', index=False))
+    # companies[:idx].to_excel('greatest_producers.xlsx', index=False)
     company_amount = companies[:idx]['Gewicht_KG'].sum()
     amount_perc = company_amount / companies['Gewicht_KG'].sum() * 100
     print(f"{to_dec(amount_perc)}% "
@@ -215,9 +215,9 @@ if __name__ == "__main__":
     target = ROLES[typ]['target']  # target role
     for role in [source, target]:
         LMA = utils.add_areas(LMA,
-                             areas=polygon,
-                             role=role,
-                             admin_level=VARS['LEVEL'])
+                              areas=polygon,
+                              role=role,
+                              admin_level=VARS['LEVEL'])
 
     # compute highlights
     overview_highlights()

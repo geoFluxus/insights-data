@@ -1,10 +1,8 @@
 import pandas as pd
-import geopandas as gpd
 import json
 import variables as var
 import numpy as np
-import utils
-
+from src import utils
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,

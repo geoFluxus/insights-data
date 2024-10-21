@@ -1,9 +1,8 @@
 import pandas as pd
-import fiona
 import geopandas as gpd
 import numpy as np
 import json
-import _make_iterencode
+from src import _make_iterencode
 import re
 import variables as var
 
@@ -144,23 +143,44 @@ def get_classification_graphs(df, source=None,
     Create graphs based on ontology classifications
     for LMA & CBS data
     """
-    categories = {
-        'chains': [
-            'primair',
-            'secundair',
-            'tertiair',
-            'quaternair',
-            'Onbekend'
-        ],
-        'agendas': [
-            'BiomassaVoedselTransitieAgenda',
-            'BouwTransitieAgenda',
-            'ConsumptiegoederenTransitieAgenda',
-            'MaakindustrieTransitieAgenda',
-            'NonSpecifiekTransitieAgenda',
-            'KunststoffenTransitieAgenda'
-        ]
-    }
+    # categories = {
+    #     'chains': [
+    #         'primair',
+    #         'secundair',
+    #         'tertiair',
+    #         'quaternair',
+    #         'Onbekend'
+    #     ],
+    #     'agendas': [
+    #         'BiomassaVoedselTransitieAgenda',
+    #         'MaakindustrieTransitieAgenda',
+    #         'BouwTransitieAgenda&MaakindustrieTransitieAgenda',
+    #         'BouwTransitieAgenda&ConsumptiegoederenTransitieAgenda',
+    #         'ConsumptiegoederenTransitieAgenda&MaakindustrieTransitieAgenda',
+    #         'ConsumptiegoederenTransitieAgenda',
+    #         'NonSpecifiekTransitieAgenda',
+    #         'ConsumptiegoederenTransitieAgenda&NonSpecifiekTransitieAgenda',
+    #         'BiomassaVoedselTransitieAgenda&KunststoffenTransitieAgenda',
+    #         'KunststoffenTransitieAgenda',
+    #         'ConsumptiegoederenTransitieAgenda&KunststoffenTransitieAgenda',
+    #         'BouwTransitieAgenda',
+    #         'BiomassaVoedselTransitieAgenda&BouwTransitieAgenda'
+    #         # 'Afval',
+    #         # 'Afval&Consumptiegoederen',
+    #         # 'Afval&Consumptiegoederen&Textiel',
+    #         # 'Bouw',
+    #         # 'Bouw&Consumptiegoederen',
+    #         # 'Consumptiegoederen',
+    #         # 'Consumptiegoederen&Eigen organisatie',
+    #         # 'Consumptiegoederen&Overig',
+    #         # 'Consumptiegoederen&Textiel',
+    #         # 'Eigen Organisatie',
+    #         # 'Overig',
+    #         # 'Overig&Textiel',
+    #         # 'Textiel',
+    #         # 'Voedsel',
+    #     ]
+    # }
 
     groupby = []
 
@@ -180,15 +200,7 @@ def get_classification_graphs(df, source=None,
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
     # specify categories
-    cats = categories.get(klass, None)
-    if klass == 'agendas':
-        extra = []
-        for i in range(len(cats)):
-            for j in range(i+1, len(cats)):
-                extra.append(f'{cats[i]}&{cats[j]}')
-        extra.append('Onbekend')
-        cats.extend(extra)
-        cats = sorted(cats)
+    cats = sorted(flows[klass].drop_duplicates().to_list())
 
     # get results for categories
     results = []

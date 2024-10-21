@@ -3,8 +3,6 @@ import numpy as np
 import gc
 import json
 import variables as var
-import utils
-
 
 # VARIABLES
 VARS = {
@@ -453,7 +451,8 @@ if __name__ == '__main__':
                     }
                 })
 
-        import _make_iterencode
+        from src import _make_iterencode, utils
+
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
         json.dump(final, outfile, indent=indent)

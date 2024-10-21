@@ -1,7 +1,7 @@
 import utils
 import pandas as pd
 import variables as var
-import json
+import os
 
 
 # VARIABLES
@@ -11,6 +11,7 @@ VARS = {
     'AREA': var.AREA,
     'LEVEL': var.LEVEL,
     'YEAR': var.YEAR,
+    'COROP_FILE': var.COROP_FILE,
     'COROPS': var.COROPS,
     'OUTPUT_DIR': var.OUTPUT_DIR,
     'TRANSITION_AGENDAS_UNIT': var.UNITS['MATERIALS']['TRANSITION_AGENDAS'],
@@ -29,8 +30,7 @@ def process_lma():
         prefix = f"{PREFIXES[VARS['LEVEL']]}\t{PREFIXES[typ]} afval"
 
         # import file
-        print()
-        print(f'Import {typ}...')
+        print(f'\nImport {typ}...')
         path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
         filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
@@ -75,13 +75,12 @@ def process_lma():
 
 
 def process_cbs():
-    print()
-    print('Import CBS data...')
+    print('\nImport CBS data...')
 
     # stromen -> million kg
-    prefix = f"{PREFIXES[VARS['LEVEL']]}\tgoederen"
+    prefix = f"COROP\tgoederen"
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
-    filename = f"{path}/Tabel Regionale stromen 2015-2020.csv"
+    filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
@@ -90,16 +89,17 @@ def process_cbs():
     # exclude chapter 24 (Afval)
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
-        (df['Provincienaam'].isin(VARS['COROPS'])) &
+        (df['Regionaam'].isin(VARS['COROPS'])) &
         (df['Goederengroep_nr'] != 24)
     ]
 
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['agendas', 'materials']:
-        cbs_classifs[classif] = pd.read_csv(
-            f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv", low_memory=False, sep=';'
-        )
+        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
+        if not os.path.isfile(file_path):
+            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv"
+        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -116,7 +116,7 @@ def process_cbs():
     ])]
     DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
         utils.get_classification_graphs(input_df,
-                                        area=VARS['AREA'],
+                                        area=VARS['COROPS'][0],
                                         klass='agendas',
                                         unit=VARS['TRANSITION_AGENDAS_UNIT'])
 
@@ -125,7 +125,7 @@ def process_cbs():
     DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level=VARS['LEVEL'],
-                                  area=VARS['AREA'],
+                                  area=VARS['COROPS'][0],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
 
     # store material tree data
@@ -165,23 +165,23 @@ def merge_material_trees(unit='kg'):
                 # "value": round(item['sums'].get(k, 0) / total[k] * 100)
             })
 
-    # convert to tree visualization
-    def update_tree(tree, dic):
-        for key in dic.keys():
-            item = {
-                "name": key,
-                'values': sums[key],
-                "unit": unit
-            }
-            if isinstance(dic[key], dict):
-                item["children"] = []
-                item = update_tree(item, dic[key])
-            tree.setdefault("children", []).append(item)
-        return tree
-    tree = update_tree({}, hierarchy)["children"][0]
-    DATA[f"province\tall\tmaterial_tree\t{VARS['YEAR']}"] = [{
-        "data": tree
-    }]
+    # # convert to tree visualization
+    # def update_tree(tree, dic):
+    #     for key in dic.keys():
+    #         item = {
+    #             "name": key,
+    #             'values': sums[key],
+    #             "unit": unit
+    #         }
+    #         if isinstance(dic[key], dict):
+    #             item["children"] = []
+    #             item = update_tree(item, dic[key])
+    #         tree.setdefault("children", []).append(item)
+    #     return tree
+    # tree = update_tree({}, hierarchy)["children"][0]
+    # DATA[f"province\tall\tmaterial_tree\t{VARS['YEAR']}"] = [{
+    #     "data": tree
+    # }]
 
     # convert tree to table
     terms = {
@@ -228,9 +228,10 @@ if __name__ == "__main__":
     # import ewc classifications
     ewc_classifs = {}
     for classif in ['agendas', 'materials']:
-        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv",
-                                            low_memory=False,
-                                            sep=';')
+        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
+        if not os.path.isfile(file_path):
+            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv"
+        ewc_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # process LMA data
     process_lma()
