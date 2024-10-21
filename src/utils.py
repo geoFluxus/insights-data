@@ -45,12 +45,12 @@ def export_graphs(fil, data=None):
         # preprocess
         results = {}
         for key, items in data.items():
-            level, type, field, period = key.split('\t')
+            # level, type, field, period = key.split('\t')
             for item in items:
-                item['level'] = level
-                item['period'] = period
-                item['type'] = type
-                results.setdefault(field, []).append(item)
+                # item['level'] = level
+                # item['period'] = period
+                # item['type'] = type
+                results.setdefault(key, []).append(item)
 
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
@@ -70,7 +70,7 @@ def import_areas(level=None):
     level = LEVELS[level]
 
     # load geometries
-    areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}.shp')
+    areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}_{var.YEAR}.shp')
     areas['centroid'] = areas['geometry'].centroid
 
     return areas
@@ -203,7 +203,6 @@ def get_classification_graphs(df, source=None,
     cats = sorted(flows[klass].drop_duplicates().to_list())
 
     # get results for categories
-    results = []
     values = []
     for cat in cats:
         row = groups[groups[klass] == cat]
@@ -211,8 +210,7 @@ def get_classification_graphs(df, source=None,
         values.append(kg_to_unit(value, unit=unit))
     cats = [format_name(cat) for cat in cats]
 
-    # add to results
-    results.append({
+    return {
         "name": area,
         klass: cats,
         "values": {
@@ -221,9 +219,7 @@ def get_classification_graphs(df, source=None,
                 "unit": unit
             }
         }
-    })
-
-    return results
+    }
 
 
 def build_nested(tree_list):
@@ -404,12 +400,10 @@ def get_material_sankey(df, source=None,
 
     # convert hierarchy to nivo sankey
     sankey, sums = get_sankey(hierarchy, unit=unit)
-
-    sankeys = []
-    sankeys.append({
+    data = {
         "name": area,
         "materials": sankey,
-    })
+    }
 
-    return sankeys, hierarchy, sums
+    return data, hierarchy, sums
 
