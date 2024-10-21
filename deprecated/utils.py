@@ -1,8 +1,9 @@
 import pandas as pd
+import fiona
 import geopandas as gpd
 import numpy as np
 import json
-from src import _make_iterencode
+import _make_iterencode
 import re
 import variables as var
 
@@ -45,12 +46,12 @@ def export_graphs(fil, data=None):
         # preprocess
         results = {}
         for key, items in data.items():
-            # level, type, field, period = key.split('\t')
+            level, type, field, period = key.split('\t')
             for item in items:
-                # item['level'] = level
-                # item['period'] = period
-                # item['type'] = type
-                results.setdefault(key, []).append(item)
+                item['level'] = level
+                item['period'] = period
+                item['type'] = type
+                results.setdefault(field, []).append(item)
 
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
@@ -72,6 +73,7 @@ def import_areas(level=None):
     # load geometries
     areas = gpd.read_file(f'{INPUT_DIR}/GEODATA/areas/{level}/{level}_{var.YEAR}.shp')
     areas['centroid'] = areas['geometry'].centroid
+    print(areas.crs)
 
     return areas
 
@@ -143,44 +145,44 @@ def get_classification_graphs(df, source=None,
     Create graphs based on ontology classifications
     for LMA & CBS data
     """
-    # categories = {
-    #     'chains': [
-    #         'primair',
-    #         'secundair',
-    #         'tertiair',
-    #         'quaternair',
-    #         'Onbekend'
-    #     ],
-    #     'agendas': [
-    #         'BiomassaVoedselTransitieAgenda',
-    #         'MaakindustrieTransitieAgenda',
-    #         'BouwTransitieAgenda&MaakindustrieTransitieAgenda',
-    #         'BouwTransitieAgenda&ConsumptiegoederenTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&MaakindustrieTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda',
-    #         'NonSpecifiekTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&NonSpecifiekTransitieAgenda',
-    #         'BiomassaVoedselTransitieAgenda&KunststoffenTransitieAgenda',
-    #         'KunststoffenTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&KunststoffenTransitieAgenda',
-    #         'BouwTransitieAgenda',
-    #         'BiomassaVoedselTransitieAgenda&BouwTransitieAgenda'
-    #         # 'Afval',
-    #         # 'Afval&Consumptiegoederen',
-    #         # 'Afval&Consumptiegoederen&Textiel',
-    #         # 'Bouw',
-    #         # 'Bouw&Consumptiegoederen',
-    #         # 'Consumptiegoederen',
-    #         # 'Consumptiegoederen&Eigen organisatie',
-    #         # 'Consumptiegoederen&Overig',
-    #         # 'Consumptiegoederen&Textiel',
-    #         # 'Eigen Organisatie',
-    #         # 'Overig',
-    #         # 'Overig&Textiel',
-    #         # 'Textiel',
-    #         # 'Voedsel',
-    #     ]
-    # }
+    categories = {
+        'chains': [
+            'primair',
+            'secundair',
+            'tertiair',
+            'quaternair',
+            'Onbekend'
+        ],
+        'agendas': [
+            'BiomassaVoedselTransitieAgenda',
+            'MaakindustrieTransitieAgenda',
+            'BouwTransitieAgenda&MaakindustrieTransitieAgenda',
+            'BouwTransitieAgenda&ConsumptiegoederenTransitieAgenda',
+            'ConsumptiegoederenTransitieAgenda&MaakindustrieTransitieAgenda',
+            'ConsumptiegoederenTransitieAgenda',
+            'NonSpecifiekTransitieAgenda',
+            'ConsumptiegoederenTransitieAgenda&NonSpecifiekTransitieAgenda',
+            'BiomassaVoedselTransitieAgenda&KunststoffenTransitieAgenda',
+            'KunststoffenTransitieAgenda',
+            'ConsumptiegoederenTransitieAgenda&KunststoffenTransitieAgenda',
+            'BouwTransitieAgenda',
+            'BiomassaVoedselTransitieAgenda&BouwTransitieAgenda'
+            # 'Afval',
+            # 'Afval&Consumptiegoederen',
+            # 'Afval&Consumptiegoederen&Textiel',
+            # 'Bouw',
+            # 'Bouw&Consumptiegoederen',
+            # 'Consumptiegoederen',
+            # 'Consumptiegoederen&Eigen organisatie',
+            # 'Consumptiegoederen&Overig',
+            # 'Consumptiegoederen&Textiel',
+            # 'Eigen Organisatie',
+            # 'Overig',
+            # 'Overig&Textiel',
+            # 'Textiel',
+            # 'Voedsel',
+        ]
+    }
 
     groupby = []
 
@@ -200,9 +202,14 @@ def get_classification_graphs(df, source=None,
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
     # specify categories
-    cats = sorted(flows[klass].drop_duplicates().to_list())
+    cats = categories.get(klass, None)
+    if klass == 'agendas':
+        cats.append('Onbekend')
+        cats = sorted(cats)
+        print(cats)
 
     # get results for categories
+    results = []
     values = []
     for cat in cats:
         row = groups[groups[klass] == cat]
@@ -210,12 +217,19 @@ def get_classification_graphs(df, source=None,
         values.append(kg_to_unit(value, unit=unit))
     cats = [format_name(cat) for cat in cats]
 
-    return {
+    # add to results
+    results.append({
         "name": area,
         klass: cats,
-        "values": values,
-        "unit": unit
-    }
+        "values": {
+            "weight": {
+                "value": values,
+                "unit": unit
+            }
+        }
+    })
+
+    return results
 
 
 def build_nested(tree_list):
@@ -299,9 +313,14 @@ def get_hierarchy(df):
                     new.append(item)
             levels = new
         if len(materials) > 1:
-            value = f'{levels[-1]} (gemengd)' if len(levels) else 'Gemengd'
-            levels.append(value)
+            if 'Goederengroep_naam' in df.columns:
+                if len(levels) == 0: levels.append('Gemengd')
+            else:
+                value = f'{levels[-1]} (gemengd)' if len(levels) else 'Gemengd'
+                levels.append(value)
         levels = [format_name(lvl) for lvl in levels]
+        if 'Goederengroep_naam' in df.columns:
+            levels.append(row['Goederengroep_naam'])
 
         # convert into hierarchy
         tree = build_nested(levels)
@@ -385,10 +404,17 @@ def get_material_sankey(df, source=None,
         groupby.append(f'{source}_{level}', )
 
     # groupby: source, materials
-    groupby.extend([
-        'materials',
-        'Gewicht_KG'
-    ])
+    if 'Goederengroep_naam' in flows.columns:
+        groupby.extend([
+            'materials',
+            'Goederengroep_naam',
+            'Gewicht_KG'
+        ])
+    else:
+        groupby.extend([
+            'materials',
+            'Gewicht_KG'
+        ])
     groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
 
     # get material hierarchy
@@ -396,10 +422,11 @@ def get_material_sankey(df, source=None,
 
     # convert hierarchy to nivo sankey
     sankey, sums = get_sankey(hierarchy, unit=unit)
-    data = {
+
+    sankeys = []
+    sankeys.append({
         "name": area,
         "materials": sankey,
-    }
+    })
 
-    return data, hierarchy, sums
-
+    return sankeys, hierarchy, sums

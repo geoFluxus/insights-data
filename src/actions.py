@@ -19,13 +19,12 @@ VARS = {
 }
 
 
-ALL_YEARS = f"sinds {VARS['YEARS'][0]}"
-LAST_QUARTER = f"vergeleken met Q{VARS['QUARTER']} {VARS['YEARS'][-2]}"
+AREA = VARS['AREA']
+LEVEL = VARS['LEVEL']
+ALL_YEARS = "all_years"
+LAST_QUARTER = "last_quarter"
 UNKNOWN = 'Onbekend'
-
 DATA = {}
-
-RESULTS = {}
 
 
 def to_json(value):
@@ -43,31 +42,23 @@ def get_flows(year=None):
     return pd.read_csv(filename, low_memory=False)
 
 
-def save(flows, area=None):
+def save(flows, datatype=None, prop=None, unit='t'):
     X, Y = [], []
-    level, field, category, typ, unit = [None] * 5
-    for key, amount in flows.items():
-        level, field, category, typ, period, unit = key.split('\t')
-        X.append(period)
-        Y.append(to_json(amount))
-    RESULTS.setdefault(field, []).append({
-        'name': area,
-        'level': level,
-        'category': category,
-        'type': typ,
+    for flow in flows:
+        X.append(flow['period'])
+        Y.append(to_json(flow['amount']))
+    item = DATA.setdefault(datatype, {})
+    item[prop] = {
+        'name': AREA,
+        'level': LEVEL,
         'period': X,
-        'values': {
-            'waste': {
-                'weight': {
-                    'value': Y,
-                    'unit': unit
-                }
-            }
-        }
-    })
+        'value': Y,
+        'unit': unit
+    }
 
 
-def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=True, add_trends=True):
+def compute_trends(df, on=[], values=[], datatype=None, prop=None,
+                   per_months=12, add_graph=True, add_trends=True):
     """
     Analyse trends for areas on different timeframe
     df: flow dataframe -> DataFrame
@@ -127,16 +118,18 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
         # save data for graphs
         # add individual data to RESULTS
         if add_graph:
-            to_save = {}
+            to_save = []
             for year in VARS['YEARS']:
                 for period in range(1, len(periods) + 1):
                     if year < VARS['YEARS'][-1] or period <= VARS['QUARTER']:
                         amount = flows[(flows['MeldPeriodeJAAR'] == year) &
                                        (flows['Periode'] == period)]['Gewicht_TN']
                         amount = amount.values[0] if len(amount) else 0
-                        key = f'{prop}\tQ{period}/{str(year)[-2:]}\tt'
-                        to_save[key] = amount
-            save(to_save, area=area)
+                        to_save.append({
+                            'amount': amount,
+                            'period': f'Q{period}/{str(year)[-2:]}'
+                        })
+            save(to_save, datatype=datatype, prop=prop)
 
         # run linear regression
         if add_trends:
@@ -160,22 +153,28 @@ def compute_trends(df, on=[], values=[], per_months=12, prop=None, add_graph=Tru
             Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
             Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
 
-            # overall change (tn)
-            change = (Y_final - Y_initial) / len(VARS['YEARS'])
-            DATA.setdefault(f'{prop}\t{ALL_YEARS}\tt', {})[area] = to_json(change)
+            # overall change)
+            amount_change = (Y_final - Y_initial) / len(VARS['YEARS'])
+            pct_change = ((Y_final - Y_initial) / abs(Y_initial)) / len(VARS['YEARS']) * 100 \
+                if Y_initial else np.nan
+            item = DATA.setdefault(datatype, {})
+            item[ALL_YEARS] = {
+                'amount': to_json(amount_change),
+                'unit': 't',
+                'pct': to_json(pct_change),
+                'period': str(VARS['YEARS'][0])
+            }
 
-            # overall change (%)
-            change = ((Y_final - Y_initial) / abs(Y_initial)) / len(VARS['YEARS']) * 100 if Y_initial else np.nan
-            DATA.setdefault(f'{prop}\t{ALL_YEARS}\t%', {})[area] = to_json(change)
-
-            # change to same quarter, last year (tn)
+            # change to same quarter, last year
             Y_final, Y_initial = Y[-1], Y[-5]
-            change = Y_final - Y_initial
-            DATA.setdefault(f'{prop}\t{LAST_QUARTER}\tt', {})[area] = to_json(change)
-
-            # change to same quarter, last year (%)
-            change = (Y_final - Y_initial) / Y_initial * 100 if Y_initial else np.nan
-            DATA.setdefault(f'{prop}\t{LAST_QUARTER}\t%', {})[area] = to_json(change)
+            amount_change = Y_final - Y_initial
+            pct_change = (Y_final - Y_initial) / Y_initial * 100 if Y_initial else np.nan
+            item[LAST_QUARTER] = {
+                'amount': to_json(amount_change),
+                'unit': 't',
+                'pct': to_json(pct_change),
+                'period': f"Q{VARS['QUARTER']}/{str(VARS['YEARS'][-2])[-2:]}"
+            }
 
 
 if __name__ == '__main__':
@@ -185,7 +184,6 @@ if __name__ == '__main__':
     ROLES = var.ROLES
     PREFIXES = var.PREFIXES
     TREATMENT_METHODS = var.TREATMENT_METHODS
-    LEVELS = [f"{VARS['LEVEL']}"]
 
     # start analysis
     print('ACTIONS ANALYSIS')
@@ -194,36 +192,28 @@ if __name__ == '__main__':
         print(f'{name}={value}')
 
     # import areas
-    AREAS = {}
-    print()
-    print("Import areas...")
-    for level in LEVELS:
-        AREAS[level] = utils.import_areas(level=VARS['LEVEL'])
+    # import province polygon
+    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = polygon[polygon['name'] == VARS['AREA']]
+    assert len(polygon) == 1
 
     # start analysis
     all_years = []
     for year in VARS['YEARS']:
-        print()
-        print(f"Load {year} flows...")
+        print(f"\nLoad {year} flows...")
         flows = get_flows(year=year)
         flows['Gewicht_TN'] = flows['Gewicht_KG'] / 10**3
         print(f"Total flows: {len(flows)}")
 
         # add areas to roles
         source = ROLES['Ontvangst']['source']  # source role
-        target = ROLES['Ontvangst']['target']  # target role
-        for role, level in itertools.product([source, target], LEVELS):
-            flows = utils.add_areas(flows, role=role, areas=AREAS[level], admin_level=level)
+        flows = utils.add_areas(flows, role=source, areas=polygon, admin_level=LEVEL)
 
         all_years.append(flows)
 
     print("Merge all years...")
     flows = pd.concat(all_years)
     print(f"Total flows: {len(flows)}\n")
-
-    # import activities
-    ACTIVITIES = pd.read_excel(f"{VARS['INPUT_DIR']}/DATA/descriptions/activitygroup.xlsx")
-    ACTIVITIES['name'] = ACTIVITIES['code'] + ' - ' + ACTIVITIES['name_nl'].str.lower().str.capitalize()
 
     # import industries
     industries = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
@@ -234,88 +224,37 @@ if __name__ == '__main__':
     industry_groups = flows['industries'].drop_duplicates().to_list()
 
     # TRENDS (All amounts in tonnes) -> ONLY PRODUCTION
-    for role, level in itertools.product(['Herkomst'], LEVELS):
-        on = f'{role}_{level}'
-        prefix = f'{PREFIXES[level]}\t{PREFIXES[role]}'
-        areas = [VARS['AREA']]
+    on = f'Herkomst_{LEVEL}'
 
-        # average quarterly change on GENERAL waste
-        compute_trends(flows,
-                       on=[on],
-                       values=[areas],
-                       per_months=3, prop=f'{prefix}\ttotal\ttotal',
-                       add_graph=False)
+    # average quarterly change on GENERAL waste
+    compute_trends(flows,
+                   on=[on],
+                   values=[[AREA]],
+                   per_months=3,
+                   datatype='production_trends',
+                   prop='total',
+                   add_graph=False)
 
-        # average quarterly change in ECONOMIC ACTIVITIES
-        for index, activity in ACTIVITIES.iterrows():
-            compute_trends(flows,
-                           on=[on, 'Ontdoener_AG'],
-                           values=[areas, [activity['code']]],
-                           per_months=3, prop=f'{prefix}\teconomische sector\t{activity["name"]}',
-                           add_graph=False)
-
-        # average quarterly change in TREATMENT METHODS
+    # average quarterly change in INDUSTRIES per TREATMENT method
+    for group in industry_groups:
         for method, codes in TREATMENT_METHODS.items():
+            formatted_name = " ".join(
+                re.findall('[A-Z][^A-Z]*',
+                           group.replace('Industrie', '')
+                                .replace('Industry', '')
+                           )
+            )
             compute_trends(flows,
-                           on=[on, 'VerwerkingsmethodeCode'],
-                           values=[areas, codes],
-                           per_months=3, prop=f'{prefix}\tverwerkingsmethode\t{method}',
-                           add_graph=False)
-
-        # average quarterly change in INDUSTRIES per TREATMENT method
-        for group in industry_groups:
-            for method, codes in TREATMENT_METHODS.items():
-                formatted_name = " ".join(
-                    re.findall('[A-Z][^A-Z]*',
-                               group.replace('Industrie', '')
-                                    .replace('Industry', '')
-                               )
-                )
-                compute_trends(flows,
-                               on=[on, 'industries', 'VerwerkingsmethodeCode'],
-                               values=[areas, [group], codes],
-                               per_months=3,
-                               prop=f'{prefix}\tindustrie\t{formatted_name} - {method}',
-                               add_trends=False)
+                           on=[on, 'industries', 'VerwerkingsmethodeCode'],
+                           values=[[AREA], [group], codes],
+                           per_months=3,
+                           datatype='process_trends',
+                           prop=f'{formatted_name} - {method}',
+                           add_trends=False)
 
     with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
-        fields = sorted(list(DATA.keys()))
-        fields = zip(*[iter(fields)] * 2)
-
-        for tup in fields:
-            key = tup[0]
-            values = DATA[key]
-            level, field, category, typ, period, unit = key.split('\t')
-
-            for value in values.items():
-                name, amount = value
-                waste = {
-                    'percentage': {
-                        'value': amount,
-                        'unit': unit
-                    }
-                }
-                for key in tup[1:]:
-                    new_unit = key.split('\t')[-1]
-                    waste['weight'] = {
-                        'value': DATA[key][name],
-                        'unit': new_unit
-                    }
-
-                RESULTS.setdefault(field, []).append({
-                    'name': name,
-                    'level': level,
-                    'category': category,
-                    'type': typ,
-                    'period': period,
-                    'values': {
-                        'waste': waste
-                    }
-                })
-
         from src import _make_iterencode
-
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
-        json.dump(RESULTS, outfile, indent=indent)
+        json.dump(DATA, outfile, indent=indent)
 
