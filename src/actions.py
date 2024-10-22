@@ -6,6 +6,7 @@ import json
 import itertools
 import re
 import utils
+import benchmark
 
 
 VARS = {
@@ -152,6 +153,13 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None,
             # compute initial & final amount based on model
             Y_initial = reg.predict(np.array(X[0]).reshape(-1, 1))[0]
             Y_final = reg.predict(np.array(X[-1]).reshape(-1, 1))[0]
+            # add regression for production graph
+            if datatype == 'production_graph':
+                DATA[datatype]['line'] = {
+                    'y1': Y_initial,
+                    'y2': Y_final,
+                }
+                return
 
             # overall change)
             amount_change = (Y_final - Y_initial) / len(VARS['YEARS'])
@@ -241,8 +249,7 @@ if __name__ == '__main__':
                    values=[[AREA]],
                    per_months=3,
                    datatype='production_graph',
-                   prop='total',
-                   add_trends=False)
+                   prop='points',)
 
     # average quarterly change in INDUSTRIES per TREATMENT method
     for group in industry_groups:
@@ -261,6 +268,9 @@ if __name__ == '__main__':
                            datatype='process_trends',
                            prop=prop,
                            add_trends=False)
+
+    # eural treemap
+    DATA['eural_treemap'] = benchmark.treemap()
 
     with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
         from src import _make_iterencode

@@ -267,6 +267,20 @@ def update_nested(dic, key, value):
             update_nested(v, key, value)
 
 
+def update_tree(tree, dic, extra):
+    for key in dic.keys():
+        item = {
+            "code": key,
+            **extra[key]  # add extra info here
+        }
+        if isinstance(dic[key], dict):
+            item["children"] = []
+            item = update_tree(item, dic[key], extra)
+        tree["count"] = tree.get("count", 0) + 1
+        tree.setdefault("children", []).append(item)
+    return tree
+
+
 def flatten_nested(dic, keys=set()):
     """
     get all keys of nested dict
