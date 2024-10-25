@@ -272,6 +272,9 @@ if __name__ == '__main__':
     # eural treemap
     DATA['eural_treemap'] = benchmark.treemap()
 
+    # benchmark sankey
+    DATA['benchmark_sankey'] = benchmark.get_benchmark_sankey()
+
     with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
         from src import _make_iterencode
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
