@@ -258,7 +258,7 @@ def get_benchmark_sankey():
     }
     for typ, df in zip(['source', 'target'], [sources, targets]):
         data['nodes'].extend([{
-            'id': f"source_{n['benchmark_group']}",
+            'id': f"{typ}_{n['benchmark_group']}",
             'value': n['amount_kg'],
             'unit': 'kg',
             'pct': n['pct']
