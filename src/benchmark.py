@@ -259,6 +259,7 @@ def get_benchmark_sankey():
     for typ, df in zip(['source', 'target'], [sources, targets]):
         data['nodes'].extend([{
             'id': f"{typ}_{n['benchmark_group']}",
+            'rank': n['benchmark_group'],
             'value': n['amount_kg'],
             'unit': 'kg',
             'pct': n['pct']
@@ -266,6 +267,8 @@ def get_benchmark_sankey():
     data['links'].extend([{
         'source': f"source_{l['benchmark_group']}",
         'target': f"target_{l['benchmark_group_alt']}",
+        'source_rank': l['benchmark_group'],
+        'target_rank': l['benchmark_group_alt'],
         'value': l['amount_kg'],
         'unit': 'kg'
     } for idx, l in links.iterrows()])
