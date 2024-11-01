@@ -189,12 +189,10 @@ def get_benchmark_sankey():
     province_data = get_potential(import_dataset(filename), rladder=rladder)
 
     # import national dataset
-    # print(f"\nImport national dataset for {VARS['YEAR']}...")
-    # path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
-    # filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
-    # national_data = get_potential(import_dataset(filename), rladder=rladder)
-    # national_data.to_excel(fr'..\json\national_data.xlsx', index=False)
-    national_data = pd.read_excel(fr'..\json\national_data.xlsx', dtype={'eural_code': object})
+    print(f"\nImport national dataset for {VARS['YEAR']}...")
+    path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
+    filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
+    national_data = get_potential(import_dataset(filename), rladder=rladder)
 
     # compute potential
     potential = pd.merge(province_data, national_data,
