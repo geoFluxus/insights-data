@@ -275,7 +275,7 @@ if __name__ == '__main__':
     # benchmark sankey
     DATA['benchmark_sankey'] = benchmark.get_benchmark_sankey()
 
-    with open(f"{VARS['OUTPUT_DIR']}/actions.json", 'w') as outfile:
+    with open(f"{VARS['OUTPUT_DIR']}/waste.json", 'w') as outfile:
         from src import _make_iterencode
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
