@@ -156,7 +156,9 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None,
             # add regression for production graph
             if datatype == 'production_graph':
                 DATA[datatype]['line'] = {
+                    'x1': to_save[0]['period'],
                     'y1': Y_initial,
+                    'x2': to_save[-1]['period'],
                     'y2': Y_final,
                 }
                 return
