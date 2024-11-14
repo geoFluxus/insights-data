@@ -43,22 +43,25 @@ def get_flows(year=None):
     return pd.read_csv(filename, low_memory=False)
 
 
-def save(flows, datatype=None, prop=None, unit='t'):
+def save(flows, datatype=None, prop=None, attrs={}, unit='t'):
     X, Y = [], []
     for flow in flows:
         X.append(flow['period'])
         Y.append(to_json(flow['amount']))
     item = DATA.setdefault(datatype, {})
     item[prop] = {
-        'name': AREA,
-        'level': LEVEL,
-        'period': X,
-        'value': Y,
-        'unit': unit
+        **{
+            'name': AREA,
+            'level': LEVEL,
+            'period': X,
+            'value': Y,
+            'unit': unit
+        },
+        **attrs
     }
 
 
-def compute_trends(df, on=[], values=[], datatype=None, prop=None,
+def compute_trends(df, on=[], values=[], datatype=None, prop=None, attrs={},
                    per_months=12, add_graph=True, add_trends=True):
     """
     Analyse trends for areas on different timeframe
@@ -126,11 +129,12 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None,
                         amount = flows[(flows['MeldPeriodeJAAR'] == year) &
                                        (flows['Periode'] == period)]['Gewicht_TN']
                         amount = amount.values[0] if len(amount) else 0
-                        to_save.append({
+                        item = {
                             'amount': amount,
-                            'period': f'Q{period}/{str(year)[-2:]}'
-                        })
-            save(to_save, datatype=datatype, prop=prop)
+                            'period': f'Q{period}/{str(year)[-2:]}',
+                        }
+                        to_save.append(item)
+            save(to_save, datatype=datatype, prop=prop, attrs=attrs)
 
         # run linear regression
         if add_trends:
@@ -269,6 +273,10 @@ if __name__ == '__main__':
                            per_months=3,
                            datatype='process_trends',
                            prop=prop,
+                           attrs={
+                               'industry': formatted_name,
+                               'process': method.capitalize()
+                           },
                            add_trends=False)
 
     # eural treemap
