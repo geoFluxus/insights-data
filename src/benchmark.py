@@ -299,6 +299,8 @@ def get_benchmark_sankey():
     data['links'].extend([{
         'source': f"source_{l['benchmark_group']}",
         'target': f"target_{l['benchmark_group_alt']}",
+        'source_rank': l['benchmark_group'],
+        'target_rank': l['benchmark_group_alt'],
         'value': utils.kg_to_unit(
             l['amount_kg'], unit=UNIT
         ),
