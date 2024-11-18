@@ -14,6 +14,24 @@ VARS = {
 }
 
 DATA = {}
+UNIT = 't'
+
+
+def filter_by_area(df):
+    ROLES = var.ROLES
+
+    # import areas
+    # import province polygon
+    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = polygon[polygon['name'] == VARS['AREA']]
+    assert len(polygon) == 1
+
+    # add areas to roles
+    source = ROLES['Ontvangst']['source']  # source role
+    df = utils.add_areas(df, role=source, areas=polygon, admin_level=VARS['LEVEL'])
+
+    # ONLY PRODUCTION
+    return df[df[f"{source}_{VARS['LEVEL']}"] == VARS['AREA']]
 
 
 def to_treemap(df):
@@ -37,9 +55,9 @@ def to_treemap(df):
                 extra[e[f'{level}_code']] = {
                     **extra[e[f'{level}_code']],
                     'value': utils.kg_to_unit(
-                        e['amount_kg'] / 10**3, unit='t'
+                        e['amount_kg'], unit=UNIT
                     ),
-                    'unit': 't'
+                    'unit': UNIT
                 }
 
     tree = utils.update_tree({},
@@ -73,6 +91,8 @@ def treemap():
     filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
+    print(f"\nFilter on production only within area...")
+    df = filter_by_area(df)
 
     # aggregate per eural code
     groupby = [
@@ -109,9 +129,11 @@ def get_potential(df, rladder=None):
     return df
 
 
-def import_dataset(path):
+def import_dataset(path, area_filter=False):
     df = pd.read_csv(path, low_memory=False)
     df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
+    if filter_by_area:
+        df = filter_by_area(df)
 
     # aggregate per eural code & process
     groupby = [
@@ -180,19 +202,28 @@ def get_benchmark_sankey():
     path = f"{var.INPUT_DIR}/DATA/descriptions/rhierarchy.xlsx"
     rladder = pd.read_excel(path)
     rladder = rladder[['processing_code', 'benchmark_group']]
+    rladder_names = {
+        r['benchmark_group'][0]: r['benchmark_group'][1:].strip()
+        for idx, r in rladder.iterrows()
+    }
     rladder['benchmark_group'] = rladder['benchmark_group'].str[0]
 
     # import province dataset
     print(f"\nImport province dataset for {VARS['YEAR']}...")
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
     filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
-    province_data = get_potential(import_dataset(filename), rladder=rladder)
+    province_data = get_potential(
+        import_dataset(filename, area_filter=True),
+        rladder=rladder
+    )
 
     # import national dataset
     print(f"\nImport national dataset for {VARS['YEAR']}...")
-    path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
-    filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
-    national_data = get_potential(import_dataset(filename), rladder=rladder)
+    # path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
+    # filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
+    # national_data = get_potential(import_dataset(filename), rladder=rladder)
+    # national_data.to_excel(fr"..\json\national_data_{VARS['YEAR']}.xlsx", index=False)
+    national_data = pd.read_excel('../json/national_data_2022.xlsx', dtype={'eural_code': str})
 
     # compute potential
     potential = pd.merge(province_data, national_data,
@@ -258,17 +289,20 @@ def get_benchmark_sankey():
         data['nodes'].extend([{
             'id': f"{typ}_{n['benchmark_group']}",
             'rank': n['benchmark_group'],
-            'value': n['amount_kg'],
-            'unit': 'kg',
+            'name': rladder_names[n['benchmark_group']],
+            'value': utils.kg_to_unit(
+                n['amount_kg'], unit=UNIT
+            ),
+            'unit': UNIT,
             'pct': n['pct']
         } for idx, n in df.iterrows()])
     data['links'].extend([{
         'source': f"source_{l['benchmark_group']}",
         'target': f"target_{l['benchmark_group_alt']}",
-        'source_rank': l['benchmark_group'],
-        'target_rank': l['benchmark_group_alt'],
-        'value': l['amount_kg'],
-        'unit': 'kg'
+        'value': utils.kg_to_unit(
+            l['amount_kg'], unit=UNIT
+        ),
+        'unit': UNIT
     } for idx, l in links.iterrows()])
 
     return data
