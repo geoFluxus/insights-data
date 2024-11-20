@@ -54,6 +54,7 @@ def to_treemap(df):
             if level == 'eural':
                 extra[e[f'{level}_code']] = {
                     **extra[e[f'{level}_code']],
+                    'hazardous': e['hazardous'],
                     'value': utils.kg_to_unit(
                         e['amount_kg'], unit=UNIT
                     ),
@@ -81,7 +82,7 @@ def treemap():
     ewc6 = pd.read_excel(f"{path}/waste06.xlsx")
     ewc6['ewc_code'] = ewc6['ewc_code'].astype(str).str.zfill(6)
     ewc6['ewc_name'] = ewc6['ewc_name'].str.capitalize()
-    ewc6 = ewc6[['ewc_code', 'ewc_name']].rename(
+    ewc6 = ewc6[['ewc_code', 'ewc_name', 'hazardous']].rename(
         columns={'ewc_code': 'eural_code', 'ewc_name': 'eural_name'}
     )
 
