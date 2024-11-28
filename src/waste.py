@@ -3,11 +3,9 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import json
-import itertools
 import re
 import utils
-import benchmark
-
+from src.analysis import benchmark
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
