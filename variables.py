@@ -5,6 +5,7 @@ AREA = 'Zaanstad'
 LEVEL = 'Gemeente'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
 YEAR = 2022
+DMI_YEARS = [_ for _ in range(2015, 2023)]
 GOALS_YEARS = [_ for _ in range(2016, 2022)]
 ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4

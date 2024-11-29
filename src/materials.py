@@ -94,18 +94,18 @@ def process_cbs():
     period = VARS['YEAR']
 
     # stromen -> million kg
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
+    path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
-    # exclude chapter 24 (Afval)
+    # exclude afval
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
         (df['Regionaam'].isin(VARS['COROPS'])) &
-        (df['Goederengroep_nr'] != 24)
+        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False))
     ]
 
     # import cbs classifications
