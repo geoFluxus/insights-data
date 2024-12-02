@@ -324,8 +324,10 @@ def visualise_per_province(data, indicator=None):
         fig.set(xlim=(PROJ_START, PROJ_END))
 
         yhat, err_bands = regression(sns.regplot, fig, "Jaar", indicator, truncate=False)
+        goal_value = viz_data[viz_data['Jaar'] == PROJ_START + 1][indicator].values[0] / 2
+
         item = DATA.setdefault(indicator, {})
-        item[goal] = {
+        item[goal.lower()] = {
             "points": {
                 "period": viz_data["Jaar"].to_list(),
                 "values": viz_data[indicator].to_list()
@@ -339,7 +341,13 @@ def visualise_per_province(data, indicator=None):
             "area": {
                 "upper_bound": err_bands[0].tolist(),
                 "lower_bound": err_bands[1].tolist()
-            }
+            },
+            **({'goal': {
+                "x1": PROJ_START,
+                "y1": goal_value,
+                "x2": PROJ_END,
+                "y2": goal_value
+            }} if goal == 'abiotic' else {})
         }
 
 
