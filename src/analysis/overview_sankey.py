@@ -103,11 +103,12 @@ def process_cbs():
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
-    # exclude chapter 24 (Afval)
+    # exclude afval and total sums
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
         (df['Regionaam'].isin(VARS['COROPS'])) &
-        (df['Goederengroep_nr'] != 24)
+        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
+        (df['Gebruiksgroep_naam'] != 'Totaal')
     ]
     stromen = [
         'Aanbod_eigen_regio',
