@@ -9,7 +9,8 @@ DMI_YEARS = [_ for _ in range(2015, 2023)]
 GOALS_YEARS = [_ for _ in range(2016, 2022)]
 ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4
-COROP_FILE = f"Tabel Regionale stromen 2015-2022 {'provincie' if LEVEL == 'Provincie' else 'COROPplus'}"
+COROP_FILE = f"Tabel Regionale stromen 2015-2022 " \
+             f"{'provincie' if LEVEL == 'Provincie' else 'COROPplus'}"
 COROPS = ['Zaanstreek']
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
