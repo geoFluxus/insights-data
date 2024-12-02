@@ -1,13 +1,11 @@
 import variables as var
 import pandas as pd
-import geopandas as gpd
 from sklearn.linear_model import LinearRegression
 import numpy as np
-import itertools
 import json
 import itertools
-import utils
 import re
+import utils
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
@@ -314,7 +312,8 @@ if __name__ == '__main__':
                     }
                 })
 
-        import _make_iterencode
+        from src import _make_iterencode
+
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)
         json.dump(RESULTS, outfile, indent=indent)

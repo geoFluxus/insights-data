@@ -1,7 +1,6 @@
 import utils
 import pandas as pd
 import variables as var
-import json
 import os
 
 
@@ -28,11 +27,12 @@ def process_lma():
     # process LMA ontvangst
     for typ in ['Ontvangst']:
         # data prefix
-        prefix = f"{PREFIXES[VARS['LEVEL']]}\t{PREFIXES[typ]} afval"
+        level = PREFIXES[VARS['LEVEL']]
+        datatype = f"{PREFIXES[typ]} afval"
+        period = VARS['YEAR']
 
         # import file
-        print()
-        print(f'Import {typ}...')
+        print(f'\nImport {typ}...')
         path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
         filename = f"{path}/{typ.lower()}_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
         df = pd.read_csv(filename, low_memory=False)
@@ -52,22 +52,32 @@ def process_lma():
                                           right_on='ewc')
 
         # TRANSITION AGENDAS
-        DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
-            utils.get_classification_graphs(df,
-                                            source=source,
-                                            level=VARS['LEVEL'],
-                                            area=VARS['AREA'],
-                                            klass='agendas',
-                                            unit=VARS['TRANSITION_AGENDAS_UNIT'])
+        DATA.setdefault('transition_agendas', []).append({
+            'level': level,
+            'period': period,
+            'type': datatype,
+            **utils.get_classification_graphs(df,
+                                              source=source,
+                                              level=VARS['LEVEL'],
+                                              area=VARS['AREA'],
+                                              klass='agendas',
+                                              unit=VARS['TRANSITION_AGENDAS_UNIT'])
+        })
 
         # MATERIAL SANKEY
         # also retrieve data for material tree
-        DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
+        data, hierarchy, sums = \
             utils.get_material_sankey(df,
-                                      source=source,
-                                      level=VARS['LEVEL'],
-                                      area=VARS['AREA'],
-                                      unit=VARS['MATERIAL_TREE_UNIT'])
+                                     source=source,
+                                     level=VARS['LEVEL'],
+                                     area=VARS['AREA'],
+                                     unit=VARS['MATERIAL_TREE_UNIT'])
+        DATA.setdefault('material_sankey', []).append({
+            'level': level,
+            'period': period,
+            'type': datatype,
+            **data
+        })
 
         # store material tree data
         MATERIAL_TREE['afval'] = {
@@ -77,23 +87,25 @@ def process_lma():
 
 
 def process_cbs():
-    print()
-    print('Import CBS data...')
+    print('\nImport CBS data...')
+    # data prefix
+    level = 'COROP'
+    datatype = 'goederen'
+    period = VARS['YEAR']
 
     # stromen -> million kg
-    prefix = f"COROP\tgoederen"
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/CBS"
+    path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
-    # exclude chapter 24 (Afval)
+    # exclude afval
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
         (df['Regionaam'].isin(VARS['COROPS'])) &
-        (df['Goederengroep_nr'] != 24)
+        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False))
     ]
 
     # import cbs classifications
@@ -117,19 +129,30 @@ def process_cbs():
         'Invoer_internationaal',
         'Invoer_regionaal'
     ])]
-    DATA[f"{prefix}\ttransition_agendas\t{VARS['YEAR']}"] = \
-        utils.get_classification_graphs(input_df,
-                                        area=VARS['COROPS'][0],
-                                        klass='agendas',
-                                        unit=VARS['TRANSITION_AGENDAS_UNIT'])
+    DATA.setdefault('transition_agendas', []).append({
+        'level': level,
+        'period': period,
+        'type': datatype,
+        **utils.get_classification_graphs(input_df,
+                                          area=VARS['COROPS'][0],
+                                          klass='agendas',
+                                          unit=VARS['TRANSITION_AGENDAS_UNIT'])
+    })
+
 
     # MATERIAL SANKEY
     # also retrieve data for material tree
-    DATA[f"{prefix}\tmaterial_sankey\t{VARS['YEAR']}"], hierarchy, sums = \
+    data, hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level=VARS['LEVEL'],
                                   area=VARS['COROPS'][0],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
+    DATA.setdefault('material_sankey', []).append({
+        'level': level,
+        'period': period,
+        'type': datatype,
+        **data
+    })
 
     # store material tree data
     MATERIAL_TREE['goederen'] = {
@@ -168,23 +191,23 @@ def merge_material_trees(unit='kg'):
                 # "value": round(item['sums'].get(k, 0) / total[k] * 100)
             })
 
-    # convert to tree visualization
-    def update_tree(tree, dic):
-        for key in dic.keys():
-            item = {
-                "name": key,
-                'values': sums[key],
-                "unit": unit
-            }
-            if isinstance(dic[key], dict):
-                item["children"] = []
-                item = update_tree(item, dic[key])
-            tree.setdefault("children", []).append(item)
-        return tree
-    tree = update_tree({}, hierarchy)["children"][0]
-    DATA[f"province\tall\tmaterial_tree\t{VARS['YEAR']}"] = [{
-        "data": tree
-    }]
+    # # convert to tree visualization
+    # def update_tree(tree, dic):
+    #     for key in dic.keys():
+    #         item = {
+    #             "name": key,
+    #             'values': sums[key],
+    #             "unit": unit
+    #         }
+    #         if isinstance(dic[key], dict):
+    #             item["children"] = []
+    #             item = update_tree(item, dic[key])
+    #         tree.setdefault("children", []).append(item)
+    #     return tree
+    # tree = update_tree({}, hierarchy)["children"][0]
+    # DATA[f"province\tall\tmaterial_tree\t{VARS['YEAR']}"] = [{
+    #     "data": tree
+    # }]
 
     # convert tree to table
     terms = {
@@ -207,7 +230,7 @@ def merge_material_trees(unit='kg'):
                 table, id = tree_to_table(dic[key], parent=key, table=table, id=id)
         return table, id
     table, id = tree_to_table(hierarchy)
-    DATA[f"province\tall\tmaterial_table\t{VARS['YEAR']}"] = [{
+    DATA['material_table'] = [{
         "data": table,
     }]
 

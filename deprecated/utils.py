@@ -430,4 +430,3 @@ def get_material_sankey(df, source=None,
     })
 
     return sankeys, hierarchy, sums
-
