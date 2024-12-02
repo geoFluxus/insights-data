@@ -15,6 +15,9 @@ RELEVANT_COLS = [
 PROJ_START = 2015
 PROJ_END = 2030
 
+RESOURCE_TYPE = None
+FILEPATH = None
+
 
 def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     # pivot table for analysis
@@ -41,7 +44,7 @@ def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     lokale_winning = lokale_winning[['Regionaam', 'Goederengroep', 'Winning']]
     data = pd.merge(data, lokale_winning, how='left', on=['Regionaam', 'Goederengroep'])
     data.fillna(0, inplace=True)
-    data = data.merge(resource_type, on='Goederengroep')
+    data = data.merge(RESOURCE_TYPE, on='Goederengroep')
 
     return data
 
@@ -50,13 +53,13 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     cols_import = ['Winning', 'Invoer_nationaal', 'Invoer_internationaal']
     cols_export = ['Uitvoer_nationaal', 'Uitvoer_internationaal']
     rme_matrices_file = 'geoFluxus/CBS_to_RME.xlsx'
-    cbs_rme = pd.read_excel(f'{filepath}/{rme_matrices_file}', sheet_name='CBS_to_RME_codes').fillna(0)
-    eur_or_t = pd.read_excel(f'{filepath}/{rme_matrices_file}', sheet_name='eur_or_t')
+    cbs_rme = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='CBS_to_RME_codes').fillna(0)
+    eur_or_t = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='eur_or_t')
     eur_or_t.set_index(eur_or_t['CBS_name'])
 
     #Load conversion tables
-    rme_import_coefficients = pd.read_excel(f'{filepath}/{rme_matrices_file}', sheet_name='RME_import_'+str(year))
-    rme_export_coefficients = pd.read_excel(f'{filepath}/{rme_matrices_file}', sheet_name='RME_export_'+str(year))
+    rme_import_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_import_'+str(year))
+    rme_export_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_export_'+str(year))
     rm_groups_import = rme_import_coefficients['Raw_material_name'][1:]
     rm_groups_export = rme_export_coefficients['Raw_material_name'][1:]
 
@@ -67,8 +70,8 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     convert_export = cbs_rme.values[1:, 1:].astype(float) @ rme_export_coefficients.values[1:, 2:].T
     converter_export = pd.DataFrame(index=cbs_rme['CBS_name'][1:], columns=rm_groups_export, data=convert_export)
     if save:
-        converter_import.to_excel(filepath + f'cbs_to_rme_conversion_table_import_{year}.xlsx')
-        converter_export.to_excel(filepath + f'cbs_to_rme_conversion_table_export_{year}.xlsx')
+        converter_import.to_excel(FILEPATH + f'cbs_to_rme_conversion_table_import_{year}.xlsx')
+        converter_export.to_excel(FILEPATH + f'cbs_to_rme_conversion_table_export_{year}.xlsx')
     rm_data = pd.DataFrame()
 
     #Add keys for which groups use monitary values, and which use tons.
@@ -110,7 +113,7 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     materials = materials.stack(level=0, future_stack=True)
     if abiotisch:
         #print(materials.index.get_level_values(2))
-        abiotics = pd.read_excel(f'{filepath}/{rme_matrices_file}', sheet_name='abiotisch')
+        abiotics = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='abiotisch')
         materials = materials[materials.index.get_level_values(2).isin(abiotics['Abiotisch'])]
     materials['RMI'] = materials['Winning'] + materials['Invoer_internationaal'] + materials['Invoer_nationaal']
     df_import = None
@@ -135,7 +138,7 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     materials_export = materials_export.stack(level=0, future_stack=True)
     if abiotisch:
         # print(materials.index.get_level_values(2))
-        #abiotics = pd.read_excel(filepath + rme_matrices_file, sheet_name='abiotisch')
+        #abiotics = pd.read_excel(FILEPATH + rme_matrices_file, sheet_name='abiotisch')
         materials_export = materials_export[materials_export.index.get_level_values(2).isin(abiotics['Abiotisch'])]
 
     materials = pd.merge(materials, materials_export, left_index=True, right_index=True, how='outer')
@@ -172,7 +175,7 @@ def calculate_indicators(path, file_name, raw_materials=False, goal='abiotisch')
         ].copy()
 
         # lokale winning
-        lokale_winning_groups = resource_type[resource_type['Lokale winning'] == 'ja']
+        lokale_winning_groups = RESOURCE_TYPE[RESOURCE_TYPE['Lokale winning'] == 'ja']
         lokale_winning_groups = lokale_winning_groups['Goederengroep'].tolist()
 
         # compute local extraction
@@ -198,7 +201,7 @@ def calculate_indicators(path, file_name, raw_materials=False, goal='abiotisch')
                 #Assume that we don't aggregate data
                 rm_data = data.copy()
                 eur_aggregated = eur_data.copy()
-        # if required by the goal, aggregate per resource_type type biotic/abiotic/mixed
+        # if required by the goal, aggregate per RESOURCE_TYPE type biotic/abiotic/mixed
         elif goal == 'agg_per_type':
             aggregated = data.groupby(['Regionaam', 'Grondstof']).sum().reset_index()
             if raw_materials:
@@ -341,23 +344,25 @@ def visualise_per_province(data, indicator=None):
 
 
 def run():
+    global FILEPATH, RESOURCE_TYPE
+
     print("\nDMI-RMI")
-    filepath = f"{var.INPUT_DIR}/DATA/monitor_data/data"
+    FILEPATH = f"{var.INPUT_DIR}/DATA/monitor_data/data"
 
     # import csb data
     # stromen -> million kg
     filename = f"/CBS/{var.COROP_FILE}.csv"
 
     # read division into biotic / abiotic product groups
-    path = f"{filepath}/geofluxus"
-    resource_type = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
+    path = f"{FILEPATH}/geofluxus"
+    RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
 
     # Call the calculate indicators function with raw material calculations enabled.
-    dmcs, dmis, rmcs, rmis = calculate_indicators(filepath, filename,
+    dmcs, dmis, rmcs, rmis = calculate_indicators(FILEPATH, filename,
                                                   raw_materials=True,
                                                   goal='total')
 
-    dmcs_ab, dmis_ab, rmcs_ab, rmis_ab = calculate_indicators(filepath, filename,
+    dmcs_ab, dmis_ab, rmcs_ab, rmis_ab = calculate_indicators(FILEPATH, filename,
                                                               raw_materials=True)
 
     indicators = {
