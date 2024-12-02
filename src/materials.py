@@ -101,11 +101,12 @@ def process_cbs():
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
-    # exclude afval
+    # exclude afval and total sums
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
         (df['Regionaam'].isin(VARS['COROPS'])) &
-        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False))
+        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
+        (df['Gebruiksgroep_naam'] != 'Totaal')
     ]
 
     # import cbs classifications
