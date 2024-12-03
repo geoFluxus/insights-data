@@ -312,7 +312,14 @@ def regression(func, fig, *args, **kwargs):
         plotter = _RegressionPlotter(*plot_args, **plot_kwargs)
         grid, yhat, err_bands = plotter.fit_regression(ax)
 
-        return yhat, err_bands
+        return grid, yhat, err_bands
+
+
+def get_sample(l):
+    return [
+        x for idx, x in enumerate(l)
+        if idx % 10 == 0 or idx == len(l) - 1
+    ]
 
 
 def visualise_per_province(data, indicator=None):
@@ -323,10 +330,10 @@ def visualise_per_province(data, indicator=None):
         fig = sns.FacetGrid(data=viz_data, col='Regionaam', hue='Regionaam', aspect=0.5, height=5, col_wrap=6)
         fig.set(xlim=(PROJ_START, PROJ_END))
 
-        yhat, err_bands = regression(sns.regplot, fig, "Jaar", indicator, truncate=False)
+        grid, yhat, err_bands = regression(sns.regplot, fig, "Jaar", indicator, truncate=False)
         goal_value = viz_data[viz_data['Jaar'] == PROJ_START + 1][indicator].values[0] / 2
 
-        item = DATA.setdefault(indicator, {})
+        item = DATA.setdefault(indicator.lower(), {})
         item[goal.lower()] = {
             "points": {
                 "period": viz_data["Jaar"].to_list(),
@@ -339,8 +346,9 @@ def visualise_per_province(data, indicator=None):
                 "y2": yhat[-1]
             },
             "area": {
-                "upper_bound": err_bands[0].tolist(),
-                "lower_bound": err_bands[1].tolist()
+                "grid": get_sample(grid.tolist()),
+                "upper_bound": get_sample(err_bands[0].tolist()),
+                "lower_bound": get_sample(err_bands[1].tolist())
             },
             **({'goal': {
                 "x1": PROJ_START,
@@ -382,7 +390,13 @@ def run():
     for indicator, data in indicators.items():
         visualise_per_province(data, indicator=indicator)
 
-    return DATA
+    return {
+        "level": var.PREFIXES[var.LEVEL],
+        "period": var.YEAR,
+        "name": var.AREA,
+        "unit": "kt",
+        **DATA,
+    }
 
 
 

@@ -1,4 +1,4 @@
-from analysis import overview_sankey, dmi
+from analysis import overview_sankey, overview_materials
 import json
 import variables as var
 
@@ -7,7 +7,7 @@ DATA = {}
 
 if __name__ == '__main__':
     DATA["overview_sankey"] = overview_sankey.run()
-    DATA["dmi"] = dmi.run()
+    DATA["overview_materials"] = overview_materials.run()
 
     with open(f"{var.OUTPUT_DIR}/overview.json", 'w') as outfile:
         from src import _make_iterencode
