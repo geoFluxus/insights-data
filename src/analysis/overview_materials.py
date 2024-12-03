@@ -355,7 +355,7 @@ def visualise_per_province(data, indicator=None):
                 "y1": goal_value,
                 "x2": PROJ_END,
                 "y2": goal_value
-            }} if goal == 'abiotic' else {})
+            }} if goal == 'abiotic' and indicator in ['DMC', 'RMC'] else {})
         }
 
 
@@ -395,7 +395,7 @@ def run():
         "period": var.YEAR,
         "name": var.AREA,
         "unit": "kt",
-        **DATA,
+        "data": DATA,
     }
 
 
