@@ -86,7 +86,7 @@ def add_areas(flows, areas=None, role=None, admin_level=None):
     # join geolocation with area polygons
     flows['wkt'] = gpd.GeoSeries.from_wkt(flows[f'{role}_Location'])
     flows = gpd.GeoDataFrame(flows, geometry='wkt', crs='EPSG:4326')
-    flows = gpd.sjoin(flows, areas, how='left', op='within')
+    flows = gpd.sjoin(flows, areas, how='left', predicate='within')
 
     # keep only original dataframe columns & role area
     flows[f'{role}_{admin_level}'] = flows['name']
