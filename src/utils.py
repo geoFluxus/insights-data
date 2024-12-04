@@ -187,7 +187,11 @@ def get_classification_graphs(df, source=None,
     flows = df.copy()
     if source is not None:
         # filter source in areas
-        flows = flows[flows[f'{source}_{level}'].isin([area])]
+        if isinstance(area, str):
+            in_area = flows[f'{source}_{level}'] == area
+        elif isinstance(area, list):
+            in_area = flows[f'{source}_{level}'].isin(area)
+        flows = flows[in_area]
         flows = flows.rename(columns={source: 'source'})
 
         groupby.append(f'{source}_{level}',)
@@ -211,7 +215,7 @@ def get_classification_graphs(df, source=None,
     cats = [format_name(cat) for cat in cats]
 
     return {
-        "name": area,
+        "name": ','.join(area) if isinstance(area, list) else area,
         klass: cats,
         "values": values,
         "unit": unit
@@ -393,7 +397,11 @@ def get_material_sankey(df, source=None,
     flows = df.copy()
     if source is not None:
         # filter source in areas
-        flows = flows[flows[f'{source}_{level}'].isin([area])]
+        if isinstance(area, str):
+            in_area = flows[f'{source}_{level}'] == area
+        elif isinstance(area, list):
+            in_area = flows[f'{source}_{level}'].isin(area)
+        flows = flows[in_area]
         flows = flows.rename(columns={source: 'source'})
 
         groupby.append(f'{source}_{level}', )
@@ -411,7 +419,7 @@ def get_material_sankey(df, source=None,
     # convert hierarchy to nivo sankey
     sankey, sums = get_sankey(hierarchy, unit=unit)
     data = {
-        "name": area,
+        "name": ','.join(area) if isinstance(area, list) else area,
         "materials": sankey,
     }
 

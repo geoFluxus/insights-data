@@ -135,18 +135,17 @@ def process_cbs():
         'period': period,
         'type': datatype,
         **utils.get_classification_graphs(input_df,
-                                          area=VARS['COROPS'][0],
+                                          area=VARS['COROPS'],
                                           klass='agendas',
                                           unit=VARS['TRANSITION_AGENDAS_UNIT'])
     })
-
 
     # MATERIAL SANKEY
     # also retrieve data for material tree
     data, hierarchy, sums = \
         utils.get_material_sankey(input_df,
                                   level=VARS['LEVEL'],
-                                  area=VARS['COROPS'][0],
+                                  area=VARS['COROPS'],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
     DATA.setdefault('material_sankey', []).append({
         'level': level,
