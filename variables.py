@@ -21,16 +21,16 @@ unit = 'Mt' if LEVEL == 'Provincie' else 'kt'
 UNITS = {
     'OVERVIEW': {
         'OVERVIEW_SANKEY': unit,
+        'OVERVIEW_MATERIALS': 'kt'
     },
     'MATERIALS': {
         'TRANSITION_AGENDAS': unit,
         'MATERIAL_TREE': 't'
     },
-    'GOALS': {
-        'NATIONAL_GOALS': 'Mt'
-    },
-    'HIGHLIGHTS': {
-        'COMPANY_WASTE': unit
+    'WASTE': {
+        'TRENDS': 't',
+        'BENCHMARK': 't',
+        'EURAL_TREE': 't'
     }
 }
 

@@ -12,7 +12,7 @@ VARS = {
     'YEAR': var.YEAR,
     'OUTPUT_DIR': var.OUTPUT_DIR
 }
-UNIT = 't'
+UNIT = var.UNITS['WASTE']['EURAL_TREE']
 
 
 def filter_by_area(df):

@@ -22,6 +22,7 @@ ALL_YEARS = "all_years"
 LAST_QUARTER = "last_quarter"
 UNKNOWN = 'Onbekend'
 DATA = {}
+UNIT = var.UNITS['WASTE']['TRENDS']
 
 
 def to_json(value):
@@ -170,7 +171,7 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None, attrs={},
             item = DATA.setdefault(datatype, {})
             item[ALL_YEARS] = {
                 'amount': to_json(amount_change),
-                'unit': 't',
+                'unit': UNIT,
                 'pct': to_json(pct_change),
                 'period': str(VARS['YEARS'][0])
             }
@@ -181,7 +182,7 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None, attrs={},
             pct_change = (Y_final - Y_initial) / Y_initial * 100 if Y_initial else np.nan
             item[LAST_QUARTER] = {
                 'amount': to_json(amount_change),
-                'unit': 't',
+                'unit': UNIT,
                 'pct': to_json(pct_change),
                 'period': f"Q{VARS['QUARTER']}/{str(VARS['YEARS'][-2])[-2:]}"
             }
