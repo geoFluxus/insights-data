@@ -25,7 +25,8 @@ UNITS = {
     },
     'MATERIALS': {
         'TRANSITION_AGENDAS': unit,
-        'MATERIAL_TREE': 't'
+        'MATERIAL_TREE': 't',
+        'HIGHLIGHTS': 'Mt'
     },
     'WASTE': {
         'TRENDS': 't',

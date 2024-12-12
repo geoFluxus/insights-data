@@ -131,7 +131,7 @@ def process_cbs():
     input_df = df[df['Stroom'].isin([
         'Aanbod_eigen_regio',
         'Invoer_internationaal',
-        'Invoer_regionaal'
+        'Invoer_nationaal'
     ])]
     DATA.setdefault('transition_agendas', []).append({
         'level': level,
@@ -238,6 +238,45 @@ def merge_material_trees(unit='kg'):
     }]
 
 
+def material_hightlights():
+    highlights = {}
+    unit = var.UNITS['MATERIALS']['HIGHLIGHTS']
+
+    # renewable goods (Goederen -> Organisch -> Biotisch)
+    sums = MATERIAL_TREE['goederen']['sums']
+    highlights['renewable_goods'] = {
+        'amount': round(utils.kg_to_unit(sums['Biotisch'], unit=unit), 1),
+        'unit': unit,
+        'pct': round(sums['Biotisch'] / sums['Totaal'] * 100, 1)
+    }
+
+    # renewable goods (Goederen -> Organisch -> Biotisch)
+    sums = MATERIAL_TREE['goederen']['sums']
+    highlights['renewable_goods'] = {
+        'amount': round(utils.kg_to_unit(sums['Biotisch'], unit=unit), 1),
+        'unit': unit,
+        'pct': round(sums['Biotisch'] / sums['Totaal'] * 100, 1)
+    }
+
+    # not renewable waste (Afval -> Abiotisch)
+    sums = MATERIAL_TREE['afval']['sums']
+    highlights['not_renewable_waste'] = {
+        'amount': round(utils.kg_to_unit(sums['Abiotisch'], unit=unit), 1),
+        'unit': unit,
+        'pct': round(sums['Abiotisch'] / sums['Totaal'] * 100, 1)
+    }
+
+    # wood - renewable waste (Afval -> Organisch -> Biotisch -> Hout)
+    sums = MATERIAL_TREE['afval']['sums']
+    highlights['wood_renewable_waste'] = {
+        'amount': round(utils.kg_to_unit(sums['Hout'], unit='kt'), 1),
+        'unit': 'kt',
+        'pct': round(sums['Hout'] / sums['Biotisch'] * 100, 1)
+    }
+
+    DATA['material_highlights'] = highlights
+
+
 def run():
     # start analysis
     print('MATERIALS ANALYSIS')
@@ -267,7 +306,12 @@ def run():
     if len(VARS['COROPS']):
         process_cbs()
 
+    # material highlights
+    material_hightlights()
+
     # merge material trees
+    import json
+    print(json.dumps(MATERIAL_TREE, indent=2))
     merge_material_trees(unit=VARS['MATERIAL_TREE_UNIT'])
 
     return DATA

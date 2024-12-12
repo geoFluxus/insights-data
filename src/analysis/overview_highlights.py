@@ -82,7 +82,7 @@ def total_imported_machine_apparatus():
         imported_goods = GOODS[
             GOODS['Stroom'].isin([
                 'Invoer_internationaal',
-                'Invoer_regionaal'
+                'Invoer_nationaal'
             ])
         ]
         machines = imported_goods[
@@ -115,7 +115,7 @@ def total_exported_food():
     exported_goods = GOODS[
         GOODS['Stroom'].isin([
             'Uitvoer_internationaal',
-            'Uitvoer_regionaal'
+            'Uitvoer_nationaal'
         ])
     ]
     food = exported_goods[

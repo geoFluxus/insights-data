@@ -8,8 +8,8 @@ import variables as var
 DATA = {}
 
 if __name__ == '__main__':
-    # DATA["overview_sankey"] = overview_sankey.run()
-    # DATA["overview_materials"] = overview_materials.run()
+    DATA["overview_sankey"] = overview_sankey.run()
+    DATA["overview_materials"] = overview_materials.run()
     DATA["overview_highlights"] = overview_highlights.run()
 
     with open(f"{var.OUTPUT_DIR}/overview.json", 'w') as outfile:
