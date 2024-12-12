@@ -1,6 +1,6 @@
 import pandas as pd
 import variables as var
-import utils
+from src.analysis import utils
 
 
 # VARIABLES
