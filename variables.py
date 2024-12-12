@@ -1,6 +1,5 @@
 # VARIABLES
 INPUT_DIR = 'W:/Shared With Me/MASTER'
-# INPUT_DIR = '/Users/rusnesileryte/Amazon WorkDocs Drive/My Documents/MASTER'
 AREA = 'Zaanstad'
 LEVEL = 'Gemeente'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
@@ -21,7 +20,8 @@ unit = 'Mt' if LEVEL == 'Provincie' else 'kt'
 UNITS = {
     'OVERVIEW': {
         'OVERVIEW_SANKEY': unit,
-        'OVERVIEW_MATERIALS': 'kt'
+        'OVERVIEW_MATERIALS': 'kt',
+        'HIGHLIGHTS': 'Mt'
     },
     'MATERIALS': {
         'TRANSITION_AGENDAS': unit,
