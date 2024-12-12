@@ -40,23 +40,6 @@ def format_name(name):
     return name
 
 
-def export_graphs(fil, data=None):
-    with open(fil, 'w') as outfile:
-        # preprocess
-        results = {}
-        for key, items in data.items():
-            # level, type, field, period = key.split('\t')
-            for item in items:
-                # item['level'] = level
-                # item['period'] = period
-                # item['type'] = type
-                results.setdefault(key, []).append(item)
-
-        json.encoder._make_iterencode = _make_iterencode._make_iterencode
-        indent = (2, None)
-        json.dump(results, outfile, indent=indent)
-
-
 def import_areas(level=None):
     """
     import area polygons
