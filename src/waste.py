@@ -4,8 +4,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 import json
 import re
-import utils
-from src.analysis import benchmark
+from src.analysis import utils, benchmark, eural_treemap
 
 VARS = {
     'INPUT_DIR': var.INPUT_DIR,
@@ -278,10 +277,10 @@ if __name__ == '__main__':
                            add_trends=False)
 
     # eural treemap
-    DATA['eural_treemap'] = benchmark.treemap()
+    DATA['eural_treemap'] = eural_treemap.run()
 
     # benchmark sankey
-    DATA['benchmark_sankey'] = benchmark.get_benchmark_sankey()
+    DATA['benchmark_sankey'] = benchmark.run()
 
     with open(f"{VARS['OUTPUT_DIR']}/waste.json", 'w') as outfile:
         from src import _make_iterencode

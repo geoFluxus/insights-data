@@ -1,4 +1,4 @@
-import utils
+from src.analysis import utils
 import pandas as pd
 import variables as var
 import os
@@ -68,10 +68,10 @@ def process_lma():
         # also retrieve data for material tree
         data, hierarchy, sums = \
             utils.get_material_sankey(df,
-                                     source=source,
-                                     level=VARS['LEVEL'],
-                                     area=VARS['AREA'],
-                                     unit=VARS['MATERIAL_TREE_UNIT'])
+                                      source=source,
+                                      level=VARS['LEVEL'],
+                                      area=VARS['AREA'],
+                                      unit=VARS['MATERIAL_TREE_UNIT'])
         DATA.setdefault('material_sankey', []).append({
             'level': level,
             'period': period,

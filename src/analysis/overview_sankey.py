@@ -1,4 +1,4 @@
-from src import utils
+from src.analysis import utils
 import pandas as pd
 import variables as var
 import numpy as np

@@ -451,7 +451,8 @@ if __name__ == '__main__':
                     }
                 })
 
-        from src import _make_iterencode, utils
+        from src import _make_iterencode
+        from src.analysis import utils
 
         json.encoder._make_iterencode = _make_iterencode._make_iterencode
         indent = (2, None)

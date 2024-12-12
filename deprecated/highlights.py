@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src import utils
+from src.analysis import utils
 import variables as var
 import matplotlib.pyplot as plot
 
