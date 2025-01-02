@@ -249,7 +249,7 @@ def calculate_indicators(path, file_name, raw_materials=False, goal='abiotisch')
         all_data = pd.concat([all_data, aggregated])
 
     if raw_materials:
-        return dmcs, dmis, rmcs, rmis, all_data
+        return dmcs, dmis, rmcs, rmis, all_data, all_eur_data
     else:
         return dmcs, dmis
 
@@ -374,15 +374,14 @@ def run():
     RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
 
     # Call the calculate indicators function with raw material calculations enabled.
-    dmcs, dmis, rmcs, rmis, all_data = calculate_indicators(FILEPATH, filename,
+    dmcs, dmis, rmcs, rmis, all_data, all_eur_data = calculate_indicators(FILEPATH, filename,
                                                             raw_materials=True,
                                                             goal='total')
-
     # export all data for later analysis
     all_data.to_excel(f'{var.OUTPUT_DIR}/all_data.xlsx')
-    print(f'All computed data have been exported to {var.OUTPUT_DIR}/all_data.xlsx')
+    all_eur_data.to_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx')
 
-    dmcs_ab, dmis_ab, rmcs_ab, rmis_ab, _ = calculate_indicators(FILEPATH, filename,
+    dmcs_ab, dmis_ab, rmcs_ab, rmis_ab, _, _ = calculate_indicators(FILEPATH, filename,
                                                                  raw_materials=True)
 
     indicators = {
