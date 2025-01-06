@@ -173,6 +173,6 @@ def run():
         "period": var.YEAR,
         "name": var.AREA,
         "unit": "%",
-        "materials": materials,
+        "materials": heatmap_materials,
         "values": heatmap_data
     }

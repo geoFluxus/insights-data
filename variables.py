@@ -32,7 +32,8 @@ UNITS = {
         'TRENDS': 't',
         'BENCHMARK': 't',
         'EURAL_TREE': 't'
-    }
+    },
+    'NATIONAL_GOALS_UNIT': 'Mt'
 }
 
 ROLES = {
