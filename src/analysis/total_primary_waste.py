@@ -108,8 +108,7 @@ def compute_lma_goal(df,
                      areas=None,
                      apply=None,
                      year=None,
-                     reference=None,
-                     ignore=False):
+                     reference=None):
     """
     Compute LMA waste
     """
