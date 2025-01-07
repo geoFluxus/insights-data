@@ -146,7 +146,7 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     return materials.reset_index()
 
 
-def calculate_indicators(path, file_name, raw_materials=False, goal='abiotisch'):
+def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False, goal='abiotisch'):
     dmcs = pd.DataFrame()
     dmis = pd.DataFrame()
     all_data = pd.DataFrame()
@@ -167,9 +167,10 @@ def calculate_indicators(path, file_name, raw_materials=False, goal='abiotisch')
     for year in var.DMI_YEARS:
         # filter by year & COROPS
         # exclude afval and total sums
+        if isinstance(corop, str): corop = [corop]
         df_year = df[
             (df['Jaar'] == year) &
-            (df['Regionaam'].isin(var.COROPS)) &
+            (df['Regionaam'].isin(corop)) &
             (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
             (df['Gebruiksgroep_naam'] != 'Totaal')
         ].copy()
@@ -392,6 +393,24 @@ def run():
     }
     for indicator, data in indicators.items():
         visualise_per_province(data, indicator=indicator)
+
+    # compute data for all provinces (for environmental cost)
+    filename = "/CBS/Tabel Regionale stromen 2015-2022 provincie.csv"
+    provinces = [
+        'Drenthe', 'Flevoland', 'Friesland', 'Gelderland',
+        'Groningen', 'Limburg', 'Noord-Brabant', 'Noord-Holland',
+        'Overijssel', 'Utrecht', 'Zeeland', 'Zuid-Holland'
+    ]
+    province_data = []
+    for province in provinces:
+        print(f"\nCompute data for {province}...")
+        dmcs, dmis, rmcs, rmis, all_data, all_eur_data = calculate_indicators(FILEPATH, filename,
+                                                                              corop=province,
+                                                                              raw_materials=True,
+                                                                              goal='total')
+        province_data.append(all_data)
+    province_data = pd.concat(province_data)
+    province_data.to_excel(f"{var.OUTPUT_DIR}/all_province_data.xlsx", index=False)
 
     return {
         "level": var.PREFIXES[var.LEVEL],
