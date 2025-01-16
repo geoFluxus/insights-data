@@ -1,16 +1,17 @@
 # VARIABLES
 INPUT_DIR = 'W:/Shared With Me/MASTER'
-AREA = 'Zaanstad'
+AREA = 'Enschede'
 LEVEL = 'Gemeente'
 AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
-YEAR = 2022
+YEAR = 2023
 DMI_YEARS = [_ for _ in range(2015, 2023)]
-GOALS_YEARS = [_ for _ in range(2016, 2022)]
+GOALS_YEARS = [_ for _ in range(2018, 2024)]
 ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4
-COROP_FILE = f"Tabel Regionale stromen 2015-2022 " \
-             f"{'provincie' if LEVEL == 'Provincie' else 'COROPplus'}"
-COROPS = ['Zaanstreek']
+COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
+             f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
+COROPS = ['Twente']
+HOUSEHOLD_KG = 59.345 * 10**6
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
 OUTPUT_DIR = '../json'
@@ -21,7 +22,8 @@ UNITS = {
     'OVERVIEW': {
         'OVERVIEW_SANKEY': unit,
         'OVERVIEW_MATERIALS': 'kt',
-        'HIGHLIGHTS': 'Mt'
+        'HIGHLIGHTS': 'Mt',
+        'OVERVIEW_USAGE': 'kt'
     },
     'MATERIALS': {
         'TRANSITION_AGENDAS': unit,
