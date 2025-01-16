@@ -395,7 +395,7 @@ def run():
         visualise_per_province(data, indicator=indicator)
 
     # compute data for all provinces (for environmental cost)
-    filename = "/CBS/Tabel Regionale stromen 2015-2022 provincie.csv"
+    filename = "/CBS/Tabel Regionale stromen 2015-2023 provincie.csv"
     provinces = [
         'Drenthe', 'Flevoland', 'Friesland', 'Gelderland',
         'Groningen', 'Limburg', 'Noord-Brabant', 'Noord-Holland',

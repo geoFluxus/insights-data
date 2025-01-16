@@ -167,27 +167,31 @@ def import_household_data(areas=None):
 
 
 def process_household():
-    # import postcodes
-    postcodes = pd.read_csv(
-        f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv",
-        low_memory=False
-    )
-    postcodes['PC4'] = postcodes['PC4'].astype(str)
-    gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
-    area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
-    print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}')
+    if var.HOUSEHOLD_KG is not None:
+        household_data = var.HOUSEHOLD_KG
+    else:
+        # import postcodes
+        postcodes = pd.read_csv(
+            f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv",
+            low_memory=False
+        )
+        postcodes['PC4'] = postcodes['PC4'].astype(str)
+        gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
+        area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
+        print(f'AREA GEMEENTEN ({len(area_gemeenten)}): {sorted(area_gemeenten)}')
 
-    # import household data
-    print('\nImport household data...')
-    household_data = import_household_data(areas=gemeenten)
-    household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
-    household_data = household_data[household_data['Perioden'] == int(VARS['YEAR'])]
-    household_data = household_data[household_data[VARS['LEVEL']] == VARS['AREA']]
+        # import household data
+        print('\nImport household data...')
+        household_data = import_household_data(areas=gemeenten)
+        household_data = household_data.rename(columns={'Gebieden': 'Gemeente'})
+        household_data = household_data[household_data['Perioden'] == int(VARS['YEAR'])]
+        household_data = household_data[household_data[VARS['LEVEL']] == VARS['AREA']]
 
-    # total household waste
-    household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
-                                   * household_data['Inwoners']
-    household_data = household_data['Gewicht_KG'].sum()
+        # total household waste
+        household_data['Gewicht_KG'] = household_data["Totaal aangeboden huishoudelijk afval [Kilo's per inwoner]"] \
+                                       * household_data['Inwoners']
+        household_data = household_data['Gewicht_KG'].sum()
+
     item = DATA.setdefault("flows", {})
     item["huishoudelijk_afval"] = {
         "values": [

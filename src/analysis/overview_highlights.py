@@ -141,7 +141,7 @@ def waste_produced_by_companies():
         (lma['EC2'] != '19')
         ]  # all waste produced except chapter 19
     company_amount = lma['Gewicht_KG'].sum()
-    total_amount = company_amount + cbs_primary_waste(HOUSEHOLD)
+    total_amount = company_amount + HOUSEHOLD
     perc = company_amount / total_amount * 100
     print(f"{to_dec(perc)}% "
           f"({utils.kg_to_unit(company_amount, unit=VARS['COMPANY_WASTE_UNIT'])} {VARS['COMPANY_WASTE_UNIT']}) "
@@ -236,14 +236,18 @@ def run():
     assert len(polygon) == 1
 
     # import CBS household data
-    print('Import CBS household data...\n')
     global HOUSEHOLD
-    HOUSEHOLD = import_household_data(areas=gemeenten)
-    HOUSEHOLD = HOUSEHOLD.rename(columns={'Gebieden': 'Gemeente'})
-    HOUSEHOLD = HOUSEHOLD[
-        (HOUSEHOLD[VARS['LEVEL']] == VARS['AREA']) &
-        (HOUSEHOLD['Perioden'] == VARS['YEAR'])
-    ]
+    if var.HOUSEHOLD_KG is not None:
+        HOUSEHOLD = var.HOUSEHOLD_KG
+    else:
+        print('Import CBS household data...\n')
+        HOUSEHOLD = import_household_data(areas=gemeenten)
+        HOUSEHOLD = HOUSEHOLD.rename(columns={'Gebieden': 'Gemeente'})
+        HOUSEHOLD = HOUSEHOLD[
+            (HOUSEHOLD[VARS['LEVEL']] == VARS['AREA']) &
+            (HOUSEHOLD['Perioden'] == VARS['YEAR'])
+        ]
+        HOUSEHOLD = cbs_primary_waste(HOUSEHOLD)
 
     # import CBS goods data
     global GOODS
