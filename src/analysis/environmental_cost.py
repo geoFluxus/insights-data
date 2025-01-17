@@ -115,7 +115,7 @@ def run():
             values[indicator] = [row[agenda] * 100 for agenda in agendas]
         results[theme] = {
             "level": "COROP",
-            "name": "Zaanstreek",
+            "name": var.COROPS[0],
             "period": var.YEAR,
             "unit": "%",
             "agendas": agendas,
