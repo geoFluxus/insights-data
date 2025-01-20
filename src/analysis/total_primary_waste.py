@@ -9,7 +9,7 @@ import json
 DATA = {}
 LAP = {
     'total_primary_waste': {
-        'goal': 0.9,
+        'goal': 61,
         'metrics': {
           "current_year": {
             "year": 2023,
@@ -207,15 +207,15 @@ def run():
                              apply=total_company_primary_waste,
                              year=year)
 
-        # total household primary waste (CBS) -> weight
-        print('Compute household waste...')
-        total_household_primary = \
-            cbs_primary_waste(cbs_flows,
-                              level=level,
-                              year=year)
+        # # total household primary waste (CBS) -> weight
+        # print('Compute household waste...')
+        # total_household_primary = \
+        #     cbs_primary_waste(cbs_flows,
+        #                       level=level,
+        #                       year=year)
 
-        # total primary waste = total company primary waste + total household primary waste
-        total_primary_waste = total_company_primary.add(total_household_primary)
+        # total primary waste = total company primary waste
+        total_primary_waste = total_company_primary
         total_primary_waste['area'] = total_company_primary['area']
         DATA.setdefault('total_primary_waste', []).append(total_primary_waste)
 
