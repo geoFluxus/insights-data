@@ -48,7 +48,8 @@ def run():
                 (df['Gebruiksgroep_naam'] == usage)
             ]['Gewicht_KG'].sum()
 
-            values.setdefault(stroom, []).append(
+            stroom_name = stroom.replace('_', ' ')
+            values.setdefault(stroom_name, []).append(
                 utils.kg_to_unit(usage_sum, unit=unit)
             )
 
