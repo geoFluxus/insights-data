@@ -165,7 +165,9 @@ def run():
             'amounts': []
         }
         for material in heatmap_materials:
-            data['amounts'].append(row[material] * 100)
+            data['amounts'].append(
+                row[material] * 100 if row[material] > 0 else None
+            )
         heatmap_data[row['Goederengroep']] = data
 
     return {
