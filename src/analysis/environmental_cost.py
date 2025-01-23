@@ -31,8 +31,8 @@ def calculate_impacts(data_file='', impact_file='', group_relation_file=''):
 def visualize_impacts_and_DMI(data, jaar=var.YEAR):
     data = data[data['Jaar'] == jaar]
     # normalise data
-    label_names = ['Milieukostenindicator', 'CO2eq uitstoot', 'Domestic Material Input']
-    col_names = ['MKI total (mln euro)', 'CO2 emissions total (kt)', 'DMI']
+    label_names = ['CO2eq uitstoot', 'Milieukostenindicator', 'Domestic Material Input']
+    col_names = ['CO2 emissions total (kt)', 'MKI total (mln euro)', 'DMI']
     viz_data = pd.DataFrame()
     for i in range(len(col_names)):
         temp = data.pivot_table(index='Regionaam', columns='TA', values=col_names[i], aggfunc='sum')
