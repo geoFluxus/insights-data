@@ -71,11 +71,13 @@ def process_lma(polygon, ewc_classifs):
 
         # source in / target out
         flows.append(STROMEN[(source, True, target, False)])
-        amounts.append(utils.compute_sankey_branch(df,
-                                                   source=source, source_in=True,
-                                                   target=target, target_in=False,
-                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
-                                                   unit=VARS['OVERVIEW_SANKEY_UNIT']))
+        amount = utils.compute_sankey_branch(df,
+                                           source=source, source_in=True,
+                                           target=target, target_in=False,
+                                           level=VARS['LEVEL'], areas=[VARS['AREA']],
+                                           unit=VARS['OVERVIEW_SANKEY_UNIT'])
+        if var.EXCLUDE_HOUSEHOLD: amount -= utils.kg_to_unit(var.HOUSEHOLD_KG, unit=VARS['OVERVIEW_SANKEY_UNIT'])
+        amounts.append(amount)
 
         # source out / target in
         flows.append(STROMEN[(source, False, target, True)])
@@ -237,5 +239,6 @@ def run():
         'name': var.AREA,
         'level': var.LEVEL,
         'year': var.YEAR,
-        'unit': VARS['OVERVIEW_SANKEY_UNIT']
+        'unit': VARS['OVERVIEW_SANKEY_UNIT'],
+        'exclude_household': var.EXCLUDE_HOUSEHOLD
     }

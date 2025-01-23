@@ -110,14 +110,15 @@ def compute_sankey_branch(flows,
     }
 
     conditions = []
+    amount = 0
     for area in areas:
         for role, is_in in zip([source, target], [source_in, target_in]):
             condition = flows[f'{role}_{level}'].isin([area])
             if not is_in: condition = ~condition
             conditions.append(condition)
         new_flows = flows[np.bitwise_and.reduce(conditions)]
-        amount = kg_to_unit(new_flows['Gewicht_KG'].sum(), unit=unit)
-        return amount
+        amount += kg_to_unit(new_flows['Gewicht_KG'].sum(), unit=unit)
+    return amount
 
 
 def get_classification_graphs(df, source=None,

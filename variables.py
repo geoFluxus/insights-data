@@ -12,6 +12,7 @@ COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
              f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
 COROPS = ['Twente']
 HOUSEHOLD_KG = 61.09 * 10**6
+EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
 OUTPUT_DIR = '../json'
