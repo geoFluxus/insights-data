@@ -9,15 +9,22 @@ DATA = {}
 
 def calculate_impacts(data_file='', impact_file='', group_relation_file=''):
     data = pd.read_excel(data_file)
-    impacts = pd.read_excel(impact_file)
-    groups = pd.read_excel(group_relation_file, sheet_name='CBS_code_merger')
+    if 'Unnamed: 0' in data.columns:
+        data.drop(columns='Unnamed: 0', inplace=True)
+
+    impacts = pd.read_excel(impact_file).drop(columns='Unnamed: 0')
+    groups = pd.read_excel(group_relation_file, sheet_name='CBS67').drop(columns='Unnamed: 0')
+    ta = pd.read_excel(group_relation_file, sheet_name='CBS_code_merger')
+
     data = pd.merge(data, groups, left_on='Goederengroep', right_on='Goederengroep_naam', how='left')
-    data = pd.merge(data, impacts, how='left', left_on='25_groep_nr', right_on='Tab')
+    data = pd.merge(data, impacts, how='left', left_on='Goederengroep_nr', right_on='Goederengroep_code')
+    data = pd.merge(data, ta[['Goederengroep_nr', 'TA']], how='left', on='Goederengroep_nr')
     data['CO2 emissions (kg CO2e/kg)'] = data['CO2 emissions (kg CO2e/kg)'].astype(float)
     data['Impact category (Euro/kg)'] = data['Impact category (Euro/kg)'].astype(float)
 
     data['CO2 emissions total (kt)'] = data['DMI'] * data['CO2 emissions (kg CO2e/kg)']  #In kt
     data['MKI total (mln euro)'] = data['DMI'] * data['Impact category (Euro/kg)'] #In mln Euro
+    data = data[data['Goederengroep_nr'] != 67]
     return data
 
 
@@ -86,7 +93,7 @@ def visualize_impacts(data, indicator = '', col_name='', jaar=var.YEAR):
 
 
 def run():
-    emissions_file = f'{FILEPATH}/TNO/environmental_indicators.xlsx'
+    emissions_file = f'{FILEPATH}/geoFluxus/MKI_CO2_factors.xlsx'
     groups_file = f'{FILEPATH}/geoFluxus/CBS_names.xlsx'
     inds = ['MKI', 'CO2']
     themes = ['environmental_costs', 'co2_impact']
@@ -95,6 +102,7 @@ def run():
     # environmental impact of current area
     all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
     dat = calculate_impacts(all_data_file, emissions_file, groups_file)
+    dat.to_excel(f'{var.OUTPUT_DIR}/all_impact_data.xlsx')
 
     # environmental impact of all provinces
     all_prov_data_file = f'{var.OUTPUT_DIR}/all_province_data.xlsx'
