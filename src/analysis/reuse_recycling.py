@@ -108,15 +108,16 @@ def run():
 
     # map processes
     processes = {
-        'Hergebruik': ['B01', 'B02', 'B03', 'B05'],
-        'Recycle': ['C01', 'C02', 'C03', 'C04', 'D01',
+        'Hergebruik': ['B01', 'B02', 'B03', 'B05', 'C04'],
+        'Recycle': ['C01', 'C02', 'C03', 'D01',
                      'D02', 'D03', 'D04', 'D05', 'D06',
                      'E01', 'E02', 'E03', 'E04', 'E05',
-                     'F03', 'F04', 'F05'],
+                     'F05'],
         'Overige verwerkingsmethoden': [
-            'G01', 'G02'  # storten
-            'B04', 'F01', 'F02', 'F06', 'F07'  # verbranden
-            'A01', 'A02'  # bewaren
+            'G01', 'G02',  # storten
+            'F01', 'F02',  # verbranden
+            'B04', 'F03', 'F04', 'F06', 'F07'  # terugwinning
+            # 'A01', 'A02'  # bewaren
         ]
     }
     for process, codes in processes.items():
