@@ -139,9 +139,13 @@ def waste_produced_by_companies():
     lma = lma[
         (lma[f"Herkomst_{VARS['LEVEL']}"] == VARS['AREA']) &
         (lma['EC2'] != '19')
-        ]  # all waste produced except chapter 19
+    ]  # all waste produced except chapter 19
     company_amount = lma['Gewicht_KG'].sum()
-    total_amount = company_amount + HOUSEHOLD
+    if var.EXCLUDE_HOUSEHOLD:
+        total_amount = company_amount
+        company_amount -= HOUSEHOLD
+    else:
+        total_amount = company_amount + HOUSEHOLD
     perc = company_amount / total_amount * 100
     print(f"{to_dec(perc)}% "
           f"({utils.kg_to_unit(company_amount, unit=VARS['COMPANY_WASTE_UNIT'])} {VARS['COMPANY_WASTE_UNIT']}) "

@@ -236,10 +236,24 @@ def search_nested(key, dic):
     """
     search key in nested dict
     """
-    if key in dic: return dic[key]
+    if key in dic:
+        return dic[key]
     for v in dic.values():
         if isinstance(v, dict):
             a = search_nested(key, v)
+            if a is not None: return a
+    return None
+
+
+def path_nested(key, dic, parents=[]):
+    """
+    search key in nested dict
+    """
+    if key in dic:
+        return parents + [key]
+    for k, v in dic.items():
+        if isinstance(v, dict):
+            a = path_nested(key, v, parents + [k])
             if a is not None: return a
     return None
 
@@ -292,9 +306,9 @@ def get_hierarchy(df):
 
         # retrieve material intersection
         # to define levels
-        levels = materials[0].split(',')
+        levels = materials[0].split('+')
         for material in materials[1:]:
-            search = material.split(',')
+            search = material.split('+')
             new = []
             for item in levels:
                 if item in search:
