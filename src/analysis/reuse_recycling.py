@@ -89,7 +89,7 @@ def run():
         'VerwerkingsmethodeCode',
         'Gewicht_KG'
     ]
-    path = f"{var.INPUT_DIR}/DATA/LMA/ontvangst/processed"
+    path = fr"C:\Users\vasil\Downloads"
     df = pd.read_csv(f'{path}/ontvangst_{var.YEAR}_full.csv',
                      usecols=columns, dtype={'EuralCode': str},
                      low_memory=False)
@@ -124,12 +124,15 @@ def run():
         df.loc[df['VerwerkingsmethodeCode'].isin(codes), 'process'] = process
 
     # total waste (reuse & recycling)
+    def total_waste(df):
+        return df[df['EuralCode'].str[:2] != '19']
     DATA['total_reuse_recycling'] = \
         compute_lma_goal(df,
                          role='Herkomst',
                          level=var.LEVEL,
                          areas=AREAS,
                          groupby=['process'],
+                         apply=total_waste,
                          year=var.YEAR)
 
     # construction waste (reuse & recycling)
@@ -146,7 +149,7 @@ def run():
 
     # industry waste (reuse & recycling)
     def industry_waste(df):
-        return df[df['EuralCode'].str[:2] != '19']
+        return df[~df['EuralCode'].str[:2].isin(['19', '20'])]
     DATA['industry_reuse_recycling'] = \
         compute_lma_goal(df,
                          role='Herkomst',
@@ -162,6 +165,7 @@ def run():
         # order processes in dataframe
         categories = list(processes.keys())
         data['process'] = pd.Categorical(data['process'], categories=categories, ordered=True)
+        data = data.sort_values('process')
 
         # convert to object
         values = {}
