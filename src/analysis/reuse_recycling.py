@@ -149,7 +149,7 @@ def run():
 
     # industry waste (reuse & recycling)
     def industry_waste(df):
-        return df[~df['EuralCode'].str[:2].isin(['19', '20'])]
+        return df[~df['EuralCode'].str[:2].isin(['17', '18', '19', '20'])]
     DATA['industry_reuse_recycling'] = \
         compute_lma_goal(df,
                          role='Herkomst',
