@@ -89,7 +89,7 @@ def run():
         'VerwerkingsmethodeCode',
         'Gewicht_KG'
     ]
-    path = fr"C:\Users\vasil\Downloads"
+    path = f"{var.INPUT_DIR}/DATA/LMA/ontvangst/processed"
     df = pd.read_csv(f'{path}/ontvangst_{var.YEAR}_full.csv',
                      usecols=columns, dtype={'EuralCode': str},
                      low_memory=False)
