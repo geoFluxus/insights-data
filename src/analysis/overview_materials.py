@@ -364,7 +364,7 @@ def run():
     global FILEPATH, RESOURCE_TYPE
 
     print("\nDMI-RMI")
-    FILEPATH = f"{var.INPUT_DIR}/DATA/monitor_data/data"
+    FILEPATH = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data"
 
     # import csb data
     # stromen -> million kg

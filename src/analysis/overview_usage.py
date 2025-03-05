@@ -9,7 +9,7 @@ def run():
     unit = var.UNITS['OVERVIEW']['OVERVIEW_USAGE']
 
     # stromen -> million kg
-    path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
     filename = f"{path}/{var.COROP_FILE}.csv"
 
     df = pd.read_csv(filename, low_memory=False, sep=',')

@@ -97,7 +97,7 @@ def process_lma(polygon, ewc_classifs):
 
 def process_cbs():
     # stromen -> million kg
-    path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
 
     df = pd.read_csv(filename, low_memory=False, sep=',')
@@ -220,7 +220,7 @@ def run():
     # import ewc classifications
     ewc_classifs = {}
     for classif in ['chains']:
-        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv",
+        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv",
                                             low_memory=False,
                                             sep=';')
 

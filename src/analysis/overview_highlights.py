@@ -228,7 +228,7 @@ def run():
         print(f'{name}={value}')
 
     # import postcodes
-    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
+    postcodes = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/GEODATA/postcodes/{VARS['POSTCODES']}.csv", low_memory=False)
     postcodes['PC4'] = postcodes['PC4'].astype(str)
     gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
     area_gemeenten = gemeenten[gemeenten[f"{VARS['LEVEL']}"] == VARS['AREA']]['Gemeente'].to_list()
@@ -257,7 +257,7 @@ def run():
     global GOODS
     if len(VARS['COROPS']):
         print('Import CBS goods data... \n')
-        path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
+        path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
         filename = f"{path}/{VARS['COROP_FILE']}.csv"
         GOODS = pd.read_csv(filename, low_memory=False)
         # stromen -> million kg

@@ -1,8 +1,8 @@
 # VARIABLES
-INPUT_DIR = 'W:/Shared With Me/MASTER'
-AREA = 'Enschede'
+INPUT_DIR = 'C:/Users/vasil/geoFluxus Dropbox/geoFluxus'
+AREA = 'Zaanstad'
 LEVEL = 'Gemeente'
-AREA_DIR = f"PROJECTS/monitor/{LEVEL}{AREA}"
+AREA_DIR = f"Monitors/{LEVEL}{AREA}"
 YEAR = 2023
 DMI_YEARS = [_ for _ in range(2015, 2024)]
 GOALS_YEARS = [_ for _ in range(2018, 2024)]
@@ -10,8 +10,8 @@ ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4
 COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
              f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
-COROPS = ['Twente']
-HOUSEHOLD_KG = 61.09 * 10**6
+COROPS = ['Zaanstreek']
+HOUSEHOLD_KG = 451.9 * 159618
 EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
