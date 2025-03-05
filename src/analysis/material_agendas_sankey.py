@@ -97,7 +97,7 @@ def process_cbs():
     period = VARS['YEAR']
 
     # stromen -> million kg
-    path = f"{var.INPUT_DIR}/DATA/monitor_data/data/CBS"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
     df = pd.read_csv(filename, low_memory=False)
     df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
@@ -117,7 +117,7 @@ def process_cbs():
     for classif in ['agendas', 'materials']:
         file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
         if not os.path.isfile(file_path):
-            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/cbs_{classif}.csv"
+            file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
         cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # add classifications
@@ -296,7 +296,7 @@ def run():
     for classif in ['agendas', 'materials']:
         file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
         if not os.path.isfile(file_path):
-            file_path = f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_{classif}.csv"
+            file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
         EWC_CLASSIFS[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # process LMA data

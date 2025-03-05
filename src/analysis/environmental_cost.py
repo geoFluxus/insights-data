@@ -3,7 +3,7 @@ import variables as var
 import numpy as np
 
 
-FILEPATH = f"{var.INPUT_DIR}/DATA/monitor_data/data"
+FILEPATH = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data"
 DATA = {}
 
 
