@@ -70,7 +70,7 @@ def run():
 
     # import eural descriptions
     print("Load eural descriptions...")
-    path = f"{VARS['INPUT_DIR']}/DATA/geofluxusApp/templates"
+    path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/geofluxusApp/templates"
     ewc2 = pd.read_excel(f"{path}/waste02.xlsx")
     ewc2['ewc_code'] = ewc2['ewc_code'].astype(str).str.zfill(2)
     ewc2 = ewc2[['ewc_code', 'ewc_name']].rename(

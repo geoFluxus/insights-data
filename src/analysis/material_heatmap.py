@@ -2,7 +2,7 @@ import pandas as pd
 import variables as var
 
 
-FILEPATH = f"{var.INPUT_DIR}/DATA/monitor_data/data"
+FILEPATH = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data"
 crm_names = ['Antimoon', 'Beryllium', 'Chroom', 'Kobalt', 'Cokeskolen', 'Fluoriet', 'Fosfor', 'Indium', 'Lithium',
              'Molybdeen', 'Grafiet', 'Niobium', 'Silicium', 'Zilver', 'Tin', 'Titanium', 'Wolfraam', 'Vanadium', 'Zink',
              'Aluminium', 'Barieten', 'Bentoniet', 'Boor', 'Koper', 'Diatomiet', 'Veldspaat', 'Gallium', 'Germanium',

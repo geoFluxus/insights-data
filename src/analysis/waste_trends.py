@@ -224,7 +224,7 @@ def run():
     print(f"Total flows: {len(flows)}\n")
 
     # import industries
-    industries = pd.read_csv(f"{VARS['INPUT_DIR']}/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
+    industries = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
     flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')

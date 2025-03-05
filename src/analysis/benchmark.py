@@ -72,7 +72,7 @@ def exclude_rladder_restrictions(df):
     # exclude based on r-ladder restrictions
     # from process to process
     print("Exclude based on r-ladder restrictions...")
-    path = f"{var.INPUT_DIR}/DATA/descriptions"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions"
     ref = pd.read_excel(f"{path}/rladder_restrictions.xlsx", sheet_name='Restrictions')
 
     # apply exceptions
@@ -91,7 +91,7 @@ def exclude_rladder_restrictions(df):
 def exclude_eural_process(df):
     # exclude ewc-process pairs
     print("Exclude eural code & alternative process pairs...")
-    path = f"{var.INPUT_DIR}/DATA/descriptions"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions"
     ref = pd.read_excel(f"{path}/alternatives_exclude_processes.xlsx")
     ref = ref[['EuralCode', 'VerwerkingsmethodeCode']]
     ref['EuralCode'] = ref['EuralCode'].astype(str).str.zfill(6)
@@ -114,7 +114,7 @@ def run():
 
     # import rladder
     print("Import rladder...")
-    path = f"{var.INPUT_DIR}/DATA/descriptions/rhierarchy.xlsx"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/rhierarchy.xlsx"
     rladder = pd.read_excel(path)
     rladder = rladder[['processing_code', 'benchmark_group']]
     rladder_names = {
@@ -134,7 +134,7 @@ def run():
 
     # import national dataset
     print(f"\nImport national dataset for {VARS['YEAR']}...")
-    path = f"{VARS['INPUT_DIR']}/DATA/LMA/ontvangst/processed"
+    path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/LMA/ontvangst/processed"
     filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
     national_data = get_potential(import_dataset(filename), rladder=rladder)
 

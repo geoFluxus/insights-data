@@ -87,7 +87,7 @@ def import_lma_flows(areas=None, year=None):
     ]
 
     # import file
-    path = f"{var.INPUT_DIR}/DATA/LMA/ontvangst/processed"
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/LMA/ontvangst/processed"
     print(f'Import {year} data...')
     df = pd.read_csv(f'{path}/ontvangst_{year}_full.csv', usecols=columns, low_memory=False)
 
@@ -162,7 +162,7 @@ def cbs_primary_waste(input, level=None, year=None):
 
 def run():
     # import postcodes
-    postcodes = pd.read_csv(f"{var.INPUT_DIR}/GEODATA/postcodes/{var.POSTCODES}.csv", low_memory=False)
+    postcodes = pd.read_csv(f"{var.INPUT_DIR}/Database_LockedFiles/GEODATA/postcodes/{var.POSTCODES}.csv", low_memory=False)
     postcodes['PC4'] = postcodes['PC4'].astype(str)
     gemeenten = postcodes[['Gemeente', 'Provincie']].drop_duplicates()
     area_gemeenten = gemeenten[gemeenten[f"{var.LEVEL}"] == var.AREA]['Gemeente'].to_list()
