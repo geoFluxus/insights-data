@@ -37,7 +37,7 @@ def get_flows(year=None):
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
     filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}_full.csv"
 
-    return pd.read_csv(filename, low_memory=False)
+    return pd.read_csv(filename, low_memory=False, dtype={'EuralCode': str})
 
 
 def save(flows, datatype=None, prop=None, attrs={}, unit='t'):
