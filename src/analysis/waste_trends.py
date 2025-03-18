@@ -37,7 +37,7 @@ def get_flows(year=None):
     path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
     filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{year}_full.csv"
 
-    return pd.read_csv(filename, low_memory=False, dtype={'EuralCode': str})
+    return pd.read_csv(filename, low_memory=False)
 
 
 def save(flows, datatype=None, prop=None, attrs={}, unit='t'):
@@ -226,7 +226,9 @@ def run():
     # import industries
     industries = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
-    flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
+    flows['EuralCode'] = flows['EuralCode'].apply(
+        lambda x: '' if pd.isna(x) else str(int(x)).zfill(6) if float(x).is_integer() else str(x)
+    )
     flows = pd.merge(flows, industries, how='left', left_on='EuralCode', right_on='ewc')
     flows.loc[flows['industries'].isnull(), 'industries'] = UNKNOWN
     industry_groups = flows['industries'].drop_duplicates().to_list()
