@@ -1,6 +1,6 @@
 # VARIABLES
 INPUT_DIR = 'C:/Users/vasil/geoFluxus Dropbox/geoFluxus'
-AREA = 'Zaanstad'
+AREA = 'Haarlem'
 LEVEL = 'Gemeente'
 AREA_DIR = f"Monitors/{LEVEL}{AREA}"
 YEAR = 2023
@@ -10,8 +10,8 @@ ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4
 COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
              f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
-COROPS = ['Zaanstreek']
-HOUSEHOLD_KG = 451.9 * 159618
+COROPS = ['Agglomeratie Haarlem']
+HOUSEHOLD_KG = 392.8 * 165396
 EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'

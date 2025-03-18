@@ -115,9 +115,10 @@ def process_cbs():
     # import cbs classifications
     cbs_classifs = {}
     for classif in ['agendas', 'materials']:
-        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
-        if not os.path.isfile(file_path):
-            file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
+        # file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
+        # if not os.path.isfile(file_path):
+        #     file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
+        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
         cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # add classifications
@@ -294,9 +295,10 @@ def run():
     # import ewc classifications
     global EWC_CLASSIFS
     for classif in ['agendas', 'materials']:
-        file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
-        if not os.path.isfile(file_path):
-            file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
+        # file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
+        # if not os.path.isfile(file_path):
+        #     file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
+        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
         EWC_CLASSIFS[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
     # process LMA data
