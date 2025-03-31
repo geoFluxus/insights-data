@@ -4,6 +4,7 @@ AREA = 'Haarlem'
 LEVEL = 'Gemeente'
 AREA_DIR = f"Monitors/{LEVEL}{AREA}"
 YEAR = 2023
+PROJ_END = 2023
 DMI_YEARS = [_ for _ in range(2015, 2024)]
 GOALS_YEARS = [_ for _ in range(2018, 2024)]
 ACTIONS_YEARS = [_ for _ in range(2018, 2024)]

@@ -323,6 +323,11 @@ def get_sample(l):
     ]
 
 
+def get_projected_y(x1, x2, y1, y2, x):
+    m = (y2 - y1) / (x2 - x1)
+    return y1 + m * (x - x1)
+
+
 def visualise_per_province(data, indicator=None):
     for goal, goal_data in data.items():
         viz_data = goal_data.groupby(['Regionaam', 'Jaar']).sum().reset_index()
@@ -333,6 +338,11 @@ def visualise_per_province(data, indicator=None):
 
         grid, yhat, err_bands = regression(sns.regplot, fig, "Jaar", indicator, truncate=False)
         goal_value = viz_data[viz_data['Jaar'] == PROJ_START + 1][indicator].values[0] / 2
+        proj_y = yhat[-1]
+        if PROJ_END != var.PROJ_END:
+            proj_y = get_projected_y(x1=PROJ_START,x2=PROJ_END,
+                                     y1=yhat[0],y2=yhat[-1],
+                                     x=var.PROJ_END)
 
         item = DATA.setdefault(indicator.lower(), {})
         item[goal.lower()] = {
@@ -343,8 +353,8 @@ def visualise_per_province(data, indicator=None):
             "line": {
                 "x1": PROJ_START,
                 "y1": yhat[0],
-                "x2": PROJ_END,
-                "y2": yhat[-1]
+                "x2": var.PROJ_END,
+                "y2": proj_y
             },
             "area": {
                 "grid": get_sample(grid.tolist()),
