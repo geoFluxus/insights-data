@@ -215,7 +215,7 @@ def overview_highlights():
     waste_produced_by_companies()
 
     # X% of waste produced by X% of companies
-    top_company_production()
+    # top_company_production()
 
 
 def run():

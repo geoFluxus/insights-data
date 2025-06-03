@@ -31,7 +31,7 @@ def run():
         'Invoer_nationaal',
         'Invoer_internationaal',
     ]
-    usages =[
+    usages = [
         'Consumptie huishoudens',
         'Dienstverlening bedrijven',
         'Investeringen vaste activa',
@@ -41,15 +41,15 @@ def run():
     ]
 
     values = DATA.setdefault("values", {})
-    for stroom in stromen:
-        for usage in usages:
+    for usage in usages:
+        for stroom in stromen:
             usage_sum = df[
                 (df['Stroom'] == stroom) &
                 (df['Gebruiksgroep_naam'] == usage)
             ]['Gewicht_KG'].sum()
 
-            stroom_name = stroom.replace('_', ' ')
-            values.setdefault(stroom_name, []).append(
+            usage_name = usage.replace('_', ' ')
+            values.setdefault(usage_name, []).append(
                 utils.kg_to_unit(usage_sum, unit=unit)
             )
 
@@ -59,6 +59,6 @@ def run():
         "period": var.YEAR,
         "type": "goederen",
         "unit": unit,
-        "usage": usages,
+        "usage": [stroom.replace('_', ' ') for stroom in stromen],
         **DATA
     }

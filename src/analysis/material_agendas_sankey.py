@@ -309,7 +309,8 @@ def run():
         process_cbs()
 
     # material highlights
-    material_hightlights()
+    if len(VARS['COROPS']):
+        material_hightlights()
 
     # merge material trees
     import json
