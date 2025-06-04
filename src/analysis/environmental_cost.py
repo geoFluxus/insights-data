@@ -92,6 +92,30 @@ def visualize_impacts(data, indicator = '', col_name='', jaar=var.YEAR):
     return viz_data
 
 
+def get_trendline(df):
+    co2_emissions = df.groupby('Jaar').agg(
+        year_total=('CO2 emissions total (kt)', 'sum')
+    ).reset_index()
+    mki = df.groupby('Jaar').agg(
+        year_total=('MKI total (mln euro)', 'sum')
+    ).reset_index()
+    datasets = {
+        'co2_emissions': (co2_emissions, 'kt'),
+        'mki': (mki, 'mln euro')
+    }
+
+    result = {}
+    for theme, theme_item in datasets.items():
+        data, unit = theme_item
+        result[theme] = {
+            "level": "COROP",
+            "name": var.COROPS[0],
+            "unit": unit,
+            "years": data['Jaar'].to_list(),
+            "values": data['year_total'].to_list()
+        }
+    return result
+
 def run():
     emissions_file = f'{FILEPATH}/geoFluxus/MKI_CO2_factors.xlsx'
     groups_file = f'{FILEPATH}/geoFluxus/CBS_names.xlsx'
@@ -115,13 +139,13 @@ def run():
             visualize_impacts(merged_data, indicator=inds[i],
                               col_name=col_names[i], jaar=var.YEAR)
 
-    results = {}
+    results_per_agenta = {}
     for theme, data in DATA.items():
         values = {}
         agendas = list(data.columns)
         for indicator, row in data.iterrows():
             values[indicator] = [row[agenda] * 100 for agenda in agendas]
-        results[theme] = {
+        results_per_agenta[theme] = {
             "level": "COROP",
             "name": var.COROPS[0],
             "period": var.YEAR,
@@ -130,4 +154,7 @@ def run():
             "values": values
         }
 
-    return results
+    return {
+        'trendline': get_trendline(dat),
+        **results_per_agenta
+    }
