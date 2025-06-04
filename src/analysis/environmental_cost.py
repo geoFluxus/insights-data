@@ -102,12 +102,14 @@ def get_trendline(df):
                 for cat in categories:
                     split_rows.append({'Jaar': row['Jaar'], 'TA': cat, column: value_per_cat})
             else:
-                split_rows.append(row.to_dict())
+                split_rows.append(row[['Jaar', 'TA', column]].to_dict())
         cleaned_data = pd.DataFrame(data=split_rows)
 
         groups = cleaned_data.groupby(['Jaar', 'TA']).agg(
             year_total=(column, 'sum')
         ).reset_index()
+        ta_map = {'Bouw': 'Bouwmaterialen', 'Non-specifiek': 'Overig'}
+        groups['TA'] = groups['TA'].apply(lambda x: ta_map.get(x, x))
         return groups
 
     datasets = {
