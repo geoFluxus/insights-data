@@ -93,15 +93,32 @@ def visualize_impacts(data, indicator = '', col_name='', jaar=var.YEAR):
 
 
 def get_trendline(df):
-    co2_emissions = df.groupby(['Jaar', 'TA']).agg(
-        year_total=('CO2 emissions total (kt)', 'sum')
-    ).reset_index()
-    mki = df.groupby(['Jaar', 'TA']).agg(
-        year_total=('MKI total (mln euro)', 'sum')
-    ).reset_index()
+    def prepare_data(df, column=None):
+        split_rows = []
+        for idx, row in df.iterrows():
+            categories = [c.strip() for c in row['TA'].split(', ')]
+            if len(categories) > 1:
+                value_per_cat = row[column] / len(categories)
+                for cat in categories:
+                    split_rows.append({'Jaar': row['Jaar'], 'TA': cat, column: value_per_cat})
+            else:
+                split_rows.append(row.to_dict())
+        cleaned_data = pd.DataFrame(data=split_rows)
+
+        groups = cleaned_data.groupby(['Jaar', 'TA']).agg(
+            year_total=(column, 'sum')
+        ).reset_index()
+        return groups
+
     datasets = {
-        'co2_emissions': (co2_emissions, 'kt'),
-        'mki': (mki, 'mln euro')
+        'co2_emissions': (
+            prepare_data(df, 'CO2 emissions total (kt)'),
+            'kt'
+        ),
+        'mki': (
+            prepare_data(df, 'MKI total (mln euro)'),
+            'mln euro'
+        )
     }
 
     result = {}
