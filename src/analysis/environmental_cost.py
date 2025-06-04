@@ -93,10 +93,10 @@ def visualize_impacts(data, indicator = '', col_name='', jaar=var.YEAR):
 
 
 def get_trendline(df):
-    co2_emissions = df.groupby('Jaar').agg(
+    co2_emissions = df.groupby(['Jaar', 'TA']).agg(
         year_total=('CO2 emissions total (kt)', 'sum')
     ).reset_index()
-    mki = df.groupby('Jaar').agg(
+    mki = df.groupby(['Jaar', 'TA']).agg(
         year_total=('MKI total (mln euro)', 'sum')
     ).reset_index()
     datasets = {
@@ -107,12 +107,30 @@ def get_trendline(df):
     result = {}
     for theme, theme_item in datasets.items():
         data, unit = theme_item
+        years = data['Jaar'].drop_duplicates().to_list()
+        agendas = [
+            'Biomassa en voedsel',
+            'Kunststoffen',
+            'Bouwmaterialen',
+            'Consumptiegoederen',
+            'Overig',
+            'Maakindustrie'
+        ]
+        values = []
+        for agenda in agendas:
+            agenda_values = []
+            for year in years:
+                row = data[(data['Jaar'] == year) & (data['TA'] == agenda)]
+                value = row.iloc[0]['year_total'] if not row.empty else 0
+                agenda_values.append(value)
+            values.append(agenda_values)
         result[theme] = {
             "level": "COROP",
             "name": var.COROPS[0],
             "unit": unit,
-            "years": data['Jaar'].to_list(),
-            "values": data['year_total'].to_list()
+            "years": years,
+            "agendas": agendas,
+            "values": values
         }
     return result
 
