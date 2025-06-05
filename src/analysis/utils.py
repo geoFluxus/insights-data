@@ -121,53 +121,52 @@ def compute_sankey_branch(flows,
     return amount
 
 
+def split_categories(df, column=None):
+    # split amounts for synthetic categories
+    split_rows = []
+    for idx, row in df.iterrows():
+        categories = [c.strip() for c in row[column].split(' & ')]
+        if len(categories) > 1:
+            value_per_cat = row['Gewicht_KG'] / len(categories)
+            for cat in categories:
+                split_rows.append({column: cat, 'Gewicht_KG': value_per_cat})
+        else:
+            split_rows.append(row[[column, 'Gewicht_KG']].to_dict())
+    cleaned_data = pd.DataFrame(data=split_rows)
+
+    # group by
+    groups = cleaned_data.groupby([column]).agg(
+        Gewicht_KG=('Gewicht_KG', 'sum')
+    ).reset_index()
+
+    # re-map transition agendas
+    if column == 'agendas':
+        ta_map = {
+            'Biomassa Voedsel': 'Biomassa en voedsel',
+            'Kunststoffen': 'Kunststoffen',
+            'Bouw': 'Bouwmaterialen',
+            'Consumptiegoederen': 'Consumptiegoederen',
+            'Non Specifiek': 'Overig',
+            'Maakindustrie': 'Maakindustrie',
+            'Onbekend': 'Overig'
+        }
+        groups[column] = groups[column].apply(lambda x: ta_map.get(x, x))
+        cats = list(set(ta_map.values()))
+        groups[column] = pd.Categorical(groups[column], categories=cats, ordered=True)
+        groups = groups.sort_values(column)
+    else:
+        cats = sorted(groups[column].drop_duplicates().to_list())
+
+    return cats, groups
+
+
 def get_classification_graphs(df, source=None,
                               level=None, area=None, klass=None, unit='kg'):
     """
     Create graphs based on ontology classifications
     for LMA & CBS data
     """
-    # categories = {
-    #     'chains': [
-    #         'primair',
-    #         'secundair',
-    #         'tertiair',
-    #         'quaternair',
-    #         'Onbekend'
-    #     ],
-    #     'agendas': [
-    #         'BiomassaVoedselTransitieAgenda',
-    #         'MaakindustrieTransitieAgenda',
-    #         'BouwTransitieAgenda&MaakindustrieTransitieAgenda',
-    #         'BouwTransitieAgenda&ConsumptiegoederenTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&MaakindustrieTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda',
-    #         'NonSpecifiekTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&NonSpecifiekTransitieAgenda',
-    #         'BiomassaVoedselTransitieAgenda&KunststoffenTransitieAgenda',
-    #         'KunststoffenTransitieAgenda',
-    #         'ConsumptiegoederenTransitieAgenda&KunststoffenTransitieAgenda',
-    #         'BouwTransitieAgenda',
-    #         'BiomassaVoedselTransitieAgenda&BouwTransitieAgenda'
-    #         # 'Afval',
-    #         # 'Afval&Consumptiegoederen',
-    #         # 'Afval&Consumptiegoederen&Textiel',
-    #         # 'Bouw',
-    #         # 'Bouw&Consumptiegoederen',
-    #         # 'Consumptiegoederen',
-    #         # 'Consumptiegoederen&Eigen organisatie',
-    #         # 'Consumptiegoederen&Overig',
-    #         # 'Consumptiegoederen&Textiel',
-    #         # 'Eigen Organisatie',
-    #         # 'Overig',
-    #         # 'Overig&Textiel',
-    #         # 'Textiel',
-    #         # 'Voedsel',
-    #     ]
-    # }
-
     groupby = []
-
     flows = df.copy()
     if source is not None:
         # filter source in areas
@@ -180,15 +179,9 @@ def get_classification_graphs(df, source=None,
 
         groupby.append(f'{source}_{level}',)
 
-    # groupby: source, materials
-    groupby.extend([
-        klass,
-        'Gewicht_KG'
-    ])
-    groups = flows[groupby].groupby(groupby[:-1]).sum().reset_index()
-
     # specify categories
-    cats = sorted(flows[klass].drop_duplicates().to_list())
+    flows[klass] = flows[klass].apply(format_name)
+    cats, groups = split_categories(flows, column=klass)
 
     # get results for categories
     values = []
@@ -196,7 +189,6 @@ def get_classification_graphs(df, source=None,
         row = groups[groups[klass] == cat]
         value = row['Gewicht_KG'].values[0] if len(row) else 0
         values.append(kg_to_unit(value, unit=unit))
-    cats = [format_name(cat) for cat in cats]
 
     return {
         "name": ','.join(area) if isinstance(area, list) else area,

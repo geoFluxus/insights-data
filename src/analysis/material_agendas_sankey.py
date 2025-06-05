@@ -96,20 +96,17 @@ def process_cbs():
     datatype = 'goederen'
     period = VARS['YEAR']
 
-    # stromen -> million kg
-    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
-    filename = f"{path}/{VARS['COROP_FILE']}.csv"
-    df = pd.read_csv(filename, low_memory=False)
-    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6
+    # DMI -> kt (million kg)
+    filename = f'{var.OUTPUT_DIR}/all_data.xlsx'
+    df = pd.read_excel(filename)
+    df['Gewicht_KG'] = df['DMI'] * 10 ** 6
     df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
 
     # filter by year & COROPS
     # exclude afval and total sums
     df = df[
         (df['Jaar'] == VARS['YEAR']) &
-        (df['Regionaam'].isin(VARS['COROPS'])) &
-        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
-        (df['Gebruiksgroep_naam'] != 'Totaal')
+        (df['Regionaam'].isin(VARS['COROPS']))
     ]
 
     # import cbs classifications
@@ -124,21 +121,16 @@ def process_cbs():
     # add classifications
     for name, classif in cbs_classifs.items():
         df = utils.add_classification(df, classif, name=name,
-                                      left_on='Goederengroep_nr',
+                                      left_on='cbs',
                                       right_on='cbs')
 
     # TRANSITION AGENDAS
     # filter CBS input
-    input_df = df[df['Stroom'].isin([
-        'Aanbod_eigen_regio',
-        'Invoer_internationaal',
-        'Invoer_nationaal'
-    ])]
     DATA.setdefault('transition_agendas', []).append({
         'level': level,
         'period': period,
         'type': datatype,
-        **utils.get_classification_graphs(input_df,
+        **utils.get_classification_graphs(df,
                                           area=VARS['COROPS'],
                                           klass='agendas',
                                           unit=VARS['TRANSITION_AGENDAS_UNIT'])
@@ -147,7 +139,7 @@ def process_cbs():
     # MATERIAL SANKEY
     # also retrieve data for material tree
     data, hierarchy, sums = \
-        utils.get_material_sankey(input_df,
+        utils.get_material_sankey(df,
                                   level=VARS['LEVEL'],
                                   area=VARS['COROPS'],
                                   unit=VARS['MATERIAL_TREE_UNIT'])
@@ -251,20 +243,12 @@ def material_hightlights():
         'pct': round(sums['Biotisch'] / sums['Totaal'] * 100, 1)
     }
 
-    # renewable goods (Goederen -> Organisch -> Biotisch)
-    sums = MATERIAL_TREE['goederen']['sums']
-    highlights['renewable_goods'] = {
+    # not renewable waste (Afval -> Biotisch)
+    sums = MATERIAL_TREE['afval']['sums']
+    highlights['renewable_waste'] = {
         'amount': round(utils.kg_to_unit(sums['Biotisch'], unit=unit), 1),
         'unit': unit,
         'pct': round(sums['Biotisch'] / sums['Totaal'] * 100, 1)
-    }
-
-    # not renewable waste (Afval -> Abiotisch)
-    sums = MATERIAL_TREE['afval']['sums']
-    highlights['not_renewable_waste'] = {
-        'amount': round(utils.kg_to_unit(sums['Abiotisch'], unit=unit), 1),
-        'unit': unit,
-        'pct': round(sums['Abiotisch'] / sums['Totaal'] * 100, 1)
     }
 
     # wood - renewable waste (Afval -> Organisch -> Biotisch -> Hout)
@@ -313,8 +297,6 @@ def run():
         material_hightlights()
 
     # merge material trees
-    import json
-    print(json.dumps(MATERIAL_TREE, indent=2))
     merge_material_trees(unit=VARS['MATERIAL_TREE_UNIT'])
 
     return DATA
