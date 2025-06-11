@@ -151,7 +151,14 @@ def split_categories(df, column=None):
             'Onbekend': 'Overig'
         }
         groups[column] = groups[column].apply(lambda x: ta_map.get(x, x))
-        cats = list(set(ta_map.values()))
+        cats = [
+            'Biomassa en voedsel',
+            'Kunststoffen',
+            'Bouwmaterialen',
+            'Consumptiegoederen',
+            'Overig',
+            'Maakindustrie'
+        ]
         groups[column] = pd.Categorical(groups[column], categories=cats, ordered=True)
         groups = groups.sort_values(column)
     else:
