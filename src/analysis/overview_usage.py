@@ -34,9 +34,9 @@ def run():
     usages = [
         'Consumptie huishoudens',
         'Dienstverlening bedrijven',
-        'Investeringen vaste activa',
-        'Overheid',
         'Productie goederen',
+        'Overheid',
+        'Investeringen vaste activa',
         'Verandering voorraden'
     ]
 
