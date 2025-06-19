@@ -95,6 +95,16 @@ def process_lma(polygon, ewc_classifs):
             }
 
 
+def compute_lokale_winning():
+    all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
+    df = pd.read_excel(all_data_file)
+    df = df[df['Jaar'] == var.YEAR]
+    return [utils.kg_to_unit(
+        df['Winning'].sum() * 10**6,
+        unit=VARS['OVERVIEW_SANKEY_UNIT']
+    )]
+
+
 def process_cbs():
     # stromen -> million kg
     path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
@@ -114,14 +124,10 @@ def process_cbs():
     ]
     stromen = [
         'Aanbod_eigen_regio',
-        'Distributie',
-        'Doorvoer',
         'Invoer_internationaal',
         'Invoer_nationaal',
         'Uitvoer_internationaal',
         'Uitvoer_nationaal',
-        'Wederuitvoer',
-        'Invoer_voor_wederuitvoer'
     ]
 
     # SANKEY
@@ -136,6 +142,11 @@ def process_cbs():
                 )
             ]
         }
+
+    # lokale winning
+    item['lokale_winning'] = {
+        "values": compute_lokale_winning()
+    }
 
 
 def import_household_data(areas=None):
