@@ -133,16 +133,18 @@ def plot_heatmap(dat, mat_inds, prov=None, values=None):
 
 
 def export_overview(viz_data):
-    total_value = viz_data['Inkoop_waarde'].sum()
     viz_data = viz_data[viz_data['row_sum'] != 0]
-    viz_data['Invoerwaarde'] = viz_data['Inkoop_waarde'] / total_value
 
     overview_data = []
+    crm_columns = [
+        col for col in viz_data.columns
+        if col in crm_names
+    ]
     for idx, row in viz_data.iterrows():
         overview_data.append({
             "material": row['Goederengroep'],
-            "crm": row['row_sum'] / len(crm_names) * 100,
-            "value": row['Invoerwaarde'] * 100
+            "crm": row['row_sum'] / len(crm_columns),
+            "value": len([col for col in crm_columns if row[col] != 0])
         })
 
     return {
