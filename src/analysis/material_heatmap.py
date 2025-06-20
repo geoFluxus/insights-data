@@ -132,8 +132,10 @@ def plot_heatmap(dat, mat_inds, prov=None, values=None):
     return viz_data
 
 
-def export_overview(viz_data):
+def export_overview(viz_data, indicators):
     viz_data = viz_data[viz_data['row_sum'] != 0]
+    weights = dict(zip(indicators['Materiaal'], indicators['product']))
+    weight_sum = sum(weights.values())
 
     overview_data = []
     crm_columns = [
@@ -143,7 +145,7 @@ def export_overview(viz_data):
     for idx, row in viz_data.iterrows():
         overview_data.append({
             "material": row['Goederengroep'],
-            "crm": row['row_sum'] / len(crm_columns),
+            "crm": sum(row[col] * weights[col] * 100 for col in crm_columns) / weight_sum,
             "value": len([col for col in crm_columns if row[col] != 0])
         })
 
@@ -207,6 +209,6 @@ def run():
     viz_data = plot_heatmap(data, indicators, prov=var.COROPS[0], values=euros)
 
     return {
-        'material_overview': export_overview(viz_data),
+        'material_overview': export_overview(viz_data, criticals),
         'raw_materials': export_heatmap(viz_data)
     }
