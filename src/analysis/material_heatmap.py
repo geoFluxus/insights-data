@@ -145,7 +145,7 @@ def export_overview(viz_data, indicators):
     for idx, row in viz_data.iterrows():
         overview_data.append({
             "material": row['Goederengroep'],
-            "crm": sum(row[col] * weights[col] * 100 for col in crm_columns) / weight_sum,
+            "crm": sum(row[col] * weights[col] for col in crm_columns) / weight_sum,
             "value": len([col for col in crm_columns if row[col] != 0])
         })
 
