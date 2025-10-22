@@ -246,8 +246,8 @@ def material_hightlights():
     # not renewable waste (Afval -> Biotisch)
     sums = MATERIAL_TREE['afval']['sums']
     highlights['renewable_waste'] = {
-        'amount': round(utils.kg_to_unit(sums['Biotisch'], unit=unit), 1),
-        'unit': unit,
+        'amount': round(utils.kg_to_unit(sums['Biotisch'], unit='kt'), 1),
+        'unit': 'kt',
         'pct': round(sums['Biotisch'] / sums['Totaal'] * 100, 1)
     }
 
