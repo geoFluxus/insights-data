@@ -288,7 +288,8 @@ def run():
                            datatype='process_trends',
                            prop=prop,
                            attrs={
-                               'industry': formatted_name
+                               'industry': formatted_name,
+                               'process': code
                            },
                            add_trends=False)
 
