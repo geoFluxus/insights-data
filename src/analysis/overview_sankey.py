@@ -83,7 +83,7 @@ def process_lma(polygon, ewc_classifs, on_agendas=False):
             if on_agendas:
                 # remove household from comnsuptiegoederen agenda
                 idx = amount['agendas'].index('Consumptiegoederen')
-                # amount['values'][idx] -= household
+                amount['values'][idx] -= household
             else:
                 amount -= household
         amounts.append(amount)
