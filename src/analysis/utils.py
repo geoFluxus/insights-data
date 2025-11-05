@@ -98,8 +98,9 @@ def add_classification(df, classif, name=None,
 def compute_sankey_branch(flows,
                           source=None, source_in=True,
                           target=None, target_in=True,
-                          level=None, areas=[],
-                          unit='kg'):
+                          level=None, area=None,
+                          unit='kg',
+                          on_agendas=False):
     """
     Compute sankey brances
     for LMA & CBS data
@@ -110,14 +111,20 @@ def compute_sankey_branch(flows,
     }
 
     conditions = []
-    amount = 0
-    for area in areas:
-        for role, is_in in zip([source, target], [source_in, target_in]):
-            condition = flows[f'{role}_{level}'].isin([area])
-            if not is_in: condition = ~condition
-            conditions.append(condition)
-        new_flows = flows[np.bitwise_and.reduce(conditions)]
-        amount += kg_to_unit(new_flows['Gewicht_KG'].sum(), unit=unit)
+    for role, is_in in zip([source, target], [source_in, target_in]):
+        condition = flows[f'{role}_{level}'].isin([area])
+        if not is_in: condition = ~condition
+        conditions.append(condition)
+    new_flows = flows[np.bitwise_and.reduce(conditions)]
+    if on_agendas:
+        amount = get_classification_graphs(
+            new_flows,
+            area=area,
+            klass='agendas',
+            unit=unit
+        )
+    else:
+        amount = kg_to_unit(new_flows['Gewicht_KG'].sum(), unit=unit)
     return amount
 
 
