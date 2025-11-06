@@ -5,7 +5,8 @@ from src.analysis import utils
 
 DATA = {}
 
-def run():
+
+def run(on_agendas=False):
     unit = var.UNITS['OVERVIEW']['OVERVIEW_USAGE']
 
     # stromen -> million kg
@@ -25,6 +26,18 @@ def run():
         (df['Gebruiksgroep_naam'] != 'Totaal')
     ]
 
+    # import cbs classifications
+    cbs_classifs = {}
+    for classif in ['agendas']:
+        file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
+        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+
+    # add classifications
+    for name, classif in cbs_classifs.items():
+        df = utils.add_classification(df, classif, name=name,
+                                      left_on='Goederengroep_nr',
+                                      right_on='cbs')
+
     # SANKEY
     stromen = [
         'Aanbod_eigen_regio',
@@ -43,15 +56,25 @@ def run():
     values = DATA.setdefault("values", {})
     for usage in usages:
         for stroom in stromen:
-            usage_sum = df[
+            usage_df = df[
                 (df['Stroom'] == stroom) &
                 (df['Gebruiksgroep_naam'] == usage)
-            ]['Gewicht_KG'].sum()
-
+            ]
             usage_name = usage.replace('_', ' ')
-            values.setdefault(usage_name, []).append(
-                utils.kg_to_unit(usage_sum, unit=unit)
-            )
+
+            if on_agendas:
+                values.setdefault(usage_name, []).append({
+                    k: v for k, v in utils.get_classification_graphs(
+                        usage_df,
+                        area=var.COROPS,
+                        klass='agendas',
+                        unit=unit
+                    ).items() if k in ["agendas", "values"]
+                })
+            else:
+                values.setdefault(usage_name, []).append(
+                    utils.kg_to_unit(usage_df['Gewicht_KG'].sum(), unit=unit)
+                )
 
     return {
         "level": "COROP",
