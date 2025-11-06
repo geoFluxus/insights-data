@@ -176,6 +176,7 @@ def process_cbs(on_agendas=False):
     all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
     df = pd.read_excel(all_data_file)
     df = df[df['Jaar'] == var.YEAR]
+    df['Gewicht_KG'] = df['Winning'] * 10 ** 6
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -184,7 +185,7 @@ def process_cbs(on_agendas=False):
                                       right_on='cbs')
 
     if on_agendas:
-        result = utils.get_classification_graphs(stroom_df,
+        result = utils.get_classification_graphs(df,
                                                  area=VARS['COROPS'],
                                                  klass='agendas',
                                                  unit=unit)
