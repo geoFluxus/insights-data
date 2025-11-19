@@ -63,30 +63,69 @@ def process_lma(polygon, ewc_classifs, on_agendas=False):
         # source in / target in
         flows, amounts = [], []
         flows.append(STROMEN[(source, True, target, True)])
-        amounts.append(utils.compute_sankey_branch(df,
-                                                   source=source, source_in=True,
-                                                   target=target, target_in=True,
-                                                   level=VARS['LEVEL'], area=VARS['AREA'],
-                                                   unit=VARS['OVERVIEW_SANKEY_UNIT'],
-                                                   on_agendas=on_agendas))
+        lokaal = utils.compute_sankey_branch(
+            df,
+            source=source, source_in=True,
+            target=target, target_in=True,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Lokaal: {lokaal}')
+        lokaal_200301 = utils.compute_sankey_branch(
+            df[df['EuralCode'] == '200301'],
+            source=source, source_in=True,
+            target=target, target_in=True,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Lokaal (200301): {lokaal_200301}')
 
         # source in / target out
         flows.append(STROMEN[(source, True, target, False)])
-        amount = utils.compute_sankey_branch(df,
-                                           source=source, source_in=True,
-                                           target=target, target_in=False,
-                                           level=VARS['LEVEL'], area=VARS['AREA'],
-                                           unit=VARS['OVERVIEW_SANKEY_UNIT'],
-                                           on_agendas=on_agendas)
+        export = utils.compute_sankey_branch(
+            df,
+            source=source, source_in=True,
+            target=target, target_in=False,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Export: {export}')
+        export_200301 = utils.compute_sankey_branch(
+            df[df['EuralCode'] == '200301'],
+            source=source, source_in=True,
+            target=target, target_in=False,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Export (200301): {export_200301}')
+
         if var.EXCLUDE_HOUSEHOLD:
             household = utils.kg_to_unit(var.HOUSEHOLD_KG, unit=VARS['OVERVIEW_SANKEY_UNIT'])
+            print(f'Household: {household}')
             if on_agendas:
                 # remove household from comnsuptiegoederen agenda
-                idx = amount['agendas'].index('Consumptiegoederen')
-                amount['values'][idx] -= household
+                idx = lokaal['agendas'].index('Consumptiegoederen')
+                lokaal_200301_consumption = lokaal_200301['values'][idx]
+                export_200301_consumption = export_200301['values'][idx]
+                total_200301_consumption = lokaal_200301_consumption + export_200301_consumption
+                diff_lokaal = lokaal_200301_consumption - household * (lokaal_200301_consumption / total_200301_consumption)
+                diff_export = export_200301_consumption - household * (export_200301_consumption / total_200301_consumption)
+                lokaal['values'][idx] = lokaal['values'][idx] - lokaal_200301_consumption + diff_lokaal
+                export['values'][idx] = export['values'][idx] - export_200301_consumption + diff_export
             else:
-                amount -= household
-        amounts.append(amount)
+                total_200301 = lokaal_200301 + export_200301
+                diff_lokaal = lokaal_200301 - household * (lokaal_200301 / total_200301)
+                diff_export = export_200301 - household * (export_200301 / total_200301)
+                lokaal = lokaal - lokaal_200301 + diff_lokaal
+                export = export - export_200301 + diff_export
+            print(f'Adjusted lokaal: {lokaal}')
+            print(f'Adjusted export: {export}')
+        amounts.append(lokaal)
+        amounts.append(export)
 
         # source out / target in
         flows.append(STROMEN[(source, False, target, True)])

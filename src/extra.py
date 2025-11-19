@@ -11,7 +11,7 @@ from src.analysis.utrecht import (transition_agendas,
 DATA = {}
 
 if __name__ == "__main__":
-    overview_materials.run()
+    # overview_materials.run()
     DATA['sankey'] = overview_sankey.run(on_agendas=True)
     DATA['usage'] = overview_usage.run(on_agendas=True)
     DATA['agendas'] = transition_agendas.run()
