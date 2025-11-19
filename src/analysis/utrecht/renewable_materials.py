@@ -4,6 +4,7 @@ from src.analysis import utils
 
 
 DATA = {}
+UNIT = 'kt'
 
 
 def process_cbs():
@@ -19,7 +20,7 @@ def process_cbs():
 
     # import cbs classifications
     cbs_classifs = {}
-    for classif in ['materials']:
+    for classif in ['agendas', 'materials']:
         file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
         cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
@@ -31,15 +32,26 @@ def process_cbs():
 
     for year in var.GOALS_YEARS:
         year_df = df[df['Jaar'] == year]
-        total_sum = year_df['Gewicht_KG'].sum()
-        renew_sum = year_df[
-            year_df['materials'].str.contains('Biotisch')
-        ]['Gewicht_KG'].sum()
+        total = {
+            k: v for k, v in utils.get_classification_graphs(
+                year_df,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+        renew = {
+            k: v for k, v in utils.get_classification_graphs(
+                year_df[year_df['materials'].str.contains('Biotisch')],
+                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
         DATA.setdefault('goods', []).append({
             'year': year,
-            'total_sum': total_sum / 10**9,
-            'renew_sum': renew_sum / 10**9,
-            'unit': 'Mt'
+            'unit': UNIT,
+            'total': total,
+            'renew': renew
         })
 
 
@@ -52,7 +64,7 @@ def process_waste():
 
     # import cbs classifications
     ewc_classifs = {}
-    for classif in ['materials']:
+    for classif in ['agendas', 'materials']:
         file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
         ewc_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
 
@@ -76,15 +88,31 @@ def process_waste():
         df['split_materials'] = df['materials'].str.split('&')
 
         # compute stats
-        total_sum = df['Gewicht_KG'].sum()
-        renew_sum = df[
-            df['split_materials'].apply(lambda x: all('Biotisch' in s for s in x))
-        ]['Gewicht_KG'].sum()
+        total = {
+            k: v for k, v in utils.get_classification_graphs(
+                df,
+                source=source,
+                level=var.LEVEL,
+                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+        renew = {
+            k: v for k, v in utils.get_classification_graphs(
+                df[df['split_materials'].apply(lambda x: all('Biotisch' in s for s in x))],
+                source=source,
+                level=var.LEVEL,
+                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
         DATA.setdefault('waste', []).append({
             'year': year,
-            'total_sum': total_sum / 10 ** 9,
-            'renew_sum': renew_sum / 10 ** 9,
-            'unit': 'Mt'
+            'unit': UNIT,
+            'total': total,
+            'renew': renew
         })
 
 
