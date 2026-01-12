@@ -32,6 +32,28 @@ def process_cbs():
 
     for year in var.GOALS_YEARS:
         year_df = df[df['Jaar'] == year]
+        # split the materials column
+        year_df['split_materials'] = year_df['materials'].str.split('&')
+
+        # boolean lists for each row
+        contains_biotisch = year_df['split_materials'].apply(
+            lambda xs: [("Biotisch" in s) for s in xs]
+        )
+        contains_abiotisch = year_df['split_materials'].apply(
+            lambda xs: [("Abiotisch" in s) for s in xs]
+        )
+
+        # groups
+        year_df_none = year_df[contains_abiotisch.apply(all)]  # all Abiotisch
+        year_df_all = year_df[contains_biotisch.apply(all)]  # all Biotisch
+
+        # some = neither pure Abiotisch nor pure Biotisch
+        year_df_some = year_df[
+            ~(contains_abiotisch.apply(all)) &
+            ~(contains_biotisch.apply(all))
+        ]
+
+        # compute stats
         total = {
             k: v for k, v in utils.get_classification_graphs(
                 year_df,
@@ -39,19 +61,38 @@ def process_cbs():
                 unit=UNIT
             ).items() if k in ["agendas", "values"]
         }
-        renew = {
+        not_renew = {
             k: v for k, v in utils.get_classification_graphs(
-                year_df[year_df['materials'].str.contains('Biotisch')],
+                year_df_none,
                 area=var.AREA,
                 klass='agendas',
                 unit=UNIT
             ).items() if k in ["agendas", "values"]
         }
+        renew = {
+            k: v for k, v in utils.get_classification_graphs(
+                year_df_all,
+                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+        mixed = {
+            k: v for k, v in utils.get_classification_graphs(
+                year_df_some,
+                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+
         DATA.setdefault('goods', []).append({
             'year': year,
             'unit': UNIT,
             'total': total,
-            'renew': renew
+            'not_renew': not_renew,
+            'renew': renew,
+            'mixed': mixed
         })
 
 
@@ -85,34 +126,64 @@ def process_waste():
             df = utils.add_classification(df, classif, name=name,
                                           left_on='EuralCode',
                                           right_on='ewc')
+        # split the materials column
         df['split_materials'] = df['materials'].str.split('&')
+
+        # boolean lists for each row
+        contains_biotisch = df['split_materials'].apply(
+            lambda xs: [("Biotisch" in s) for s in xs]
+        )
+        contains_abiotisch = df['split_materials'].apply(
+            lambda xs: [("Abiotisch" in s) for s in xs]
+        )
+
+        # groups
+        df_none = df[contains_abiotisch.apply(all)]  # all Abiotisch
+        df_all = df[contains_biotisch.apply(all)]  # all Biotisch
+
+        # some = neither pure Abiotisch nor pure Biotisch
+        df_some = df[
+            ~(contains_abiotisch.apply(all)) &
+            ~(contains_biotisch.apply(all))
+            ]
 
         # compute stats
         total = {
             k: v for k, v in utils.get_classification_graphs(
                 df,
-                source=source,
-                level=var.LEVEL,
-                area=var.AREA,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+        not_renew = {
+            k: v for k, v in utils.get_classification_graphs(
+                df_none,
                 klass='agendas',
                 unit=UNIT
             ).items() if k in ["agendas", "values"]
         }
         renew = {
             k: v for k, v in utils.get_classification_graphs(
-                df[df['split_materials'].apply(lambda x: all('Biotisch' in s for s in x))],
-                source=source,
-                level=var.LEVEL,
-                area=var.AREA,
+                df_all,
                 klass='agendas',
                 unit=UNIT
             ).items() if k in ["agendas", "values"]
         }
+        mixed = {
+            k: v for k, v in utils.get_classification_graphs(
+                df_some,
+                klass='agendas',
+                unit=UNIT
+            ).items() if k in ["agendas", "values"]
+        }
+
         DATA.setdefault('waste', []).append({
             'year': year,
             'unit': UNIT,
             'total': total,
-            'renew': renew
+            'not_renew': not_renew,
+            'renew': renew,
+            'mixed': mixed
         })
 
 
