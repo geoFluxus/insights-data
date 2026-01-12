@@ -47,7 +47,7 @@ def get_potential(df, rladder=None):
 def import_dataset(path, area_filter=False):
     df = pd.read_csv(path, low_memory=False)
     df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
-    if filter_by_area:
+    if area_filter:
         df = filter_by_area(df)
 
     # aggregate per eural code & process
