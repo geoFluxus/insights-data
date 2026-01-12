@@ -48,7 +48,7 @@ if __name__ == '__main__':
         materials.to_excel(writer, sheet_name='Leveringszekerheid', index=False)
 
         potential = pd.read_excel('json/benchmark.xlsx')
-        potential['eural_code'] = potential['eural_code'].astype(str).str.zfill(6)
+        potential['eural code'] = potential['eural code'].astype(str).str.zfill(6)
         potential.to_excel(writer, sheet_name='Afval', index=False)
 
     print("Finished writing general_overview.xlsx")
