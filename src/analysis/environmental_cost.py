@@ -92,6 +92,67 @@ def visualize_impacts(data, indicator = '', col_name='', jaar=var.YEAR):
     return viz_data
 
 
+def get_trendline(df):
+    def prepare_data(df, column=None):
+        split_rows = []
+        for idx, row in df.iterrows():
+            categories = [c.strip() for c in row['TA'].split(', ')]
+            if len(categories) > 1:
+                value_per_cat = row[column] / len(categories)
+                for cat in categories:
+                    split_rows.append({'Jaar': row['Jaar'], 'TA': cat, column: value_per_cat})
+            else:
+                split_rows.append(row[['Jaar', 'TA', column]].to_dict())
+        cleaned_data = pd.DataFrame(data=split_rows)
+
+        groups = cleaned_data.groupby(['Jaar', 'TA']).agg(
+            year_total=(column, 'sum')
+        ).reset_index()
+        ta_map = {'Bouw': 'Bouwmaterialen', 'Non-specifiek': 'Overig'}
+        groups['TA'] = groups['TA'].apply(lambda x: ta_map.get(x, x))
+        return groups
+
+    datasets = {
+        'co2_emissions': (
+            prepare_data(df, 'CO2 emissions total (kt)'),
+            'kt'
+        ),
+        'mki': (
+            prepare_data(df, 'MKI total (mln euro)'),
+            'mln euro'
+        )
+    }
+
+    result = {}
+    for theme, theme_item in datasets.items():
+        data, unit = theme_item
+        years = data['Jaar'].drop_duplicates().to_list()
+        agendas = [
+            'Biomassa en voedsel',
+            'Kunststoffen',
+            'Bouwmaterialen',
+            'Consumptiegoederen',
+            'Overig',
+            'Maakindustrie'
+        ]
+        values = []
+        for agenda in agendas:
+            agenda_values = []
+            for year in years:
+                row = data[(data['Jaar'] == year) & (data['TA'] == agenda)]
+                value = row.iloc[0]['year_total'] if not row.empty else 0
+                agenda_values.append(value)
+            values.append(agenda_values)
+        result[theme] = {
+            "level": "COROP",
+            "name": var.COROPS[0],
+            "unit": unit,
+            "years": years,
+            "agendas": agendas,
+            "values": values
+        }
+    return result
+
 def run():
     emissions_file = f'{FILEPATH}/geoFluxus/MKI_CO2_factors.xlsx'
     groups_file = f'{FILEPATH}/geoFluxus/CBS_names.xlsx'
@@ -115,13 +176,13 @@ def run():
             visualize_impacts(merged_data, indicator=inds[i],
                               col_name=col_names[i], jaar=var.YEAR)
 
-    results = {}
+    results_per_agenta = {}
     for theme, data in DATA.items():
         values = {}
         agendas = list(data.columns)
         for indicator, row in data.iterrows():
             values[indicator] = [row[agenda] * 100 for agenda in agendas]
-        results[theme] = {
+        results_per_agenta[theme] = {
             "level": "COROP",
             "name": var.COROPS[0],
             "period": var.YEAR,
@@ -130,4 +191,7 @@ def run():
             "values": values
         }
 
-    return results
+    return {
+        'trendline': get_trendline(dat),
+        **results_per_agenta
+    }

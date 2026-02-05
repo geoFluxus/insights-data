@@ -47,7 +47,7 @@ def get_potential(df, rladder=None):
 def import_dataset(path, area_filter=False):
     df = pd.read_csv(path, low_memory=False)
     df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
-    if filter_by_area:
+    if area_filter:
         df = filter_by_area(df)
 
     # aggregate per eural code & process
@@ -109,6 +109,37 @@ def exclude_eural_process(df):
     return df
 
 
+def export_potential(potential):
+    # rladder
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/rhierarchy.xlsx"
+    rladder = pd.read_excel(path)
+    potential = pd.merge(potential, rladder, how='left',
+                         left_on='processing_code_curr', right_on='processing_code')
+    potential = pd.merge(potential, rladder, how='left',
+                         left_on='processing_code_alt', right_on='processing_code')
+
+    # eural
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/ewc.xlsx"
+    eural = pd.read_excel(path)
+    eural['code'] = eural['code'].astype(str).str.zfill(6)
+    potential = pd.merge(potential, eural, how='left',
+                         left_on='eural_code', right_on='code')
+
+    columns = {
+        'eural_code': 'eural code',
+        'name': 'eural naam',
+        'amount_kg_curr': 'gewicht (kg)',
+        'processing_code_x': 'huidige verwerkingscode',
+        'processing_name_x': 'huidige verwerkingsnaam',
+        'benchmark_group_x': 'huigige verwerkingsgroep',
+        'processing_code_y': 'alternatieve verwerkingscode',
+        'processing_name_y': 'alternatieve verwerkingsnaam',
+        'benchmark_group_y': 'alternatieve verwerkingsgroep'
+    }
+    potential = potential[list(columns.keys())].rename(columns=columns)
+    potential.to_excel('../json/benchmark.xlsx', index=False)
+
+
 def run():
     print("\nWorking on potential sankey...")
 
@@ -151,6 +182,7 @@ def run():
     potential = potential[
         potential['benchmark_group_curr'] > potential['benchmark_group_alt']
     ]
+    export_potential(potential)
 
     # get max rank for each eural code
     groupby = [

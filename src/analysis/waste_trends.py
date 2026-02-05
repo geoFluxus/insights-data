@@ -223,6 +223,21 @@ def run():
     flows = pd.concat(all_years)
     print(f"Total flows: {len(flows)}\n")
 
+    # import rladder
+    print("Import rladder...")
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/rhierarchy.xlsx"
+    rladder = pd.read_excel(path)
+    rladder = rladder[['processing_code', 'benchmark_group']]
+    rladder_names = {
+        r['benchmark_group'][0]: r['benchmark_group'][1:].strip()
+        for idx, r in rladder.iterrows()
+    }
+    rladder['benchmark_group'] = rladder['benchmark_group'].str[0]
+    flows = pd.merge(flows, rladder,
+                     how='left',
+                     left_on=['VerwerkingsmethodeCode'],
+                     right_on=['processing_code'])
+
     # import industries
     industries = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_industries.csv", low_memory=False, sep=';')
     industries['ewc'] = industries['ewc'].astype(str).str.zfill(6)
@@ -258,23 +273,23 @@ def run():
     # average quarterly change in INDUSTRIES per TREATMENT method
     print("\nCompute trends per industry & processing...")
     for group in industry_groups:
-        for method, codes in TREATMENT_METHODS.items():
+        for code, name in rladder_names.items():
             formatted_name = " ".join(
                 re.findall('[A-Z][^A-Z]*',
                            group.replace('Industrie', '')
                                 .replace('Industry', '')
                            )
             )
-            prop = f'{formatted_name}_{method}'.lower().replace(' ', '_')
+            prop = f'{formatted_name}_{code}'.lower().replace(' ', '_')
             compute_trends(flows,
-                           on=[on, 'industries', 'VerwerkingsmethodeCode'],
-                           values=[[AREA], [group], codes],
+                           on=[on, 'industries', 'benchmark_group'],
+                           values=[[AREA], [group], [code]],
                            per_months=3,
                            datatype='process_trends',
                            prop=prop,
                            attrs={
                                'industry': formatted_name,
-                               'process': method.capitalize()
+                               'process': code
                            },
                            add_trends=False)
 

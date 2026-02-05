@@ -123,13 +123,65 @@ def plot_heatmap(dat, mat_inds, prov=None, values=None):
     viz_data = dat[dat['Regionaam'] == prov]
     viz_data.index = viz_data['Goederengroep']
     viz_data = viz_data[list(indicators['Materiaal'])]
-    viz_data = viz_data[viz_data.sum(axis=1) != 0]
     viz_data = viz_data / viz_data.sum()
+    viz_data['row_sum'] = viz_data.sum(axis=1)
     viz_data = pd.merge(viz_data, values[values['Regionaam'] == prov][['Goederengroep', 'Inkoop_waarde']],
                             on= 'Goederengroep', how='left')
     viz_data = viz_data.sort_values(by='Inkoop_waarde', ascending=False)
 
     return viz_data
+
+
+def export_overview(viz_data, indicators):
+    viz_data = viz_data[viz_data['row_sum'] != 0]
+    weights = dict(zip(indicators['Materiaal'], indicators['product']))
+    weight_sum = sum(weights.values())
+
+    overview_data = []
+    crm_columns = [
+        col for col in viz_data.columns
+        if col in crm_names
+    ]
+    for idx, row in viz_data.iterrows():
+        overview_data.append({
+            "material": row['Goederengroep'],
+            "crm": sum(row[col] * weights[col] for col in crm_columns) / weight_sum,
+            "value": len([col for col in crm_columns if row[col] != 0])
+        })
+
+    return {
+        "level": var.PREFIXES[var.LEVEL],
+        "period": var.YEAR,
+        "name": var.AREA,
+        "unit": "%",
+        "values": overview_data
+    }
+
+
+def export_heatmap(viz_data):
+    # export data
+    viz_data = viz_data[viz_data['row_sum'] != 0]
+    heatmap_materials = [col for col in viz_data.columns if col in materials]
+    heatmap_data = {}
+    for idx, row in viz_data.iterrows():
+        data = {
+            'worth': row['Inkoop_waarde'],
+            'amounts': []
+        }
+        for material in heatmap_materials:
+            data['amounts'].append(
+                row[material] * 100 if row[material] > 0 else None
+            )
+        heatmap_data[row['Goederengroep']] = data
+
+    return {
+        "level": var.PREFIXES[var.LEVEL],
+        "period": var.YEAR,
+        "name": var.AREA,
+        "unit": "%",
+        "materials": heatmap_materials,
+        "values": heatmap_data
+    }
 
 
 def run():
@@ -156,25 +208,7 @@ def run():
     # PLOT MATERIALS
     viz_data = plot_heatmap(data, indicators, prov=var.COROPS[0], values=euros)
 
-    # export data
-    heatmap_materials = [col for col in viz_data.columns if col in materials]
-    heatmap_data = {}
-    for idx, row in viz_data.iterrows():
-        data = {
-            'worth': row['Inkoop_waarde'],
-            'amounts': []
-        }
-        for material in heatmap_materials:
-            data['amounts'].append(
-                row[material] * 100 if row[material] > 0 else None
-            )
-        heatmap_data[row['Goederengroep']] = data
-
     return {
-        "level": var.PREFIXES[var.LEVEL],
-        "period": var.YEAR,
-        "name": var.AREA,
-        "unit": "%",
-        "materials": heatmap_materials,
-        "values": heatmap_data
+        'material_overview': export_overview(viz_data, criticals),
+        'raw_materials': export_heatmap(viz_data)
     }

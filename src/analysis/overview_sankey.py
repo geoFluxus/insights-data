@@ -22,7 +22,7 @@ VARS = {
 DATA = {}
 
 
-def process_lma(polygon, ewc_classifs):
+def process_lma(polygon, ewc_classifs, on_agendas=False):
     STROMEN = {
         ('Herkomst', True, 'Verwerker', True): 'Productie van afval binnen de regio',
         ('Herkomst', True, 'Verwerker', False): 'Export van afval',
@@ -63,39 +63,93 @@ def process_lma(polygon, ewc_classifs):
         # source in / target in
         flows, amounts = [], []
         flows.append(STROMEN[(source, True, target, True)])
-        amounts.append(utils.compute_sankey_branch(df,
-                                                   source=source, source_in=True,
-                                                   target=target, target_in=True,
-                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
-                                                   unit=VARS['OVERVIEW_SANKEY_UNIT']))
+        lokaal = utils.compute_sankey_branch(
+            df,
+            source=source, source_in=True,
+            target=target, target_in=True,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Lokaal: {lokaal}')
+        lokaal_200301 = utils.compute_sankey_branch(
+            df[df['EuralCode'] == '200301'],
+            source=source, source_in=True,
+            target=target, target_in=True,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Lokaal (200301): {lokaal_200301}')
 
         # source in / target out
         flows.append(STROMEN[(source, True, target, False)])
-        amount = utils.compute_sankey_branch(df,
-                                           source=source, source_in=True,
-                                           target=target, target_in=False,
-                                           level=VARS['LEVEL'], areas=[VARS['AREA']],
-                                           unit=VARS['OVERVIEW_SANKEY_UNIT'])
-        if var.EXCLUDE_HOUSEHOLD: amount -= utils.kg_to_unit(var.HOUSEHOLD_KG, unit=VARS['OVERVIEW_SANKEY_UNIT'])
-        amounts.append(amount)
+        export = utils.compute_sankey_branch(
+            df,
+            source=source, source_in=True,
+            target=target, target_in=False,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Export: {export}')
+        export_200301 = utils.compute_sankey_branch(
+            df[df['EuralCode'] == '200301'],
+            source=source, source_in=True,
+            target=target, target_in=False,
+            level=VARS['LEVEL'], area=VARS['AREA'],
+            unit=VARS['OVERVIEW_SANKEY_UNIT'],
+            on_agendas=on_agendas
+        )
+        print(f'Export (200301): {export_200301}')
+
+        if var.EXCLUDE_HOUSEHOLD:
+            household = utils.kg_to_unit(var.HOUSEHOLD_KG, unit=VARS['OVERVIEW_SANKEY_UNIT'])
+            print(f'Household: {household}')
+            if on_agendas:
+                # remove household from comnsuptiegoederen agenda
+                idx = lokaal['agendas'].index('Consumptiegoederen')
+                lokaal_200301_consumption = lokaal_200301['values'][idx]
+                export_200301_consumption = export_200301['values'][idx]
+                total_200301_consumption = lokaal_200301_consumption + export_200301_consumption
+                diff_lokaal = lokaal_200301_consumption - household * (lokaal_200301_consumption / total_200301_consumption)
+                diff_export = export_200301_consumption - household * (export_200301_consumption / total_200301_consumption)
+                lokaal['values'][idx] = lokaal['values'][idx] - lokaal_200301_consumption + diff_lokaal
+                export['values'][idx] = export['values'][idx] - export_200301_consumption + diff_export
+            else:
+                total_200301 = lokaal_200301 + export_200301
+                diff_lokaal = lokaal_200301 - household * (lokaal_200301 / total_200301)
+                diff_export = export_200301 - household * (export_200301 / total_200301)
+                lokaal = lokaal - lokaal_200301 + diff_lokaal
+                export = export - export_200301 + diff_export
+            print(f'Adjusted lokaal: {lokaal}')
+            print(f'Adjusted export: {export}')
+        amounts.append(lokaal)
+        amounts.append(export)
 
         # source out / target in
         flows.append(STROMEN[(source, False, target, True)])
         amounts.append(utils.compute_sankey_branch(df,
                                                    source=source, source_in=False,
                                                    target=target, target_in=True,
-                                                   level=VARS['LEVEL'], areas=[VARS['AREA']],
-                                                   unit=VARS['OVERVIEW_SANKEY_UNIT']))
+                                                   level=VARS['LEVEL'], area=VARS['AREA'],
+                                                   unit=VARS['OVERVIEW_SANKEY_UNIT'],
+                                                   on_agendas=on_agendas))
 
         for flow, amount in zip(flows, amounts):
             item = DATA.setdefault("flows", {})
             key = flow.lower().replace(' ', '_')
             item[key] = {
-                "values": [amount]
+                **({
+                    "values": amount["values"],
+                    "agendas": amount["agendas"]
+                } if on_agendas else {
+                    "values": [amount]
+                })
             }
 
 
-def process_cbs():
+def process_cbs(on_agendas=False):
     # stromen -> million kg
     path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
     filename = f"{path}/{VARS['COROP_FILE']}.csv"
@@ -112,29 +166,78 @@ def process_cbs():
         (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
         (df['Gebruiksgroep_naam'] != 'Totaal')
     ]
+
+    # import cbs classifications
+    cbs_classifs = {}
+    for classif in ['agendas']:
+        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
+        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+
+    # add classifications
+    for name, classif in cbs_classifs.items():
+        df = utils.add_classification(df, classif, name=name,
+                                      left_on='Goederengroep_nr',
+                                      right_on='cbs')
+
+    # SANKEY
+    unit = VARS['OVERVIEW_SANKEY_UNIT']
     stromen = [
         'Aanbod_eigen_regio',
-        'Distributie',
-        'Doorvoer',
         'Invoer_internationaal',
         'Invoer_nationaal',
         'Uitvoer_internationaal',
         'Uitvoer_nationaal',
-        'Wederuitvoer',
-        'Invoer_voor_wederuitvoer'
     ]
-
-    # SANKEY
     for stroom in stromen:
         item = DATA.setdefault("flows", {})
         key = stroom.lower().replace(' ', '_')
-        item[key] = {
-            "values": [
-                utils.kg_to_unit(
-                    df[df['Stroom'] == stroom]['Gewicht_KG'].sum(),
-                    unit=VARS['OVERVIEW_SANKEY_UNIT']
-                )
-            ]
+        if on_agendas:
+            stroom_df = df[df['Stroom'] == stroom]
+            result = utils.get_classification_graphs(stroom_df,
+                                                     area=VARS['COROPS'],
+                                                     klass='agendas',
+                                                     unit=unit)
+            item[key] = {
+                "values": result["values"],
+                "agendas": result["agendas"]
+            }
+        else:
+            item[key] = {
+                "values": [
+                    utils.kg_to_unit(
+                        df[df['Stroom'] == stroom]['Gewicht_KG'].sum(),
+                        unit=unit
+                    )
+                ]
+            }
+
+    # lokale winning
+    all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
+    df = pd.read_excel(all_data_file)
+    df = df[df['Jaar'] == var.YEAR]
+    df['Gewicht_KG'] = df['Winning'] * 10 ** 6
+
+    # add classifications
+    for name, classif in cbs_classifs.items():
+        df = utils.add_classification(df, classif, name=name,
+                                      left_on='cbs',
+                                      right_on='cbs')
+
+    if on_agendas:
+        result = utils.get_classification_graphs(df,
+                                                 area=VARS['COROPS'],
+                                                 klass='agendas',
+                                                 unit=unit)
+        item['lokale_winning'] = {
+            "values": result["values"],
+            "agendas": result["agendas"]
+        }
+    else:
+        item['lokale_winning'] = {
+            "values": [utils.kg_to_unit(
+                df['Winning'].sum() * 10 ** 6,
+                unit=VARS['OVERVIEW_SANKEY_UNIT']
+            )]
         }
 
 
@@ -168,7 +271,7 @@ def import_household_data(areas=None):
     return df
 
 
-def process_household():
+def process_household(on_agendas=False):
     if var.HOUSEHOLD_KG is not None:
         household_data = var.HOUSEHOLD_KG
     else:
@@ -201,11 +304,12 @@ def process_household():
                 household_data,
                 unit=VARS['OVERVIEW_SANKEY_UNIT']
             )
-        ]
+        ],
+        **({'agendas': ['Consumptiegoederen']} if on_agendas else {})
     }
 
 
-def run():
+def run(on_agendas=False):
     # start analysis
     print('OVERVIEW ANALYSIS')
     print('VARIABLES:')
@@ -219,20 +323,20 @@ def run():
 
     # import ewc classifications
     ewc_classifs = {}
-    for classif in ['chains']:
+    for classif in ['chains', 'agendas']:
         ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv",
                                             low_memory=False,
                                             sep=';')
 
     # process LMA data
-    process_lma(polygon, ewc_classifs)
+    process_lma(polygon, ewc_classifs, on_agendas=on_agendas)
 
     # process CBS data
     if len(VARS['COROPS']):
-        process_cbs()
+        process_cbs(on_agendas=on_agendas)
 
     # processe household data
-    process_household()
+    process_household(on_agendas=on_agendas)
 
     return {
         **DATA,

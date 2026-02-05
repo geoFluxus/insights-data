@@ -9,8 +9,8 @@ import variables as var
 DATA = {}
 
 if __name__ == '__main__':
-    DATA["overview_sankey"] = overview_sankey.run()
     DATA["overview_materials"] = overview_materials.run()
+    DATA["overview_sankey"] = overview_sankey.run()
     DATA["overview_highlights"] = overview_highlights.run()
     DATA["overview_usage"] = overview_usage.run()
 
