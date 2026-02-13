@@ -19,32 +19,46 @@ RESOURCE_TYPE = None
 FILEPATH = None
 
 
+import numpy as np
+import pandas as pd
+
 def compute_local_extraction(data, value=None, lokale_winning_groups=None):
-    # pivot table for analysis
     data = pd.pivot_table(
         data,
-        values=[value],
-        columns=["Stroom"],
-        index=['Regionaam', "Goederengroep_naam"],
+        values=value,
+        columns="Stroom",
+        index=["Regionaam", "Goederengroep_naam", "Gebruiksgroep_naam"],
         aggfunc="sum",
         fill_value=0
     ).reset_index()
-    data.columns = [
-        col[0]
-        if col[0] != value
-        else col[1] for col in data.columns
-    ]
-    data = data.rename(columns={'Goederengroep_naam': 'Goederengroep'})
 
-    # compute local extraction (lokale winning)
-    lokale_winning = data[data['Goederengroep'].isin(lokale_winning_groups)].copy(deep=True)
-    lokale_winning['Winning'] = (lokale_winning['Uitvoer_nationaal'] +
-                                 lokale_winning['Uitvoer_internationaal'] +
-                                 lokale_winning['Aanbod_eigen_regio'])
-    lokale_winning = lokale_winning[['Regionaam', 'Goederengroep', 'Winning']]
-    data = pd.merge(data, lokale_winning, how='left', on=['Regionaam', 'Goederengroep'])
-    data.fillna(0, inplace=True)
-    data = data.merge(RESOURCE_TYPE, on='Goederengroep')
+    data.columns = [
+        c[1] if isinstance(c, tuple) and c[0] == value else (c[0] if isinstance(c, tuple) else c)
+        for c in data.columns.to_flat_index()
+    ]
+    data = data.rename(columns={"Goederengroep_naam": "Goederengroep"})
+
+    for col in ["Uitvoer_nationaal", "Uitvoer_internationaal", "Aanbod_eigen_regio"]:
+        if col not in data.columns:
+            data[col] = 0
+
+    # goederen-level winning table (unique per Regionaam+Goederengroep)
+    lw = data[data["Goederengroep"].isin(lokale_winning_groups)].copy()
+    lw["Winning"] = (
+        lw["Uitvoer_nationaal"] + lw["Uitvoer_internationaal"] + lw["Aanbod_eigen_regio"]
+    )
+    lw = lw.groupby(["Regionaam", "Goederengroep"], as_index=False)["Winning"].sum()
+
+    data = data.merge(lw, how="left", on=["Regionaam", "Goederengroep"], validate="m:1")
+    data["Winning"] = data["Winning"].fillna(0)
+
+    # ✅ write Winning only once per good (prevents double counting across gebruiksgroep rows)
+    first_row = data.groupby(["Regionaam", "Goederengroep"]).cumcount().eq(0)
+    data["Winning"] = np.where(first_row, data["Winning"], 0)
+
+    # resource types
+    data = data.merge(RESOURCE_TYPE.drop_duplicates(["Goederengroep"]),
+                      on="Goederengroep", how="left", validate="m:1")
 
     return data
 
