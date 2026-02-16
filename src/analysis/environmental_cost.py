@@ -36,6 +36,7 @@ def get_indicator_per_group(df, on='usage', value_col='CO2 emissions total (kt)'
 
     # Filter year
     df = df[df['Jaar'] == var.YEAR].copy()
+    df = df[df['Gebruiksgroep_naam'] != 'Verandering voorraden']
 
     if on == 'agendas':
         df['TA'] = df['TA'].fillna('')
@@ -47,9 +48,7 @@ def get_indicator_per_group(df, on='usage', value_col='CO2 emissions total (kt)'
 
         group_col = 'TA_list'
         agg_col = 'value_split'
-
     else:
-        df = df[df['Gebruiksgroep_naam'] != 'Verandering voorraden']
         group_col = groupby[on]
         agg_col = value_col
 
@@ -122,7 +121,20 @@ def run():
         }
     }
 
-    results = {}
+    curr_year_data = dat[dat['Jaar'] == var.YEAR].copy()
+    results = {
+        'highlights': {
+            'co2_emissions': {
+                'value': curr_year_data['CO2 emissions total (kt)'].sum(),
+                'unit': 'kt'
+            },
+            'mki': {
+                'value': curr_year_data['MKI total (mln euro)'].sum(),
+                'unit': 'mln €'
+            }
+        }
+    }
+
     for section, indicators in sections.items():
         section_results = []
 
