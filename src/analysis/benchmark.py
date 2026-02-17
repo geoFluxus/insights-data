@@ -140,6 +140,33 @@ def export_potential(potential):
     potential.to_excel('../json/benchmark.xlsx', index=False)
 
 
+def get_eurals(df):
+    # eurals
+    groupby = [
+        'eural_code',
+        'benchmark_group',
+        'benchmark_group_alt'
+    ]
+    agg = {
+        'amount_kg': ('amount_kg', 'sum'),
+    }
+    cols = groupby + [col for col, func in agg.values()]
+    eurals = df[cols].groupby(by=groupby, as_index=False, dropna=False).agg(**agg)
+
+    # eural
+    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/ewc.xlsx"
+    eural = pd.read_excel(path)
+    eural['code'] = eural['code'].astype(str).str.zfill(6)
+    eurals = pd.merge(eurals, eural, how='left',
+                      left_on='eural_code', right_on='code')
+
+    return eurals[
+        eurals['benchmark_group'] != eurals['benchmark_group_alt']
+    ]\
+        .sort_values(by='amount_kg', ascending=False)\
+        .to_dict(orient="records")[:5]
+
+
 def run():
     print("\nWorking on potential sankey...")
 
@@ -227,6 +254,7 @@ def run():
 
     # export data
     data = {
+        'table': get_eurals(province_data),
         'nodes': [],
         'links': []
     }
