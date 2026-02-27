@@ -1,7 +1,25 @@
 import pandas as pd
+import numpy as np
 import variables as var
-import seaborn as sns
-from seaborn.regression import _RegressionPlotter
+
+
+FE_GROUPS = [
+    'Steenkool en bruinkool',
+    'Ruwe aardolie',
+    'Aardgas',
+]
+SPLIT_FE = [
+    'Cokes en vaste aardolieproducten',
+    'Vloeibare aardolieproducten',
+    'Gasvormige aardolieproducten',
+    'Chemische basisproducten'
+]
+IS_FE = {
+    'Productie goederen': 50,
+    'Dienstverlening bedrijven': 100,
+    'Overheid': 100,
+    'Consumptie huishoudens': 100,
+}
 
 
 DATA = {}
@@ -19,8 +37,17 @@ RESOURCE_TYPE = None
 FILEPATH = None
 
 
-import numpy as np
-import pandas as pd
+def split_fossil(df, is_fossil=False):
+    for good in SPLIT_FE:
+        for usage, perc in IS_FE.items():
+            condition = \
+                (df['Goederengroep_naam'] == good) & \
+                (df['Gebruiksgroep_naam'] == usage)
+            factor = (perc if is_fossil else 100 - perc) / 100
+            for value in ['Brutogew', 'Waarde']:
+                df.loc[condition, value] = df[value] * factor
+    return df
+
 
 def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     data = pd.pivot_table(
@@ -160,7 +187,7 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
     return materials.reset_index()
 
 
-def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False, goal='abiotisch'):
+def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False, goal='abiotisch', is_fossil=False):
     dmcs = pd.DataFrame()
     dmis = pd.DataFrame()
     all_data = pd.DataFrame()
@@ -188,6 +215,18 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
             (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
             (df['Gebruiksgroep_naam'] != 'Totaal')
         ].copy()
+
+        # include / exclude fossil
+        fossil_groups = df_year['Goederengroep_naam'].isin(FE_GROUPS)
+        if not is_fossil:
+            fossil_groups= ~(fossil_groups)
+        else:
+            split_groups = df_year['Goederengroep_naam'].isin(SPLIT_FE)
+            fossil_groups = fossil_groups | split_groups
+        df_year = df_year[fossil_groups]
+
+        # for certain goods, split to fossil & non-fossil
+        df_year = split_fossil(df_year, is_fossil=is_fossil)
 
         # lokale winning
         lokale_winning_groups = RESOURCE_TYPE[RESOURCE_TYPE['Lokale winning'] == 'ja']
@@ -283,32 +322,49 @@ def run():
     path = f"{FILEPATH}/geofluxus"
     RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
 
-    # Call the calculate indicators function with raw material calculations enabled.
-    dmcs, dmis, rmcs, rmis, all_data, all_eur_data, all_rm_data = calculate_indicators(FILEPATH, filename,
-                                                            raw_materials=True,
-                                                            goal='total')
-    # export all data for later analysis
-    all_rm_data.to_excel(f'{var.OUTPUT_DIR}/all_raw_material_data.xlsx')
-    all_data.to_excel(f'{var.OUTPUT_DIR}/all_data.xlsx')
-    all_eur_data.to_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx')
+    for is_fossil in [False, True]:
+        # Call the calculate indicators function with raw material calculations enabled.
+        dmcs, dmis, rmcs, rmis, all_data, all_eur_data, all_rm_data = calculate_indicators(
+            FILEPATH, filename,
+            raw_materials=True,
+            goal='total',
+            is_fossil=is_fossil
+        )
 
-    dmcs_ab, dmis_ab, rmcs_ab, rmis_ab, _, _, _ = calculate_indicators(FILEPATH, filename,
-                                                                 raw_materials=True)
+        # export all data for later analysis
+        sheetname = "FE" if is_fossil else "NON_FE"
+        for dataset, excel_file in zip(
+            [all_rm_data, all_data, all_eur_data],
+            ['all_raw_material_data', 'all_data', 'euro_data_all']
+        ):
+            with pd.ExcelWriter(
+                fr"{var.OUTPUT_DIR}\{excel_file}.xlsx",
+                engine="openpyxl",
+                mode='a' if is_fossil else 'w'
+            ) as writer:
+                dataset.to_excel(writer, sheet_name=sheetname, index=False)
 
-    # export dmi/dmc graphs
-    sheets = {
-        'dmc': dmcs,
-        'dmi': dmis,
-        'rmc': rmcs,
-        'rmi': rmis,
-        'dmc_ab': dmcs_ab,
-        'dmi_ab': dmis_ab,
-        'rmc_ab': rmcs_ab,
-        'rmi_ab': rmis_ab
-    }
-    with pd.ExcelWriter(f"{var.OUTPUT_DIR}/dmi_dmc.xlsx", engine="openpyxl") as writer:
-        for indicator, data in sheets.items():
-            data.to_excel(writer, sheet_name=indicator, index=False)
+        dmcs_ab, dmis_ab, rmcs_ab, rmis_ab, _, _, _ = calculate_indicators(
+            FILEPATH, filename,
+            raw_materials=True,
+            is_fossil=is_fossil
+        )
+
+        if not is_fossil:
+            # export dmi/dmc graphs
+            sheets = {
+                'dmc': dmcs,
+                'dmi': dmis,
+                'rmc': rmcs,
+                'rmi': rmis,
+                'dmc_ab': dmcs_ab,
+                'dmi_ab': dmis_ab,
+                'rmc_ab': rmcs_ab,
+                'rmi_ab': rmis_ab
+            }
+            with pd.ExcelWriter(f"{var.OUTPUT_DIR}/dmi_dmc.xlsx", engine="openpyxl") as writer:
+                for indicator, data in sheets.items():
+                    data.to_excel(writer, sheet_name=indicator, index=False)
 
 
 if __name__ == "__main__":
