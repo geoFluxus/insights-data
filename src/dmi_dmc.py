@@ -12,13 +12,51 @@ SPLIT_FE = [
     'Cokes en vaste aardolieproducten',
     'Vloeibare aardolieproducten',
     'Gasvormige aardolieproducten',
-    'Chemische basisproducten'
+    'Chemische basisproducten',
+    'Overig afval en secundaire grondstoffen, biomassa',
+    'Overig afval en secundaire grondstoffen, fossiel'
+]
+GEBRUIK = [
+    'Consumptie huishoudens',
+    'Dienstverlening bedrijven',
+    'Investeringen vaste activa',
+    'Niet van toepassing',
+    'Overheid',
+    'Productie goederen',
+    'Verandering voorraden'
 ]
 IS_FE = {
-    'Productie goederen': 50,
-    'Dienstverlening bedrijven': 100,
-    'Overheid': 100,
-    'Consumptie huishoudens': 100,
+    'Cokes en vaste aardolieproducten': {
+        'Productie goederen': 50,
+        'Dienstverlening bedrijven': 100,
+        'Overheid': 100,
+        'Consumptie huishoudens': 100,
+    },
+    'Vloeibare aardolieproducten': {
+        'Productie goederen': 50,
+        'Dienstverlening bedrijven': 100,
+        'Overheid': 100,
+        'Consumptie huishoudens': 100,
+    },
+    'Gasvormige aardolieproducten': {
+        'Productie goederen': 50,
+        'Dienstverlening bedrijven': 100,
+        'Overheid': 100,
+        'Consumptie huishoudens': 100,
+    },
+    'Chemische basisproducten': {
+        'Productie goederen': 50,
+        'Dienstverlening bedrijven': 100,
+        'Overheid': 100,
+        'Consumptie huishoudens': 100,
+    },
+    'Overig afval en secundaire grondstoffen, biomassa': {
+        'Productie goederen': 50,
+        'Dienstverlening bedrijven': 50,
+    },
+    'Overig afval en secundaire grondstoffen, fossiel': {
+        'Productie goederen': 50,
+    },
 }
 
 
@@ -39,10 +77,11 @@ FILEPATH = None
 
 def split_fossil(df, is_fossil=False):
     for good in SPLIT_FE:
-        for usage, perc in IS_FE.items():
+        for usage in GEBRUIK:
             condition = \
                 (df['Goederengroep_naam'] == good) & \
                 (df['Gebruiksgroep_naam'] == usage)
+            perc = IS_FE[good].get(usage, 0 if is_fossil else 100)
             factor = (perc if is_fossil else 100 - perc) / 100
             for value in ['Brutogew', 'Waarde']:
                 df.loc[condition, value] = df[value] * factor
@@ -212,7 +251,7 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
         df_year = df[
             (df['Jaar'] == year) &
             (df['Regionaam'].isin(corop)) &
-            (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
+            (df['Goederengroep_naam'] != 'Huishoudelijk afval en gemeentelijk afval') &
             (df['Gebruiksgroep_naam'] != 'Totaal')
         ].copy()
 
