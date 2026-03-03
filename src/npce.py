@@ -13,6 +13,10 @@ DATA = {
 }
 
 
+def format_num(num):
+    return round(num)
+
+
 def perc(curr, ref):
     return round(curr / ref * 100) if ref != 0 else 0
 
@@ -45,14 +49,24 @@ def vervangen(df):
         'data': []
     }
     for year in YEARS:
-        renew_sum = renewable_sum(df[df['Jaar'] == year])
-        total_sum = df[df['Jaar'] == year]['DMI'].sum()
-        graph['data'].append({
-            "year": year,
-            "renew": perc(renew_sum, total_sum),
-            "other": perc(total_sum - renew_sum, total_sum),
-            "unit": "%"
-        })
+        cats, year_df = utils.split_categories(
+            df[df['Jaar'] == year],
+            column='productgroepen',
+            extra=['renewable'],
+            amount='DMI'
+        )
+
+        for cat in cats:
+            cat_df = year_df[year_df['productgroepen'] == cat]
+            renew_sum = renewable_sum(cat_df)
+            total_sum = cat_df['DMI'].sum()
+            graph['data'].append({
+                "year": year,
+                "group": cat,
+                "renew": renew_sum,
+                "other": total_sum - renew_sum,
+                "unit": "kt"
+            })
 
     return indicator, graph
 
@@ -66,25 +80,25 @@ def besparen(df):
 
     indicator = {
         'begin': {
-            'total': begin_total_sum,
-            'raw': begin_sum,
-            'reduction': begin_total_sum - begin_sum
+            'total': format_num(begin_total_sum),
+            'raw': format_num(begin_sum),
+            'reduction': format_num(begin_total_sum - begin_sum)
         },
         'curr': {
-            'total': begin_total_sum,
-            'raw': huidig_sum,
-            'reduction': begin_total_sum - huidig_sum
+            'total': format_num(begin_total_sum),
+            'raw': format_num(huidig_sum),
+            'reduction': format_num(begin_total_sum - huidig_sum)
         },
         'goals': {
             'begin': {
-                'total': begin_total_sum,
-                'raw': begin_total_sum * (100 - g2030) / 100,
-                'reduction': begin_total_sum * g2030 / 100
+                'total': format_num(begin_total_sum),
+                'raw': format_num(begin_total_sum * (100 - g2030) / 100),
+                'reduction': format_num(begin_total_sum * g2030 / 100)
             },
             'curr': {
-                'total': begin_total_sum,
-                'raw': begin_total_sum * (100 - g2035) / 100,
-                'reduction': begin_total_sum * g2035 / 100
+                'total': format_num(begin_total_sum),
+                'raw': format_num(begin_total_sum * (100 - g2035) / 100),
+                'reduction': format_num(begin_total_sum * g2035 / 100)
             },
             'unit': 'kt'
         },
@@ -95,17 +109,26 @@ def besparen(df):
         'data': [],
         'unit': 'kt',
         'targets': [
-            {'value': begin_total_sum * (100 - g2030) / 100},
-            {'value': begin_total_sum * (100 - g2035) / 100},
+            {'value': format_num(begin_total_sum * (100 - g2030) / 100)},
+            {'value': format_num(begin_total_sum * (100 - g2035) / 100)},
         ]
     }
     for year in YEARS:
-        total_sum = df[df['Jaar'] == year]['DMI'].sum()
-        graph['data'].append({
-            "year": year,
-            "raw": total_sum,
-            "unit": "kt"
-        })
+        cats, year_df = utils.split_categories(
+            df[df['Jaar'] == year],
+            column='productgroepen',
+            amount='DMI'
+        )
+
+        for cat in cats:
+            cat_df = year_df[year_df['productgroepen'] == cat]
+            total_sum = cat_df['DMI'].sum()
+            graph['data'].append({
+                "year": year,
+                "group": cat,
+                "raw": total_sum,
+                "unit": "kt"
+            })
 
     return indicator, graph
 
@@ -119,6 +142,11 @@ def compute_goederen():
     path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_hernieuwbaar.xlsx"
     renewable = pd.read_excel(path)
     goederen = pd.merge(df, renewable, on='cbs')
+
+    # merge with product groups
+    path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_productgroepen.xlsx"
+    productgroups = pd.read_excel(path, sheet_name='goederen')
+    goederen = pd.merge(goederen, productgroups, on='cbs')
 
     # compute goals
     for goal, func in [
@@ -152,6 +180,12 @@ def filter_by_area(df):
     return df[df[f"{source}_{var.LEVEL}"] == var.AREA]
 
 
+def get_process_sum(df, process=None):
+    return df[
+        df['Berekening NPCE doelstellingen'] == process
+    ]['Gewicht_kt'].sum()
+
+
 def behouden_hoeveelheid(df):
     g2030 = 15
     g2035 = 15
@@ -161,25 +195,25 @@ def behouden_hoeveelheid(df):
 
     indicator = {
         'begin': {
-            'total': begin_total_sum,
-            'raw': begin_sum,
-            'reduction': begin_total_sum - begin_sum
+            'total': format_num(begin_total_sum),
+            'raw': format_num(begin_sum),
+            'reduction': format_num(begin_total_sum - begin_sum)
         },
         'curr': {
-            'total': begin_total_sum,
-            'raw': huidig_sum,
-            'reduction': begin_total_sum - huidig_sum
+            'total': format_num(begin_total_sum),
+            'raw': format_num(huidig_sum),
+            'reduction': format_num(begin_total_sum - huidig_sum)
         },
         'goals': {
             'begin': {
-                'total': begin_total_sum,
-                'raw': begin_total_sum * (100 - g2030) / 100,
-                'reduction': begin_total_sum * g2030 / 100
+                'total': format_num(begin_total_sum),
+                'raw': format_num(begin_total_sum * (100 - g2030) / 100),
+                'reduction': format_num(begin_total_sum * g2030 / 100)
             },
             'curr': {
-                'total': begin_total_sum,
-                'raw': begin_total_sum * (100 - g2035) / 100,
-                'reduction': begin_total_sum * g2035 / 100
+                'total': format_num(begin_total_sum),
+                'raw': format_num(begin_total_sum * (100 - g2035) / 100),
+                'reduction': format_num(begin_total_sum * g2035 / 100)
             },
             'unit': 'kt'
         },
@@ -189,67 +223,67 @@ def behouden_hoeveelheid(df):
     graph = {
         'data': [],
         'unit': 'kt',
-        'targets': [
-            {'value': begin_total_sum * (100 - g2030) / 100},
-            {'value': begin_total_sum * (100 - g2035) / 100},
-        ]
     }
+
     for year in YEARS:
-        total_sum = df[df['MeldPeriodeJAAR'] == year]['Gewicht_kt'].sum()
-        graph['data'].append({
-            "year": year,
-            "raw": total_sum,
-            "unit": "kt"
-        })
+        cats, year_df = utils.split_categories(
+            df[df['MeldPeriodeJAAR'] == year],
+            column='productgroepen',
+            extra=['Berekening NPCE doelstellingen'],
+            amount='Gewicht_kt'
+        )
+
+        for cat in cats:
+            cat_df = year_df[year_df['productgroepen'] == cat]
+            graph['data'].append({
+                "year": year,
+                "group": cat,
+                'high': get_process_sum(cat_df, process='Hoogwaardige recycling'),
+                'other': get_process_sum(cat_df, process='Recycling'),
+                'low': get_process_sum(cat_df, process='Verbranding / storting'),
+                "unit": "kt"
+            })
 
     return indicator, graph
 
 
 def behouden_verwerking(df):
-    def get_process_sum(df, process=None):
-        return df[
-            df['Berekening NPCE doelstellingen'] == process
-        ]['Gewicht_kt'].sum()
-
     begin = df[df['MeldPeriodeJAAR'] == BEGIN]
+    total_sum = begin['Gewicht_kt'].sum()
     huidig = df[df['MeldPeriodeJAAR'] == HUIDIG]
     indicator = {
         'begin': {
-            'high': get_process_sum(begin, process='Hoogwaardige recycling'),
-            'other': get_process_sum(begin, process='Recycling'),
-            'low': get_process_sum(begin, process='Verbranding / storting')
-        },
-        'curr': {
-            'high': get_process_sum(huidig, process='Hoogwaardige recycling'),
-            'other': get_process_sum(huidig, process='Recycling'),
-            'low': get_process_sum(huidig, process='Verbranding / storting')
-        },
-        'unit': 'kt'
-    }
-
-    graph = {
-        'data': [],
-        'unit': '%',
-    }
-    for year in YEARS:
-        year_df = df[df['MeldPeriodeJAAR'] == year]
-        total_sum = year_df['Gewicht_kt'].sum()
-        graph['data'].append({
-            "year": year,
             'high': perc(
-                get_process_sum(year_df, process='Hoogwaardige recycling'),
+                get_process_sum(begin, process='Hoogwaardige recycling'),
                 total_sum
             ),
             'other': perc(
-                get_process_sum(year_df, process='Recycling'),
+                get_process_sum(begin, process='Recycling'),
                 total_sum
             ),
             'low': perc(
-                get_process_sum(year_df, process='Verbranding / storting'),
+                get_process_sum(begin, process='Verbranding / storting'),
+                total_sum
+            )
+        },
+        'curr': {
+            'high': perc(
+                get_process_sum(huidig, process='Hoogwaardige recycling'),
                 total_sum
             ),
-            "unit": "%"
-        })
+            'other': perc(
+                get_process_sum(huidig, process='Recycling'),
+                total_sum
+            ),
+            'low': perc(
+                get_process_sum(huidig, process='Verbranding / storting'),
+                total_sum
+            )
+        },
+        'unit': '%'
+    }
+
+    graph = None
 
     return indicator, graph
 
@@ -265,6 +299,7 @@ def compute_afval():
         prod_only['Gewicht_kt'] = prod_only['Gewicht_KG'] / 10 ** 6
         concats.append(prod_only)
     afval = pd.concat(concats)
+    afval['EuralCode'] = afval['EuralCode'].astype(str).str.zfill(6)
 
     # import process value
     path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_hoogwaardig.xlsx"
@@ -272,6 +307,14 @@ def compute_afval():
     afval = pd.merge(afval, process,
                      left_on='VerwerkingsmethodeCode',
                      right_on='LMA verwerkingscode')
+
+    # import process value
+    path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_productgroepen.xlsx"
+    productgroups = pd.read_excel(path, sheet_name='afval')
+    productgroups['ewc'] = productgroups['ewc'].astype(str).str.zfill(6)
+    afval = pd.merge(afval, productgroups,
+                     left_on='EuralCode',
+                     right_on='ewc')
 
     # compute goals
     for goal, func in [

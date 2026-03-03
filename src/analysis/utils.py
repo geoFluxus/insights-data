@@ -128,48 +128,32 @@ def compute_sankey_branch(flows,
     return amount
 
 
-def split_categories(df, column=None):
+def split_categories(df, column=None, amount='Gewicht_KG', extra=[]):
     # split amounts for synthetic categories
     split_rows = []
     for idx, row in df.iterrows():
-        categories = [c.strip() for c in row[column].split(' & ')]
+        categories = [c.strip() for c in row[column].split('&')]
         if len(categories) > 1:
-            value_per_cat = row['Gewicht_KG'] / len(categories)
+            value_per_cat = row[amount] / len(categories)
             for cat in categories:
-                split_rows.append({column: cat, 'Gewicht_KG': value_per_cat})
+                split_rows.append({
+                    column: cat,
+                    amount: value_per_cat,
+                    **{col: row[col] for col in extra}
+                })
         else:
-            split_rows.append(row[[column, 'Gewicht_KG']].to_dict())
+            split_rows.append(row[[column, amount, *extra]].to_dict())
     cleaned_data = pd.DataFrame(data=split_rows)
 
     # group by
-    groups = cleaned_data.groupby([column]).agg(
-        Gewicht_KG=('Gewicht_KG', 'sum')
-    ).reset_index()
+    groups = cleaned_data.groupby([
+        column,
+        *extra
+    ]).agg(**{
+        amount: (amount, 'sum')
+    }).reset_index()
 
-    # re-map transition agendas
-    if column == 'agendas':
-        ta_map = {
-            'Biomassa Voedsel': 'Biomassa en voedsel',
-            'Kunststoffen': 'Kunststoffen',
-            'Bouw': 'Bouwmaterialen',
-            'Consumptiegoederen': 'Consumptiegoederen',
-            'Non Specifiek': 'Overig',
-            'Maakindustrie': 'Maakindustrie',
-            'Onbekend': 'Overig'
-        }
-        groups[column] = groups[column].apply(lambda x: ta_map.get(x, x))
-        cats = [
-            'Biomassa en voedsel',
-            'Kunststoffen',
-            'Bouwmaterialen',
-            'Consumptiegoederen',
-            'Overig',
-            'Maakindustrie'
-        ]
-        groups[column] = pd.Categorical(groups[column], categories=cats, ordered=True)
-        groups = groups.sort_values(column)
-    else:
-        cats = sorted(groups[column].drop_duplicates().to_list())
+    cats = sorted(groups[column].drop_duplicates().to_list())
 
     return cats, groups
 
