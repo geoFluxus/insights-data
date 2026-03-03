@@ -249,35 +249,37 @@ def behouden_hoeveelheid(df):
 
 def behouden_verwerking(df):
     begin = df[df['MeldPeriodeJAAR'] == BEGIN]
-    total_sum = begin['Gewicht_kt'].sum()
+    begin_total_sum = begin['Gewicht_kt'].sum()
     huidig = df[df['MeldPeriodeJAAR'] == HUIDIG]
+    huidig_total_sum = huidig['Gewicht_kt'].sum()
+
     indicator = {
         'begin': {
             'high': perc(
                 get_process_sum(begin, process='Hoogwaardige recycling'),
-                total_sum
+                begin_total_sum
             ),
             'other': perc(
                 get_process_sum(begin, process='Recycling'),
-                total_sum
+                begin_total_sum
             ),
             'low': perc(
                 get_process_sum(begin, process='Verbranding / storting'),
-                total_sum
+                begin_total_sum
             )
         },
         'curr': {
             'high': perc(
                 get_process_sum(huidig, process='Hoogwaardige recycling'),
-                total_sum
+                huidig_total_sum
             ),
             'other': perc(
                 get_process_sum(huidig, process='Recycling'),
-                total_sum
+                huidig_total_sum
             ),
             'low': perc(
                 get_process_sum(huidig, process='Verbranding / storting'),
-                total_sum
+                huidig_total_sum
             )
         },
         'unit': '%'
