@@ -29,10 +29,10 @@ def get_indicator_per_group(df, on='usage', value_col='CO2 emissions total (kt)'
         'product': 'productgroepen'
     }
 
-    # # Filter year
-    # if perc:
-    #     df = df[df['Jaar'] == var.YEAR]
-    #     df = df[df['Gebruiksgroep_naam'] != 'Verandering voorraden']
+    # Filter year
+    if perc:
+        df = df[df['Jaar'] == var.YEAR]
+        df = df[df['Gebruiksgroep_naam'] != 'Verandering voorraden']
 
     if on == 'product':
         df['TA'] = df['productgroepen'].fillna('')
@@ -146,7 +146,7 @@ def run():
         section_results = []
 
         for group in ['usage', 'product']:
-            group_names = groups[group]
+            group_names = groups[group].copy()
             if group == 'usage':
                 group_names.append('Verandering voorraden')
             value, unit = indicator

@@ -71,5 +71,5 @@ PRODUCTGROEPEN = {
     'ConsumptieAEEA': 'Consumptiegoederen',
     'ConsumptieMeubilair': 'Consumptiegoederen',
     'Overig': 'Overig',
-    'Maakindustrie': 'Maakinstrustrie'
+    'Maakindustrie': 'Maakindustrie'
 }
