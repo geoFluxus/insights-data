@@ -147,15 +147,15 @@ def run():
 
         for group in ['usage', 'product']:
             group_names = groups[group].copy()
-            if group == 'usage':
-                group_names.append('Verandering voorraden')
+            # if group == 'usage':
+            #     group_names.append('Verandering voorraden')
             value, unit = indicator
             data = get_indicator_per_group(dat, on=group, value_col=value, perc=False)
 
             values = []
-            for year in var.DMI_YEARS:
+            for group_name in group_names:
                 year_values = []
-                for group_name in group_names:
+                for year in var.DMI_YEARS:
                     row = data[
                         (data[group] == group_name) & \
                         (data['Jaar'] == year)
