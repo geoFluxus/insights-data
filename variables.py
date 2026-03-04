@@ -61,3 +61,15 @@ PREFIXES = {
     'Herkomst': 'production',
     'Verwerker': 'treatment',
 }
+
+PRODUCTGROEPEN = {
+    'BiomassaVoedsel': 'Biomassa en Voedsel',
+    'Kunststoffen': 'Kunststoffen',
+    'Bouw': 'Bouw',
+    'ConsumptieOverig': 'Consumptiegoederen',
+    'ConsumptieTextiel': 'Consumptiegoederen',
+    'ConsumptieAEEA': 'Consumptiegoederen',
+    'ConsumptieMeubilair': 'Consumptiegoederen',
+    'Overig': 'Overig',
+    'Maakindustrie': 'Maakinstrustrie'
+}
