@@ -38,21 +38,9 @@ def calculate_crm_shares_per_province():
     # print(cn_to_nst_code[cn_to_nst_code[cn_code_col].astype(str).str.len() != 8])
     # print(cn_to_nst_code)
     #cn_to_nst_code[cn_code_col] = cn_to_nst_code['CN2024_CODE'].astype(str).zfill(8)
-
-    # include fossil and non-fossil
-    sheets = ['NON_FE', 'FE']
-    dmi = pd.concat(
-        pd.read_excel(f'{var.OUTPUT_DIR}/all_data.xlsx', sheet_name=s)[
-            ['Goederengroep', 'Regionaam', 'Jaar', 'DMI']
-        ]
-        for s in sheets
-    )
+    dmi = pd.read_excel(f'{var.OUTPUT_DIR}/all_data.xlsx', sheet_name='ALL')[['Goederengroep', 'Regionaam', 'Jaar', 'DMI']]
     dmi = dmi[dmi['Jaar'] == var.YEAR]
-    dmi = drop_usage(dmi)
-    dmi = (
-        dmi.groupby(['Regionaam', 'Goederengroep', 'Jaar'], as_index=False)['DMI']
-            .sum()
-    )
+
 
     good_weights = pd.merge(good_weights, cn_to_nst_code, how='left', left_on='CN_8D', right_on=cn_code_col).drop(columns=cn_code_col)
     cn_code_col = 'CN_8D'
@@ -144,53 +132,21 @@ def plot_heatmap(dat, mat_inds, prov=None, values=None):
     return viz_data
 
 
-def compute_crm_value(viz_data, indicators):
-    # weights: index = CRM material name, value = weight
-    weights = pd.Series(indicators['product'].to_numpy(), index=indicators['Materiaal']).astype(float)
+def export_overview(viz_data, indicators):
+    viz_data = viz_data[viz_data['row_sum'] != 0]
+    weights = dict(zip(indicators['Materiaal'], indicators['product']))
+    weight_sum = sum(weights.values())
 
-    # CRM columns present in your viz_data (and optionally limited to crm_names)
-    crm_columns = [c for c in viz_data.columns if c in crm_names]
-
-    # keep only weights that match columns actually used
-    w = weights.reindex(crm_columns).fillna(0.0)
-    weight_sum = float(w.sum())
-
-    # weighted CRM score per row
-    # (viz_data[crm_columns] * w) aligns by column names automatically
-    viz_data = viz_data.copy()
-    viz_data["crm"] = (viz_data[crm_columns].mul(w, axis=1).sum(axis=1) / weight_sum) if weight_sum != 0 else 0.0
-
-    # count of non-zero CRM columns per row
-    viz_data["value"] = (viz_data[crm_columns] != 0).sum(axis=1)
-
-    return viz_data
-
-
-def export_highlights(viz_data):
-    highest_crm_row = viz_data.loc[viz_data["crm"].idxmax()]
-    most_criticals_row = viz_data.loc[viz_data["value"].idxmax()]
-    highest_value = viz_data.loc[viz_data["Inkoop_waarde"].idxmax()]
-
-    return {
-        'highest_criticality': {
-            'name': highest_crm_row['Goederengroep']
-        },
-        'most_criticals': {
-            'name': most_criticals_row['Goederengroep']
-        },
-        'highest_value': {
-            'name': highest_value['Goederengroep']
-        },
-    }
-
-
-def export_overview(viz_data):
     overview_data = []
+    crm_columns = [
+        col for col in viz_data.columns
+        if col in crm_names
+    ]
     for idx, row in viz_data.iterrows():
         overview_data.append({
             "material": row['Goederengroep'],
-            "crm": row['crm'],
-            "value": row['value']
+            "crm": sum(row[col] * weights[col] for col in crm_columns) / weight_sum,
+            "value": len([col for col in crm_columns if row[col] != 0])
         })
 
     return {
@@ -204,6 +160,7 @@ def export_overview(viz_data):
 
 def export_heatmap(viz_data):
     # export data
+    viz_data = viz_data[viz_data['row_sum'] != 0]
     heatmap_materials = [col for col in viz_data.columns if col in materials]
     heatmap_data = {}
     for idx, row in viz_data.iterrows():
@@ -227,29 +184,6 @@ def export_heatmap(viz_data):
     }
 
 
-def drop_usage(df):
-    flow_cols = [
-        'Aanbod_eigen_regio', 'Distributie', 'Doorvoer',
-        'Invoer_internationaal', 'Invoer_nationaal', 'Invoer_voor_wederuitvoer',
-        'Uitvoer_internationaal', 'Uitvoer_nationaal', 'Wederuitvoer', 'Winning'
-    ]
-
-    drop_cols = ['Gebruiksgroep_naam'] if 'Gebruiksgroep_naam' in df.columns else []
-
-    group_cols = df.columns.difference(flow_cols + drop_cols)
-
-    agg = {**{c: 'sum' for c in flow_cols if c in df.columns},
-           **{c: 'first' for c in group_cols}}
-
-    df_grouped = (
-        df.drop(columns=drop_cols)
-          .groupby(list(group_cols), as_index=False)
-          .agg(agg)
-    )
-
-    return df_grouped
-
-
 def run():
     # CALCULATE DATA
     data = calculate_crm_shares_per_province()
@@ -266,28 +200,15 @@ def run():
     global materials
     materials = list(criticals['Materiaal'].dropna())
 
-    # include fossil and non-fossil
-    dfs = []
-    for sheet in ['NON_FE', 'FE']:
-        df = pd.read_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx', sheet_name=sheet)
-        df = df[df['Jaar'] == var.YEAR]
-        df = drop_usage(df)
-        df['Inkoop_waarde'] = df['Invoer_nationaal'] + df['Invoer_internationaal']
-        df = df[['Regionaam', 'Goederengroep', 'Inkoop_waarde']]
-        dfs.append(df)
-    euros = (
-        pd.concat(dfs)
-            .groupby(['Regionaam', 'Goederengroep'], as_index=False)
-            .sum()
-    )
+    euro_waarde = pd.read_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx', sheet_name='ALL')
+    euro_waarde = euro_waarde[euro_waarde['Jaar'] == var.YEAR]
+    euro_waarde['Inkoop_waarde'] = euro_waarde['Invoer_nationaal'] + euro_waarde['Invoer_internationaal']
+    euros = euro_waarde[['Regionaam', 'Goederengroep', 'Inkoop_waarde']]
 
     # PLOT MATERIALS
     viz_data = plot_heatmap(data, indicators, prov=var.COROPS[0], values=euros)
-    viz_data = viz_data[viz_data['row_sum'] != 0]
-    viz_data = compute_crm_value(viz_data, criticals)
 
     return {
-        'highlights': export_highlights(viz_data),
-        'material_overview': export_overview(viz_data),
+        'material_overview': export_overview(viz_data, criticals),
         'raw_materials': export_heatmap(viz_data)
     }

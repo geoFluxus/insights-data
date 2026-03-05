@@ -8,6 +8,7 @@ FE_GROUPS = [
     'Ruwe aardolie',
     'Aardgas',
 ]
+
 SPLIT_FE = [
     'Cokes en vaste aardolieproducten',
     'Vloeibare aardolieproducten',
@@ -16,6 +17,7 @@ SPLIT_FE = [
     'Overig afval en secundaire grondstoffen, biomassa',
     'Overig afval en secundaire grondstoffen, fossiel'
 ]
+
 GEBRUIK = [
     'Consumptie huishoudens',
     'Dienstverlening bedrijven',
@@ -25,6 +27,7 @@ GEBRUIK = [
     'Productie goederen',
     'Verandering voorraden'
 ]
+
 IS_FE = {
     'Cokes en vaste aardolieproducten': {
         'Productie goederen': 50,
@@ -68,6 +71,7 @@ RELEVANT_COLS = [
     'Waarde',
     'Brutogew'
 ]
+
 PROJ_START = 2015
 PROJ_END = 2030
 
@@ -76,15 +80,20 @@ FILEPATH = None
 
 
 def split_fossil(df, is_fossil=False):
+    """
+    For SPLIT_FE goods, apply fossil fraction perc to fossil run, and (100-perc) to non-fossil run.
+    If usage not in IS_FE[good], default perc=0 => 0% fossil, 100% non-fossil.
+    """
     for good in SPLIT_FE:
         for usage in GEBRUIK:
-            condition = \
-                (df['Goederengroep_naam'] == good) & \
+            condition = (
+                (df['Goederengroep_naam'] == good) &
                 (df['Gebruiksgroep_naam'] == usage)
+            )
             perc = IS_FE[good].get(usage, 0)
             factor = (perc if is_fossil else 100 - perc) / 100
             for value in ['Brutogew', 'Waarde']:
-                df.loc[condition, value] = df[value] * factor
+                df.loc[condition, value] = df.loc[condition, value] * factor
     return df
 
 
@@ -123,106 +132,103 @@ def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     data["Winning"] = np.where(first_row, data["Winning"], 0)
 
     # resource types
-    data = data.merge(RESOURCE_TYPE.drop_duplicates(["Goederengroep"]),
-                      on="Goederengroep", how="left", validate="m:1")
+    data = data.merge(
+        RESOURCE_TYPE.drop_duplicates(["Goederengroep"]),
+        on="Goederengroep",
+        how="left",
+        validate="m:1"
+    )
 
     return data
 
 
-def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch = False):
+def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch=False):
     cols_import = ['Winning', 'Invoer_nationaal', 'Invoer_internationaal']
     cols_export = ['Uitvoer_nationaal', 'Uitvoer_internationaal']
     rme_matrices_file = 'geoFluxus/CBS_to_RME.xlsx'
+
     cbs_rme = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='CBS_to_RME_codes').fillna(0)
     eur_or_t = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='eur_or_t')
     eur_or_t.set_index(eur_or_t['CBS_name'])
 
-    #Load conversion tables
-    rme_import_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_import_'+str(year))
-    rme_export_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_export_'+str(year))
+    rme_import_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_import_' + str(year))
+    rme_export_coefficients = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='RME_export_' + str(year))
     rm_groups_import = rme_import_coefficients['Raw_material_name'][1:]
     rm_groups_export = rme_export_coefficients['Raw_material_name'][1:]
 
-    #Compute conversion matrices (between CBS and RM groups)
     convert_import = cbs_rme.values[1:, 1:].astype(float) @ rme_import_coefficients.values[1:, 2:].T
     converter_import = pd.DataFrame(index=cbs_rme['CBS_name'][1:], columns=rm_groups_import, data=convert_import)
 
     convert_export = cbs_rme.values[1:, 1:].astype(float) @ rme_export_coefficients.values[1:, 2:].T
     converter_export = pd.DataFrame(index=cbs_rme['CBS_name'][1:], columns=rm_groups_export, data=convert_export)
+
     if save:
         converter_import.to_excel(FILEPATH + f'cbs_to_rme_conversion_table_import_{year}.xlsx')
         converter_export.to_excel(FILEPATH + f'cbs_to_rme_conversion_table_export_{year}.xlsx')
+
     rm_data = pd.DataFrame()
 
-    #Add keys for which groups use monitary values, and which use tons.
-    df = pd.merge(df, eur_or_t,left_on='Goederengroep', right_on='CBS_name', how='left')
+    df = pd.merge(df, eur_or_t, left_on='Goederengroep', right_on='CBS_name', how='left')
     eur_df = pd.merge(eur_df, eur_or_t, left_on='Goederengroep', right_on='CBS_name', how='left')
-    rm_data[['Jaar', 'Regionaam', 'Goederengroep']] = df[['Jaar','Regionaam', 'Goederengroep']]
-    rm_data.set_index(['Jaar', 'Regionaam', 'Goederengroep'], inplace=True)
-    df.set_index(['Jaar','Regionaam', 'Goederengroep'], inplace=True)
-    eur_df.set_index(['Jaar','Regionaam', 'Goederengroep'], inplace=True)
 
-    #Fill euros where the conversion table asks for monetary values, and tons where tons
-    for i in range(len(cols_import)):
-        rm_data[cols_import[i]] = eur_df['eur'] * eur_df[cols_import[i]] + df['ton'] * df[cols_import[i]]
-    for i in range(len(cols_export)):
-        rm_data[cols_export[i]] = eur_df['eur'] * eur_df[cols_export[i]] + df['ton'] * df[cols_export[i]]
+    rm_data[['Jaar', 'Regionaam', 'Goederengroep']] = df[['Jaar', 'Regionaam', 'Goederengroep']]
+    rm_data.set_index(['Jaar', 'Regionaam', 'Goederengroep'], inplace=True)
+    df.set_index(['Jaar', 'Regionaam', 'Goederengroep'], inplace=True)
+    eur_df.set_index(['Jaar', 'Regionaam', 'Goederengroep'], inplace=True)
+
+    for col in cols_import:
+        rm_data[col] = eur_df['eur'] * eur_df[col] + df['ton'] * df[col]
+    for col in cols_export:
+        rm_data[col] = eur_df['eur'] * eur_df[col] + df['ton'] * df[col]
+
     rm_data.reset_index(inplace=True)
     df.reset_index(inplace=True)
     eur_df.reset_index(inplace=True)
 
-    #Now convert the euro / tonne values per CBS category to raw material tons
-    df_import = pd.merge(rm_data, converter_import, left_on='Goederengroep', right_index=True, how='left')
-    df_import.fillna(0, inplace=True)
-    #First create all the columns for import categories and raw material combinations
-    out_cols = set()
+    df_import = pd.merge(rm_data, converter_import, left_on='Goederengroep', right_index=True, how='left').fillna(0)
+
+    out_cols = []
     for i in rm_groups_import:
         for j in cols_import:
-            out_cols.add((i, j))
-    out_cols = list(out_cols)
-    df_import = pd.concat([df_import, pd.DataFrame(0, columns=out_cols, index = df_import.index)], axis=1)
+            out_cols.append((i, j))
+    df_import = pd.concat([df_import, pd.DataFrame(0, columns=out_cols, index=df_import.index)], axis=1)
 
-    #Add results to each row, check if there are duplicate values and if so, first sum
     for i in rm_groups_import:
         for j in cols_import:
             df_import[i, j] += df_import[i] * df_import[j]
 
-
     materials = df_import.groupby(['Regionaam', 'Jaar'])[out_cols].sum()
     materials.columns = pd.MultiIndex.from_tuples(out_cols)
     materials = materials.stack(level=0, future_stack=True)
+
     if abiotisch:
-        #print(materials.index.get_level_values(2))
         abiotics = pd.read_excel(f'{FILEPATH}/{rme_matrices_file}', sheet_name='abiotisch')
         materials = materials[materials.index.get_level_values(2).isin(abiotics['Abiotisch'])]
+
     materials['RMI'] = materials['Winning'] + materials['Invoer_internationaal'] + materials['Invoer_nationaal']
-    df_import = None
 
+    df_export = pd.merge(rm_data, converter_export, left_on='Goederengroep', right_index=True, how='left').fillna(0)
 
-    df_export = pd.merge(rm_data, converter_export, left_on='Goederengroep', right_index=True, how='left')
-    df_export.fillna(0, inplace=True)
-    out_cols = set()
+    out_cols_exp = []
     for i in rm_groups_export:
         for j in cols_export:
-            out_cols.add((i, j ))
-    out_cols = list(out_cols)
-    df_export = pd.concat([df_export, pd.DataFrame(0, columns=out_cols, index = df_export.index)], axis=1)
+            out_cols_exp.append((i, j))
+    df_export = pd.concat([df_export, pd.DataFrame(0, columns=out_cols_exp, index=df_export.index)], axis=1)
 
     for i in rm_groups_export:
         for j in cols_export:
             df_export[i, j] += df_export[i] * df_export[j]
 
-
-    materials_export = df_export.groupby(['Regionaam', 'Jaar'])[out_cols].sum()
-    materials_export.columns = pd.MultiIndex.from_tuples(out_cols)
+    materials_export = df_export.groupby(['Regionaam', 'Jaar'])[out_cols_exp].sum()
+    materials_export.columns = pd.MultiIndex.from_tuples(out_cols_exp)
     materials_export = materials_export.stack(level=0, future_stack=True)
+
     if abiotisch:
-        # print(materials.index.get_level_values(2))
-        #abiotics = pd.read_excel(FILEPATH + rme_matrices_file, sheet_name='abiotisch')
         materials_export = materials_export[materials_export.index.get_level_values(2).isin(abiotics['Abiotisch'])]
 
     materials = pd.merge(materials, materials_export, left_index=True, right_index=True, how='outer')
     materials['RMC'] = materials['RMI'] - materials['Uitvoer_nationaal'] - materials['Uitvoer_internationaal']
+
     return materials.reset_index()
 
 
@@ -231,23 +237,15 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
     dmis = pd.DataFrame()
     all_data = pd.DataFrame()
     all_eur_data = pd.DataFrame()
-    all_raw_data = pd.DataFrame()
     all_rm_data = pd.DataFrame()
-    if raw_materials:
-        eur_all_data = pd.DataFrame()
-        eur_all_raw_data = pd.DataFrame()
-        rmis = pd.DataFrame()
-        rmcs = pd.DataFrame()
 
-    # import csb goederen
     df = pd.read_csv(path + file_name, low_memory=False, sep=',')
     df = df.dropna(how='all', axis='columns')
 
-    # iterate all years
     for year in var.DMI_YEARS:
-        # filter by year & COROPS
-        # exclude afval and total sums
-        if isinstance(corop, str): corop = [corop]
+        if isinstance(corop, str):
+            corop = [corop]
+
         df_year = df[
             (df['Jaar'] == year) &
             (df['Regionaam'].isin(corop)) &
@@ -255,56 +253,46 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
             (df['Gebruiksgroep_naam'] != 'Totaal')
         ].copy()
 
-        # include / exclude fossil
         fossil_groups = df_year['Goederengroep_naam'].isin(FE_GROUPS)
         if not is_fossil:
-            fossil_groups= ~(fossil_groups)
+            fossil_groups = ~(fossil_groups)
         else:
             split_groups = df_year['Goederengroep_naam'].isin(SPLIT_FE)
             fossil_groups = fossil_groups | split_groups
         df_year = df_year[fossil_groups]
 
-        # for certain goods, split to fossil & non-fossil
         df_year = split_fossil(df_year, is_fossil=is_fossil)
 
-        # lokale winning
-        lokale_winning_groups = RESOURCE_TYPE[RESOURCE_TYPE['Lokale winning'] == 'ja']
-        lokale_winning_groups = lokale_winning_groups['Goederengroep'].tolist()
+        lokale_winning_groups = RESOURCE_TYPE[RESOURCE_TYPE['Lokale winning'] == 'ja']['Goederengroep'].tolist()
 
-        # compute local extraction
-        data = compute_local_extraction(df_year, value="Brutogew",
-                                        lokale_winning_groups=lokale_winning_groups)
+        data = compute_local_extraction(df_year, value="Brutogew", lokale_winning_groups=lokale_winning_groups)
 
         if raw_materials:
-            eur_data = compute_local_extraction(df_year, value="Waarde",
-                                                lokale_winning_groups=lokale_winning_groups)
+            eur_data = compute_local_extraction(df_year, value="Waarde", lokale_winning_groups=lokale_winning_groups)
 
-        # if required by the goal, include only abiotic product groups
         if 'abiotisch' in goal:
             abiotisch = data[data['Grondstof'] == 'abiotisch']
 
-            # there are only two gemengd categories, assuming equal distribution
             abiotisch_in_gemengd = data[data['Grondstof'] == 'gemengd']
             abiotisch_in_gemengd = abiotisch_in_gemengd.apply(lambda x: x * 0.5 if x.dtype == 'float64' else x)
 
             all_abiotisch = pd.concat([abiotisch, abiotisch_in_gemengd])
 
-            aggregated = all_abiotisch.groupby(['Regionaam']).sum().reset_index()
+            aggregated = all_abiotisch.groupby(['Regionaam']).sum(numeric_only=True).reset_index()
             if raw_materials:
-                #Assume that we don't aggregate data
                 rm_data = data.copy()
                 eur_aggregated = eur_data.copy()
-        # if required by the goal, aggregate per RESOURCE_TYPE type biotic/abiotic/mixed
+
         elif goal == 'agg_per_type':
-            aggregated = data.groupby(['Regionaam', 'Grondstof']).sum().reset_index()
+            aggregated = data.groupby(['Regionaam', 'Grondstof']).sum(numeric_only=True).reset_index()
             if raw_materials:
-                eur_aggregated = eur_data.groupby(['Regionaam', 'Grondstof']).sum().reset_index()
-        # aggregated per province
+                eur_aggregated = eur_data.groupby(['Regionaam', 'Grondstof']).sum(numeric_only=True).reset_index()
+
         elif goal == 'agg_per_province':
-            aggregated = data.groupby(['Regionaam']).sum().reset_index()
+            aggregated = data.groupby(['Regionaam']).sum(numeric_only=True).reset_index()
             if raw_materials:
-                eur_aggregated = eur_data.groupby(['Regionaam']).sum().reset_index()
-        # not aggregated at all
+                eur_aggregated = eur_data.groupby(['Regionaam']).sum(numeric_only=True).reset_index()
+
         else:
             aggregated = data.copy()
             if raw_materials:
@@ -313,8 +301,8 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
         aggregated['DMI'] = aggregated['Winning'] + aggregated['Invoer_nationaal'] + aggregated['Invoer_internationaal']
         aggregated['DMC'] = aggregated['DMI'] - aggregated['Uitvoer_nationaal'] - aggregated['Uitvoer_internationaal']
         aggregated['National_DMI'] = aggregated['Winning'] + aggregated['Invoer_internationaal']
-
         aggregated['Jaar'] = year
+
         if raw_materials:
             eur_aggregated['Jaar'] = year
 
@@ -323,28 +311,69 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
         else:
             rm_data['Jaar'] = year
             outcomes_rm = calculate_rmi_rmc(rm_data, eur_aggregated, year, save=True, abiotisch=True)
-        #print(outcomes_rm.columns)
+
         dmc = aggregated[['Regionaam', 'DMC', 'Jaar']].copy(deep=True)
         dmi = aggregated[['Regionaam', 'DMI', 'Jaar']].copy(deep=True)
 
-        if raw_materials:
-            rmc = outcomes_rm[['Regionaam', 'RMC', 'Jaar']].copy(deep=True)
-            rmi = outcomes_rm[['Regionaam', 'RMI', 'Jaar']].copy(deep=True)
-        # prepare dataframes for visualisation or exports
-        dmcs = pd.concat([dmcs, dmc])
-        dmis = pd.concat([dmis, dmi])
+        dmcs = pd.concat([dmcs, dmc], ignore_index=True)
+        dmis = pd.concat([dmis, dmi], ignore_index=True)
 
         if raw_materials:
-            rmcs = pd.concat([rmcs, rmc])
-            rmis = pd.concat([rmis, rmi])
-            all_rm_data = pd.concat([all_rm_data, outcomes_rm])
-            all_eur_data = pd.concat([all_eur_data, eur_aggregated])
-        all_data = pd.concat([all_data, aggregated])
+            all_rm_data = pd.concat([all_rm_data, outcomes_rm], ignore_index=True)
+            all_eur_data = pd.concat([all_eur_data, eur_aggregated], ignore_index=True)
+
+        all_data = pd.concat([all_data, aggregated], ignore_index=True)
 
     if raw_materials:
+        rmcs = all_rm_data[['Regionaam', 'RMC', 'Jaar']].copy()
+        rmis = all_rm_data[['Regionaam', 'RMI', 'Jaar']].copy()
         return dmcs, dmis, rmcs, rmis, all_data, all_eur_data, all_rm_data
     else:
         return dmcs, dmis
+
+
+def _aggregate_no_gebruik(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build ALL sheet:
+    - combine FE + NON_FE
+    - drop Gebruiksgroep_naam
+    - KEEP Jaar as a grouping key (do NOT sum it)
+    """
+    if df is None or df.empty:
+        return df
+
+    df = df.copy()
+    df = df.drop(columns=['Gebruiksgroep_naam'], errors='ignore')
+
+    # Jaar must be a key, not a numeric column to sum
+    force_key_cols = {'Jaar'}
+
+    num_cols = [
+        c for c in df.columns
+        if pd.api.types.is_numeric_dtype(df[c]) and c not in force_key_cols
+    ]
+    key_cols = [c for c in df.columns if c not in num_cols]
+
+    # ensure Jaar is in keys (even if it was numeric)
+    for c in force_key_cols:
+        if c in df.columns and c not in key_cols:
+            key_cols.append(c)
+
+    return df.groupby(key_cols, as_index=False)[num_cols].sum()
+
+
+def _write_three_sheets(excel_path: str, non_fe: pd.DataFrame, fe: pd.DataFrame):
+    """
+    Write NON_FE, FE, and ALL.
+    ALL = NON_FE + FE, then aggregate away Gebruiksgroep_naam.
+    """
+    all_df = pd.concat([non_fe, fe], ignore_index=True)
+    all_df = _aggregate_no_gebruik(all_df)
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl", mode="w") as writer:
+        non_fe.to_excel(writer, sheet_name="NON_FE", index=False)
+        fe.to_excel(writer, sheet_name="FE", index=False)
+        all_df.to_excel(writer, sheet_name="ALL", index=False)
 
 
 def run():
@@ -353,59 +382,54 @@ def run():
     print("\nDMI-RMI")
     FILEPATH = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data"
 
-    # import csb data
-    # stromen -> million kg
     filename = f"/CBS/{var.COROP_FILE}.csv"
 
-    # read division into biotic / abiotic product groups
     path = f"{FILEPATH}/geofluxus"
     RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
 
-    for is_fossil in [False, True]:
-        # Call the calculate indicators function with raw material calculations enabled.
-        dmcs, dmis, rmcs, rmis, all_data, all_eur_data, all_rm_data = calculate_indicators(
-            FILEPATH, filename,
-            raw_materials=True,
-            goal='total',
-            is_fossil=is_fossil
-        )
+    # --- NON_FE ---
+    dmcs_non, dmis_non, rmcs_non, rmis_non, all_data_non, all_eur_non, all_rm_non = calculate_indicators(
+        FILEPATH, filename,
+        raw_materials=True,
+        goal='total',
+        is_fossil=False
+    )
 
-        # export all data for later analysis
-        sheetname = "FE" if is_fossil else "NON_FE"
-        for dataset, excel_file in zip(
-            [all_rm_data, all_data, all_eur_data],
-            ['all_raw_material_data', 'all_data', 'euro_data_all']
-        ):
-            with pd.ExcelWriter(
-                fr"{var.OUTPUT_DIR}\{excel_file}.xlsx",
-                engine="openpyxl",
-                mode='a' if is_fossil else 'w'
-            ) as writer:
-                dataset.to_excel(writer, sheet_name=sheetname, index=False)
+    # --- FE ---
+    dmcs_fe, dmis_fe, rmcs_fe, rmis_fe, all_data_fe, all_eur_fe, all_rm_fe = calculate_indicators(
+        FILEPATH, filename,
+        raw_materials=True,
+        goal='total',
+        is_fossil=True
+    )
 
-        dmcs_ab, dmis_ab, rmcs_ab, rmis_ab, _, _, _ = calculate_indicators(
-            FILEPATH, filename,
-            raw_materials=True,
-            is_fossil=is_fossil
-        )
+    # Export 3 workbooks with NON_FE / FE / ALL
+    _write_three_sheets(f"{var.OUTPUT_DIR}/all_raw_material_data.xlsx", all_rm_non, all_rm_fe)
+    _write_three_sheets(f"{var.OUTPUT_DIR}/all_data.xlsx", all_data_non, all_data_fe)
+    _write_three_sheets(f"{var.OUTPUT_DIR}/euro_data_all.xlsx", all_eur_non, all_eur_fe)
 
-        if not is_fossil:
-            # export dmi/dmc graphs
-            sheets = {
-                'dmc': dmcs,
-                'dmi': dmis,
-                'rmc': rmcs,
-                'rmi': rmis,
-                'dmc_ab': dmcs_ab,
-                'dmi_ab': dmis_ab,
-                'rmc_ab': rmcs_ab,
-                'rmi_ab': rmis_ab
-            }
-            with pd.ExcelWriter(f"{var.OUTPUT_DIR}/dmi_dmc.xlsx", engine="openpyxl") as writer:
-                for indicator, data in sheets.items():
-                    data.to_excel(writer, sheet_name=indicator, index=False)
+    # Keep your original “dmi_dmc.xlsx” export (NON_FE only by default)
+    dmcs_ab_non, dmis_ab_non, rmcs_ab_non, rmis_ab_non, _, _, _ = calculate_indicators(
+        FILEPATH, filename,
+        raw_materials=True,
+        is_fossil=False
+    )
+
+    sheets = {
+        'dmc': dmcs_non,
+        'dmi': dmis_non,
+        'rmc': rmcs_non,
+        'rmi': rmis_non,
+        'dmc_ab': dmcs_ab_non,
+        'dmi_ab': dmis_ab_non,
+        'rmc_ab': rmcs_ab_non,
+        'rmi_ab': rmis_ab_non,
+    }
+
+    with pd.ExcelWriter(f"{var.OUTPUT_DIR}/dmi_dmc.xlsx", engine="openpyxl") as writer:
+        for indicator, data in sheets.items():
+            data.to_excel(writer, sheet_name=indicator[:31], index=False)
 
 
 if __name__ == "__main__":
     run()
-
