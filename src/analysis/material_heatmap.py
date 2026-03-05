@@ -38,9 +38,21 @@ def calculate_crm_shares_per_province():
     # print(cn_to_nst_code[cn_to_nst_code[cn_code_col].astype(str).str.len() != 8])
     # print(cn_to_nst_code)
     #cn_to_nst_code[cn_code_col] = cn_to_nst_code['CN2024_CODE'].astype(str).zfill(8)
-    dmi = pd.read_excel(f'{var.OUTPUT_DIR}/all_data.xlsx')[['Goederengroep', 'Regionaam', 'Jaar', 'DMI']]
-    dmi = dmi[dmi['Jaar'] == var.YEAR]
 
+    # include fossil and non-fossil
+    sheets = ['NON_FE', 'FE']
+    dmi = pd.concat(
+        pd.read_excel(f'{var.OUTPUT_DIR}/all_data.xlsx', sheet_name=s)[
+            ['Goederengroep', 'Regionaam', 'Jaar', 'DMI']
+        ]
+        for s in sheets
+    )
+    dmi = dmi[dmi['Jaar'] == var.YEAR]
+    dmi = drop_usage(dmi)
+    dmi = (
+        dmi.groupby(['Regionaam', 'Goederengroep', 'Jaar'], as_index=False)['DMI']
+            .sum()
+    )
 
     good_weights = pd.merge(good_weights, cn_to_nst_code, how='left', left_on='CN_8D', right_on=cn_code_col).drop(columns=cn_code_col)
     cn_code_col = 'CN_8D'
@@ -215,6 +227,29 @@ def export_heatmap(viz_data):
     }
 
 
+def drop_usage(df):
+    flow_cols = [
+        'Aanbod_eigen_regio', 'Distributie', 'Doorvoer',
+        'Invoer_internationaal', 'Invoer_nationaal', 'Invoer_voor_wederuitvoer',
+        'Uitvoer_internationaal', 'Uitvoer_nationaal', 'Wederuitvoer', 'Winning'
+    ]
+
+    drop_cols = ['Gebruiksgroep_naam'] if 'Gebruiksgroep_naam' in df.columns else []
+
+    group_cols = df.columns.difference(flow_cols + drop_cols)
+
+    agg = {**{c: 'sum' for c in flow_cols if c in df.columns},
+           **{c: 'first' for c in group_cols}}
+
+    df_grouped = (
+        df.drop(columns=drop_cols)
+          .groupby(list(group_cols), as_index=False)
+          .agg(agg)
+    )
+
+    return df_grouped
+
+
 def run():
     # CALCULATE DATA
     data = calculate_crm_shares_per_province()
@@ -231,10 +266,20 @@ def run():
     global materials
     materials = list(criticals['Materiaal'].dropna())
 
-    euro_waarde = pd.read_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx')
-    euro_waarde = euro_waarde[euro_waarde['Jaar'] == var.YEAR]
-    euro_waarde['Inkoop_waarde'] = euro_waarde['Invoer_nationaal'] + euro_waarde['Invoer_internationaal']
-    euros = euro_waarde[['Regionaam', 'Goederengroep', 'Inkoop_waarde']]
+    # include fossil and non-fossil
+    dfs = []
+    for sheet in ['NON_FE', 'FE']:
+        df = pd.read_excel(f'{var.OUTPUT_DIR}/euro_data_all.xlsx', sheet_name=sheet)
+        df = df[df['Jaar'] == var.YEAR]
+        df = drop_usage(df)
+        df['Inkoop_waarde'] = df['Invoer_nationaal'] + df['Invoer_internationaal']
+        df = df[['Regionaam', 'Goederengroep', 'Inkoop_waarde']]
+        dfs.append(df)
+    euros = (
+        pd.concat(dfs)
+            .groupby(['Regionaam', 'Goederengroep'], as_index=False)
+            .sum()
+    )
 
     # PLOT MATERIALS
     viz_data = plot_heatmap(data, indicators, prov=var.COROPS[0], values=euros)
