@@ -1,11 +1,16 @@
 import variables as var
 import json
-from src.analysis import overview_materials, renewable_materials
+from src.analysis import (
+    raw_material_highlights,
+    overview_materials,
+    renewable_materials
+)
 
 
 DATA = {}
 
 if __name__ == '__main__':
+    DATA["highlights"] = raw_material_highlights.run()
     DATA["overview_materials"] = overview_materials.run()
     DATA['renewable'] = renewable_materials.run()
 

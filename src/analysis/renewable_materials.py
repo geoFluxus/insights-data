@@ -4,87 +4,63 @@ from src.analysis import utils
 
 
 DATA = {}
+PRODUCTS = [key for key in var.PRODUCTGROEPEN]
+RENEWABLES = [
+    'hernieuwbaar',
+    'secundair',
+    'niet-hernieuwbaar',
+    'gemengd',
+    'fe'
+]
 UNIT = 'kt'
 
 
 def process_cbs(indicator=None):
-    # DMI -> kt (million kg)
-    filename = f'{var.OUTPUT_DIR}/all_data.xlsx'
-    df = pd.read_excel(filename)
-    df['Gewicht_KG'] = df[indicator] * 10 ** 6
-    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
+    concats = []
+    for sheet in ['NON_FE', 'FE']:
+        # import non-fossil
+        filename = f'{var.OUTPUT_DIR}/all_data.xlsx'
+        df = pd.read_excel(filename, sheet_name=sheet)
 
-    # filter by year & COROPS
-    # exclude afval and total sums
-    df = df[df['Regionaam'].isin(var.COROPS)]
+        # merge with renewable
+        # mark all fossil groups as fossil (for split goederen)
+        path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_hernieuwbaar.xlsx"
+        renewable = pd.read_excel(path)
+        df = pd.merge(df, renewable, on='cbs')
+        if sheet == 'FE':
+            df['renewable'] = 'fe'
 
-    # import cbs classifications
-    cbs_classifs = {}
-    for classif in ['agendas', 'materials']:
-        file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
-        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+        # merge with product groups
+        path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_productgroepen.xlsx"
+        productgroups = pd.read_excel(path, sheet_name='goederen')
+        df = pd.merge(df, productgroups, on='cbs')
 
-    # add classifications
-    for name, classif in cbs_classifs.items():
-        df = utils.add_classification(df, classif, name=name,
-                                      left_on='cbs',
-                                      right_on='cbs')
+        concats.append(df)
+    df = pd.concat(concats)
 
-    for year in var.GOALS_YEARS:
-        year_df = df[df['Jaar'] == year]
-        # split the materials column
-        year_df['split_materials'] = year_df['materials'].str.split('&')
+    data = {
+        'products': {},
+        'renew': RENEWABLES,
+        'unit': UNIT
+    }
+    for product in PRODUCTS:
+        for year in var.DMI_YEARS:
+            cats, year_df = utils.split_categories(
+                df[df['Jaar'] == year],
+                column='productgroepen',
+                extra=['renewable'],
+                amount=indicator
+            )
 
-        # boolean lists for each row
-        contains_biotisch = year_df['split_materials'].apply(
-            lambda xs: [("Biotisch" in s) for s in xs]
-        )
-        contains_abiotisch = year_df['split_materials'].apply(
-            lambda xs: [("Abiotisch" in s) for s in xs]
-        )
+            for renewable in RENEWABLES:
+                value = year_df[
+                    (year_df['productgroepen'] == product) &\
+                    (year_df['renewable'] == renewable)
+                ][indicator].sum()
+                prod_item = data['products'].setdefault(product, {})
+                year_item = prod_item.setdefault(year, []).append(value)
 
-        # groups
-        year_df_none = year_df[contains_abiotisch.apply(all)]  # all Abiotisch
-        year_df_all = year_df[contains_biotisch.apply(all)]  # all Biotisch
-
-        # some = neither pure Abiotisch nor pure Biotisch
-        year_df_some = year_df[
-            ~(contains_abiotisch.apply(all)) &
-            ~(contains_biotisch.apply(all))
-        ]
-
-        not_renew = {
-            k: v for k, v in utils.get_classification_graphs(
-                year_df_none,
-                area=var.AREA,
-                klass='agendas',
-                unit=UNIT
-            ).items() if k in ["agendas", "values"]
-        }
-        renew = {
-            k: v for k, v in utils.get_classification_graphs(
-                year_df_all,
-                area=var.AREA,
-                klass='agendas',
-                unit=UNIT
-            ).items() if k in ["agendas", "values"]
-        }
-        mixed = {
-            k: v for k, v in utils.get_classification_graphs(
-                year_df_some,
-                area=var.AREA,
-                klass='agendas',
-                unit=UNIT
-            ).items() if k in ["agendas", "values"]
-        }
-
-        DATA.setdefault(indicator, []).append({
-            'year': year,
-            'unit': UNIT,
-            'not_renew': not_renew,
-            'renew': renew,
-            'mixed': mixed
-        })
+    DATA[indicator.lower()] = data
 
 
 def run():
