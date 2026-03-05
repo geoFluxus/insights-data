@@ -132,21 +132,53 @@ def plot_heatmap(dat, mat_inds, prov=None, values=None):
     return viz_data
 
 
-def export_overview(viz_data, indicators):
-    viz_data = viz_data[viz_data['row_sum'] != 0]
-    weights = dict(zip(indicators['Materiaal'], indicators['product']))
-    weight_sum = sum(weights.values())
+def compute_crm_value(viz_data, indicators):
+    # weights: index = CRM material name, value = weight
+    weights = pd.Series(indicators['product'].to_numpy(), index=indicators['Materiaal']).astype(float)
 
+    # CRM columns present in your viz_data (and optionally limited to crm_names)
+    crm_columns = [c for c in viz_data.columns if c in crm_names]
+
+    # keep only weights that match columns actually used
+    w = weights.reindex(crm_columns).fillna(0.0)
+    weight_sum = float(w.sum())
+
+    # weighted CRM score per row
+    # (viz_data[crm_columns] * w) aligns by column names automatically
+    viz_data = viz_data.copy()
+    viz_data["crm"] = (viz_data[crm_columns].mul(w, axis=1).sum(axis=1) / weight_sum) if weight_sum != 0 else 0.0
+
+    # count of non-zero CRM columns per row
+    viz_data["value"] = (viz_data[crm_columns] != 0).sum(axis=1)
+
+    return viz_data
+
+
+def export_highlights(viz_data):
+    highest_crm_row = viz_data.loc[viz_data["crm"].idxmax()]
+    most_criticals_row = viz_data.loc[viz_data["value"].idxmax()]
+    highest_value = viz_data.loc[viz_data["Inkoop_waarde"].idxmax()]
+
+    return {
+        'highest_criticality': {
+            'name': highest_crm_row['Goederengroep']
+        },
+        'most_criticals': {
+            'name': most_criticals_row['Goederengroep']
+        },
+        'highest_value': {
+            'name': most_criticals_row['Goederengroep']
+        },
+    }
+
+
+def export_overview(viz_data):
     overview_data = []
-    crm_columns = [
-        col for col in viz_data.columns
-        if col in crm_names
-    ]
     for idx, row in viz_data.iterrows():
         overview_data.append({
             "material": row['Goederengroep'],
-            "crm": sum(row[col] * weights[col] for col in crm_columns) / weight_sum,
-            "value": len([col for col in crm_columns if row[col] != 0])
+            "crm": row['crm'],
+            "value": row['value']
         })
 
     return {
@@ -160,7 +192,6 @@ def export_overview(viz_data, indicators):
 
 def export_heatmap(viz_data):
     # export data
-    viz_data = viz_data[viz_data['row_sum'] != 0]
     heatmap_materials = [col for col in viz_data.columns if col in materials]
     heatmap_data = {}
     for idx, row in viz_data.iterrows():
@@ -207,8 +238,11 @@ def run():
 
     # PLOT MATERIALS
     viz_data = plot_heatmap(data, indicators, prov=var.COROPS[0], values=euros)
+    viz_data = viz_data[viz_data['row_sum'] != 0]
+    viz_data = compute_crm_value(viz_data, criticals)
 
     return {
-        'material_overview': export_overview(viz_data, criticals),
+        'highlights': export_highlights(viz_data),
+        'material_overview': export_overview(viz_data),
         'raw_materials': export_heatmap(viz_data)
     }
