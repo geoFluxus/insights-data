@@ -81,7 +81,7 @@ def split_fossil(df, is_fossil=False):
             condition = \
                 (df['Goederengroep_naam'] == good) & \
                 (df['Gebruiksgroep_naam'] == usage)
-            perc = IS_FE[good].get(usage, 0 if is_fossil else 100)
+            perc = IS_FE[good].get(usage, 0)
             factor = (perc if is_fossil else 100 - perc) / 100
             for value in ['Brutogew', 'Waarde']:
                 df.loc[condition, value] = df[value] * factor
