@@ -8,7 +8,7 @@ DATA = {}
 
 
 def calculate_impacts(data_file='', impact_file='', group_relation_file=''):
-    data = pd.read_excel(data_file)
+    data = pd.read_excel(data_file, sheet_name='NON_FE')
     impacts = pd.read_excel(impact_file).drop(columns='Unnamed: 0')
     ta = pd.read_excel(group_relation_file, sheet_name='goederen')
 
