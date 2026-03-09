@@ -195,7 +195,6 @@ def compute_trends(df, on=[], values=[], datatype=None, prop=None, attrs={},
 def run():
     ROLES = var.ROLES
     PREFIXES = var.PREFIXES
-    TREATMENT_METHODS = var.TREATMENT_METHODS
 
     # start analysis
     print('ACTIONS ANALYSIS')

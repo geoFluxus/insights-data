@@ -315,8 +315,10 @@ def compute_afval():
     productgroups = pd.read_excel(path, sheet_name='afval')
     productgroups['ewc'] = productgroups['ewc'].astype(str).str.zfill(6)
     afval = pd.merge(afval, productgroups,
+                     how='left',
                      left_on='EuralCode',
                      right_on='ewc')
+    afval.loc[afval['productgroepen'].isnull(), 'productgroepen'] = 'Overig'
 
     # compute goals
     for goal, func in [

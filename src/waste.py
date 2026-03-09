@@ -1,6 +1,7 @@
 import variables as var
 import json
-from src.analysis import (waste_trends,
+from src.analysis import (waste_highlights,
+                          waste_trends,
                           benchmark,
                           eural_treemap)
 
@@ -10,6 +11,9 @@ DATA = {}
 if __name__ == '__main__':
     # waste trends (production & processing)
     DATA = dict(**waste_trends.run())
+
+    # highlights
+    DATA['highlights'] = waste_highlights.run()
 
     # eural treemap
     DATA['eural_treemap'] = eural_treemap.run()
