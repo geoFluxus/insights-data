@@ -28,9 +28,9 @@ def run(on_agendas=False):
 
     # import cbs classifications
     cbs_classifs = {}
-    for classif in ['agendas']:
-        file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
-        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+    for classif in ['productgroepen']:
+        file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/npce_{classif}.xlsx"
+        cbs_classifs[classif] = pd.read_excel(file_path)
 
     # add classifications
     for name, classif in cbs_classifs.items():

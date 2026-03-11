@@ -169,9 +169,9 @@ def process_cbs(on_agendas=False):
 
     # import cbs classifications
     cbs_classifs = {}
-    for classif in ['agendas']:
-        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
-        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+    for classif in ['productgroepen']:
+        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/npce_{classif}.xlsx"
+        cbs_classifs[classif] = pd.read_excel(file_path)
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -322,11 +322,12 @@ def run(on_agendas=False):
     assert len(polygon) == 1
 
     # import ewc classifications
-    ewc_classifs = {}
-    for classif in ['chains', 'agendas']:
-        ewc_classifs[classif] = pd.read_csv(f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv",
-                                            low_memory=False,
-                                            sep=';')
+    ewc_classifs = {
+        'productgroepen': pd.read_excel(
+            f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/npce_productgroepen.xlsx",
+            sheet_name='afval'
+        )
+    }
 
     # process LMA data
     process_lma(polygon, ewc_classifs, on_agendas=on_agendas)

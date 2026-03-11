@@ -12,7 +12,7 @@ QUARTER = 4
 COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
              f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
 COROPS = ['Zaanstreek']
-HOUSEHOLD_KG = 0.5926179417 * 10**9
+HOUSEHOLD_KG = 72.13 * 10**6
 EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
@@ -63,7 +63,7 @@ PREFIXES = {
 }
 
 PRODUCTGROEPEN = {
-    'BiomassaVoedsel': 'Biomassa en Voedsel',
+    'BiomassaVoedsel': 'Biomassa en voedsel',
     'Kunststoffen': 'Kunststoffen',
     'Bouw': 'Bouw',
     'ConsumptieOverig': 'Consumptiegoederen',

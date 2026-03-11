@@ -63,7 +63,7 @@ def process_lma():
                                               source=source,
                                               level=VARS['LEVEL'],
                                               area=VARS['AREA'],
-                                              klass='agendas',
+                                              klass='productgroepen',
                                               unit=VARS['TRANSITION_AGENDAS_UNIT'])
         })
 
@@ -110,13 +110,22 @@ def process_cbs():
     ]
 
     # import cbs classifications
-    cbs_classifs = {}
-    for classif in ['agendas', 'materials']:
-        # file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/cbs_{classif}.csv"
-        # if not os.path.isfile(file_path):
-        #     file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
-        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_{classif}.csv"
-        cbs_classifs[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+    pg = pd.read_excel(
+        f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/npce_productgroepen.xlsx",
+        sheet_name='goederen'
+    )
+    pg["productgroepen"] = pg["productgroepen"].apply(
+        lambda x: "&".join(
+            ["Consumptie" if "Consumptie" in p else p for p in map(str.strip, str(x).split("&"))]
+        )
+    )
+    cbs_classifs = {
+        'productgroepen': pg,
+        'materials': pd.read_csv(
+            f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_materials.csv",
+            low_memory=False, sep=';'
+        )
+    }
 
     # add classifications
     for name, classif in cbs_classifs.items():
@@ -132,7 +141,7 @@ def process_cbs():
         'type': datatype,
         **utils.get_classification_graphs(df,
                                           area=VARS['COROPS'],
-                                          klass='agendas',
+                                          klass='productgroepen',
                                           unit=VARS['TRANSITION_AGENDAS_UNIT'])
     })
 
@@ -278,12 +287,22 @@ def run():
 
     # import ewc classifications
     global EWC_CLASSIFS
-    for classif in ['agendas', 'materials']:
-        # file_path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/extra/ewc_{classif}.csv"
-        # if not os.path.isfile(file_path):
-        #     file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
-        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_{classif}.csv"
-        EWC_CLASSIFS[classif] = pd.read_csv(file_path, low_memory=False, sep=';')
+    pg = pd.read_excel(
+        f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/npce_productgroepen.xlsx",
+        sheet_name='afval'
+    )
+    pg["productgroepen"] = pg["productgroepen"].apply(
+        lambda x: "&".join(
+            ["Consumptie" if "Consumptie" in p else p for p in map(str.strip, str(x).split("&"))]
+        )
+    )
+    EWC_CLASSIFS = {
+        'productgroepen': pg,
+        'materials': pd.read_csv(
+            f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/ewc_materials.csv",
+            low_memory=False, sep=';'
+        )
+    }
 
     # process LMA data
     process_lma()

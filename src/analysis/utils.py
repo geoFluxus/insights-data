@@ -89,7 +89,7 @@ def add_classification(df, classif, name=None,
     classif[right_on] = classif[right_on].astype(str).str.zfill(6)
     df[left_on] = df[left_on].astype(str).str.zfill(6)
     df = pd.merge(df, classif, how='left', left_on=left_on, right_on=right_on)
-    df.loc[df[name].isnull(), name] = 'Onbekend'
+    df.loc[df[name].isnull(), name] = 'Overig'
     columns.append(name)
     df = df[columns]
     return df
@@ -178,7 +178,7 @@ def get_classification_graphs(df, source=None,
         groupby.append(f'{source}_{level}',)
 
     # specify categories
-    flows[klass] = flows[klass].apply(format_name)
+    # flows[klass] = flows[klass].apply(format_name)
     cats, groups = split_categories(flows, column=klass)
 
     # get results for categories
