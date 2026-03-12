@@ -249,7 +249,8 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
         df_year = df[
             (df['Jaar'] == year) &
             (df['Regionaam'].isin(corop)) &
-            (df['Goederengroep_naam'] != 'Huishoudelijk afval en gemeentelijk afval') &
+            # (df['Goederengroep_naam'] != 'Huishoudelijk afval en gemeentelijk afval') &
+            (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
             (df['Gebruiksgroep_naam'] != 'Totaal')
         ].copy()
 

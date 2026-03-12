@@ -241,6 +241,7 @@ def behouden_hoeveelheid(df):
                 'high': get_process_sum(cat_df, process='Hoogwaardige recycling'),
                 'other': get_process_sum(cat_df, process='Recycling'),
                 'low': get_process_sum(cat_df, process='Verbranding / storting'),
+                'unknown': get_process_sum(cat_df, process='Opslag'),
                 "unit": "kt"
             })
 
@@ -266,6 +267,10 @@ def behouden_verwerking(df):
             'low': perc(
                 get_process_sum(begin, process='Verbranding / storting'),
                 begin_total_sum
+            ),
+            'unknown': perc(
+                get_process_sum(begin, process='Opslag'),
+                begin_total_sum
             )
         },
         'curr': {
@@ -279,6 +284,10 @@ def behouden_verwerking(df):
             ),
             'low': perc(
                 get_process_sum(huidig, process='Verbranding / storting'),
+                huidig_total_sum
+            ),
+            'unknown': perc(
+                get_process_sum(huidig, process='Opslag'),
                 huidig_total_sum
             )
         },
