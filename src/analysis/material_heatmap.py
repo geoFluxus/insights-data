@@ -157,7 +157,7 @@ def compute_crm_value(viz_data, indicators):
 def export_highlights(viz_data):
     highest_crm_row = viz_data.loc[viz_data["crm"].idxmax()]
     most_criticals_row = viz_data.loc[viz_data["value"].idxmax()]
-    highest_value = viz_data.loc[viz_data["Inkoop_waarde"].idxmax()]
+    highest_value_row = viz_data.loc[viz_data["Inkoop_waarde"].idxmax()]
 
     return {
         'highest_criticality': {
@@ -167,7 +167,7 @@ def export_highlights(viz_data):
             'name': most_criticals_row['Goederengroep']
         },
         'highest_value': {
-            'name': most_criticals_row['Goederengroep']
+            'name': highest_value_row['Goederengroep']
         },
     }
 
