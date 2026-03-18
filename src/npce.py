@@ -72,8 +72,8 @@ def vervangen(df):
 
 
 def besparen(df):
-    g2030 = 5
-    g2035 = 16
+    g2030 = 6
+    g2035 = 15
     begin_sum = df[df['Jaar'] == BEGIN]['DMI'].sum()
     begin_total_sum = df[df['Jaar'] == BEGIN]['DMI'].sum()
     huidig_sum = df[df['Jaar'] == HUIDIG]['DMI'].sum()
