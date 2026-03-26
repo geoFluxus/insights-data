@@ -6,11 +6,25 @@ def pivot_and_write(data, writer, group=None, indicators=[]):
     Pivot indicators and write each into a sheet,
     prefixed to avoid name collisions.
     """
+    group_on_goods = group.lower() == "goederengroup"
+    extra_columns = ['Gebruiksgroep_naam'] if group_on_goods else []
     for indicator in indicators:
-        df_indi = data[['Regionaam', group, 'Gebruiksgroep_naam', 'Jaar', indicator]]
+        columns = [
+            'Regionaam',
+            group,
+            *(extra_columns),
+            'Jaar',
+            indicator
+        ]
+        df_indi = data[columns]
 
+        index = [
+            'Regionaam',
+            group,
+            *(extra_columns)
+        ]
         df_pivot = df_indi.pivot_table(
-            index=['Regionaam', group, 'Gebruiksgroep_naam'],
+            index=index,
             columns='Jaar',
             values=indicator
         ).reset_index()
@@ -30,13 +44,13 @@ if __name__ == '__main__':
             indicators=['DMI', 'DMC']
         )
 
-        # # 2. Raw material data
-        # raw = pd.read_excel('json/all_raw_material_data.xlsx')
-        # pivot_and_write(
-        #     raw, writer,
-        #     group='level_2',
-        #     indicators=['RMI', 'RMC']
-        # )
+        # 2. Raw material data
+        raw = pd.read_excel('json/all_raw_material_data.xlsx')
+        pivot_and_write(
+            raw, writer,
+            group='level_2',
+            indicators=['RMI', 'RMC']
+        )
 
         pivot_and_write(
             impact, writer,
