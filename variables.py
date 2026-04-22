@@ -63,13 +63,19 @@ PREFIXES = {
 }
 
 PRODUCTGROEPEN = {
-    'BiomassaVoedsel': 'Biomassa en voedsel',
-    'Kunststoffen': 'Kunststoffen',
-    'Bouw': 'Bouw',
-    'ConsumptieOverig': 'Consumptiegoederen',
-    'ConsumptieTextiel': 'Consumptiegoederen',
-    'ConsumptieAEEA': 'Consumptiegoederen',
-    'ConsumptieMeubilair': 'Consumptiegoederen',
-    'Overig': 'Overig',
-    'Maakindustrie': 'Maakindustrie'
+    'VoedingLandbouw': 'Voeding en landbouw',
+    'HoutPapier': 'Hout en Papier',
+    'Fossiel': 'Fossiele Energiedragers',
+    'Metaalproducten': 'Basismetalen en verwerkte metaalproducten',
+    'ChemieFarmacie': 'Chemie en Farmacie',
+    'Bouw': 'B&U en GWW',
+    'Textiel': 'Textiel',
+    'KunststoffenRubber': 'Kunststoffen en Rubber',
+    "Voertuigen": "Voertuigen exclusief auto's",
+    'Consumentenelektronica': 'Consumentenelektronica',
+    'Apparaten': 'Complexe elektrische en elektronische apparaten',
+    'Machines': 'Machines',
+    'Auto': "Auto's",
+    'Meubels': 'Meubels',
+    'Overig': 'Overig'
 }
