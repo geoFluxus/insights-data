@@ -3,6 +3,7 @@ from src import dmi_dmc
 from src.analysis import benchmark, environmental_cost, material_heatmap
 import importlib
 import os
+import pandas as pd
 
 
 regions = [
@@ -61,6 +62,7 @@ regions = [
 ]
 
 for corop, area in regions:
+    print(f'PROCESSING {area}...')
     path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
     var.COROPS = [corop]
     var.AREA = area
@@ -75,6 +77,75 @@ for corop, area in regions:
 
     dmi_dmc.run()
     environmental_cost.run()
-    material_heatmap.run()
-    benchmark.run()
+    # material_heatmap.run()
+    # benchmark.run()
+
+    # # Load all sheets
+    # path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
+    # file_path = fr"{path}\all_data.xlsx"
+    # df = pd.read_excel(file_path, sheet_name='ALL')
+    #
+    # # Select relevant columns
+    # df = df.rename(columns={'Goederengroep': 'Goederengroep (kton)'})
+    # df = df[['Goederengroep (kton)', 'Jaar', 'DMI', 'DMC']]
+    #
+    # # ---- DMI (wide) ----
+    # dmi_wide = (
+    #     df.groupby(['Goederengroep (kton)', 'Jaar'])['DMI']
+    #         .sum()
+    #         .unstack(fill_value=0)  # years become columns
+    # )
+    #
+    # # ---- DMC (wide) ----
+    # dmc_wide = (
+    #     df.groupby(['Goederengroep (kton)', 'Jaar'])['DMC']
+    #         .sum()
+    #         .unstack(fill_value=0)
+    # )
+    #
+    # # Optional: sort columns (years)
+    # dmi_wide = dmi_wide.sort_index(axis=1)
+    # dmc_wide = dmc_wide.sort_index(axis=1)
+    #
+    # file_path = fr"{path}\all_raw_material_data.xlsx"
+    # df = pd.read_excel(file_path, sheet_name='ALL')
+    #
+    # # Select relevant columns
+    # df = df.rename(columns={'level_2': 'Grondstofgroep(kton)'})
+    # df = df[['Grondstofgroep(kton)', 'Jaar', 'RMI', 'RMC']]
+    #
+    # # ---- DMI (wide) ----
+    # rmi_wide = (
+    #     df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMI']
+    #         .sum()
+    #         .unstack(fill_value=0)  # years become columns
+    # )
+    #
+    # # ---- DMC (wide) ----
+    # rmc_wide = (
+    #     df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMC']
+    #         .sum()
+    #         .unstack(fill_value=0)
+    # )
+    #
+    # # Optional: sort columns (years)
+    # rmi_wide = rmi_wide.sort_index(axis=1)
+    # rmc_wide = rmc_wide.sort_index(axis=1)
+    #
+    # waste = pd.read_excel(fr"{path}\benchmark.xlsx")
+    #
+    # file_path = fr"{path}\all_impact_data.xlsx"
+    # df = pd.read_excel(file_path, sheet_name='ALL')
+    #
+    # # Select relevant columns
+    # df = df.rename(columns={'level_2': 'Grondstofgroep(kton)'})
+    # df = df[['Grondstofgroep(kton)', 'Jaar', 'RMI', 'RMC']]
+    #
+    # # Save to Excel
+    # with pd.ExcelWriter(fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\COROPS\{area}.xlsx") as writer:
+    #     dmi_wide.to_excel(writer, sheet_name="DMI")
+    #     dmc_wide.to_excel(writer, sheet_name="DMC")
+    #     rmi_wide.to_excel(writer, sheet_name="RMI")
+    #     rmc_wide.to_excel(writer, sheet_name="RMC")
+    #     waste.to_excel(writer, sheet_name="Afval", index=False)
 

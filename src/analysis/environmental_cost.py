@@ -8,7 +8,7 @@ DATA = {}
 
 
 def calculate_impacts(data_file='', impact_file='', group_relation_file=''):
-    data = pd.read_excel(data_file, sheet_name='NON_FE')
+    data = pd.read_excel(data_file, sheet_name='ALL')
     impacts = pd.read_excel(impact_file).drop(columns='Unnamed: 0')
     ta = pd.read_excel(group_relation_file, sheet_name='goederen')
 
@@ -75,107 +75,107 @@ def run():
     dat = calculate_impacts(all_data_file, emissions_file, groups_file)
     dat.to_excel(f'{var.OUTPUT_DIR}/all_impact_data.xlsx')
 
-    # highlights
-    curr_year_data = dat[dat['Jaar'] == var.YEAR].copy()
-    results = {
-        'highlights': {
-            'co2_emissions': {
-                'value': curr_year_data['CO2 emissions total (kt)'].sum(),
-                'unit': 'kt'
-            },
-            'mki': {
-                'value': curr_year_data['MKI total (mln euro)'].sum(),
-                'unit': 'mln €'
-            }
-        }
-    }
-
-    groups = {
-        'usage': [
-            'Consumptie huishoudens',
-            'Dienstverlening bedrijven',
-            'Investeringen vaste activa',
-            'Overheid',
-            'Productie goederen',
-        ],
-        'product': list(dict.fromkeys(var.PRODUCTGROEPEN.values()))
-    }
-
-    percentage = {
-        'co2eq_emissions': {
-            'Direct Material Input': 'DMI',
-            'CO2eq uitstoot': 'CO2 emissions total (kt)',
-            'Milieukostenindicator': 'MKI total (mln euro)'
-        },
-    }
-    for section, indicators in percentage.items():
-        section_results = []
-
-        for group in ['usage', 'product']:
-            group_names = groups[group]
-            group_values = {}
-
-            for name, indicator in indicators.items():
-                data = get_indicator_per_group(dat, on=group, value_col=indicator, perc=True)
-
-                values = []
-                for group_name in group_names:
-                    row = data[(data[group] == group_name)]
-                    value = row.iloc[0]['value'] if not row.empty else 0
-                    values.append(value)
-
-                group_values[name] = values
-
-            section_results.append({
-                "level": "COROP",
-                "name": var.COROPS[0],
-                "unit": '%',
-                "on": group,
-                "groups": group_names,
-                "values": group_values
-            })
-
-        results[section] = section_results
-
-    totals = {
-        'dmi': ('DMI', 'kt'),
-        'co2': ('CO2 emissions total (kt)', 'kt'),
-        'mki': ('MKI total (mln euro)', 'mln euro')
-    }
-    for section, indicator in totals.items():
-        section_results = []
-
-        for group in ['usage', 'product']:
-            group_names = groups[group].copy()
-            # if group == 'usage':
-            #     group_names.append('Verandering voorraden')
-            value, unit = indicator
-            data = get_indicator_per_group(dat, on=group, value_col=value, perc=False)
-
-            values = []
-            for group_name in group_names:
-                year_values = []
-                for year in var.DMI_YEARS:
-                    row = data[
-                        (data[group] == group_name) & \
-                        (data['Jaar'] == year)
-                    ]
-                    value = row.iloc[0]['value'] if not row.empty else 0
-                    year_values.append(value)
-                values.append(year_values)
-
-            group_values = values
-
-            section_results.append({
-                "level": "COROP",
-                "name": var.COROPS[0],
-                "unit": unit,
-                "on": group,
-                "groups": group_names,
-                "years": var.DMI_YEARS,
-                "values": group_values
-            })
-
-        results[section] = section_results
-
-    return results
+    # # highlights
+    # curr_year_data = dat[dat['Jaar'] == var.YEAR].copy()
+    # results = {
+    #     'highlights': {
+    #         'co2_emissions': {
+    #             'value': curr_year_data['CO2 emissions total (kt)'].sum(),
+    #             'unit': 'kt'
+    #         },
+    #         'mki': {
+    #             'value': curr_year_data['MKI total (mln euro)'].sum(),
+    #             'unit': 'mln €'
+    #         }
+    #     }
+    # }
+    #
+    # groups = {
+    #     'usage': [
+    #         'Consumptie huishoudens',
+    #         'Dienstverlening bedrijven',
+    #         'Investeringen vaste activa',
+    #         'Overheid',
+    #         'Productie goederen',
+    #     ],
+    #     'product': list(dict.fromkeys(var.PRODUCTGROEPEN.values()))
+    # }
+    #
+    # percentage = {
+    #     'co2eq_emissions': {
+    #         'Direct Material Input': 'DMI',
+    #         'CO2eq uitstoot': 'CO2 emissions total (kt)',
+    #         'Milieukostenindicator': 'MKI total (mln euro)'
+    #     },
+    # }
+    # for section, indicators in percentage.items():
+    #     section_results = []
+    #
+    #     for group in ['usage', 'product']:
+    #         group_names = groups[group]
+    #         group_values = {}
+    #
+    #         for name, indicator in indicators.items():
+    #             data = get_indicator_per_group(dat, on=group, value_col=indicator, perc=True)
+    #
+    #             values = []
+    #             for group_name in group_names:
+    #                 row = data[(data[group] == group_name)]
+    #                 value = row.iloc[0]['value'] if not row.empty else 0
+    #                 values.append(value)
+    #
+    #             group_values[name] = values
+    #
+    #         section_results.append({
+    #             "level": "COROP",
+    #             "name": var.COROPS[0],
+    #             "unit": '%',
+    #             "on": group,
+    #             "groups": group_names,
+    #             "values": group_values
+    #         })
+    #
+    #     results[section] = section_results
+    #
+    # totals = {
+    #     'dmi': ('DMI', 'kt'),
+    #     'co2': ('CO2 emissions total (kt)', 'kt'),
+    #     'mki': ('MKI total (mln euro)', 'mln euro')
+    # }
+    # for section, indicator in totals.items():
+    #     section_results = []
+    #
+    #     for group in ['usage', 'product']:
+    #         group_names = groups[group].copy()
+    #         # if group == 'usage':
+    #         #     group_names.append('Verandering voorraden')
+    #         value, unit = indicator
+    #         data = get_indicator_per_group(dat, on=group, value_col=value, perc=False)
+    #
+    #         values = []
+    #         for group_name in group_names:
+    #             year_values = []
+    #             for year in var.DMI_YEARS:
+    #                 row = data[
+    #                     (data[group] == group_name) & \
+    #                     (data['Jaar'] == year)
+    #                 ]
+    #                 value = row.iloc[0]['value'] if not row.empty else 0
+    #                 year_values.append(value)
+    #             values.append(year_values)
+    #
+    #         group_values = values
+    #
+    #         section_results.append({
+    #             "level": "COROP",
+    #             "name": var.COROPS[0],
+    #             "unit": unit,
+    #             "on": group,
+    #             "groups": group_names,
+    #             "years": var.DMI_YEARS,
+    #             "values": group_values
+    #         })
+    #
+    #     results[section] = section_results
+    #
+    # return results

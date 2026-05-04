@@ -110,7 +110,14 @@ def exclude_eural_process(df):
     return df
 
 
-def export_potential(potential):
+def export_potential(potential, province_data):
+    province_data = province_data.rename(columns={
+        'processing_code': 'processing_code_curr',
+        'amount_kg': 'amount_kg_curr',
+        'benchmark_group': 'benchmark_group_curr'
+    })
+    potential = pd.concat([potential, province_data])
+
     # rladder
     path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/descriptions/rhierarchy.xlsx"
     rladder = pd.read_excel(path)
@@ -234,7 +241,7 @@ def run():
     potential = potential[
         potential['benchmark_group_curr'] >= potential['benchmark_group_alt']
     ]
-    export_potential(potential)
+    export_potential(potential, province_data)
 
     # get max rank for each eural code
     groupby = [

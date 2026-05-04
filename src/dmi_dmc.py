@@ -347,7 +347,7 @@ def _aggregate_no_gebruik(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop(columns=['Gebruiksgroep_naam'], errors='ignore')
 
     # Jaar must be a key, not a numeric column to sum
-    force_key_cols = {'Jaar'}
+    force_key_cols = {'Jaar', 'cbs'}
 
     num_cols = [
         c for c in df.columns
