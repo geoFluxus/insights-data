@@ -151,7 +151,16 @@ def export_potential(potential):
             .drop_duplicates(subset=["eural code", "huidige verwerkingscode"], keep="first")
     )
     # Set 'opslag' to empty
-    potential.loc[potential["alternatieve verwerkingsgroep"] == "I Opslag", "alternatieve verwerkingsgroep"] = ""
+    for condition in [
+        potential["huigige verwerkingsgroep"] == "I Opslag",
+        potential["huigige verwerkingsgroep"] == potential["alternatieve verwerkingsgroep"]
+    ]:
+        for col in [
+            "alternatieve verwerkingscode",
+            "alternatieve verwerkingsnaam",
+            "alternatieve verwerkingsgroep"
+        ]:
+            potential.loc[condition, col] = ""
 
     potential.to_excel(f'{var.OUTPUT_DIR}/benchmark.xlsx', index=False)
 

@@ -60,7 +60,7 @@ regions = [
     ("Noordoostpolder en Urk", "Noordoostpolder en Urk")
 ]
 
-for corop, area in regions[:1]:
+for corop, area in regions:
     path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
     var.COROPS = [corop]
     var.AREA = area
@@ -72,9 +72,9 @@ for corop, area in regions[:1]:
     importlib.reload(environmental_cost)
     importlib.reload(material_heatmap)
     importlib.reload(benchmark)
-    #
-    # dmi_dmc.run()
-    # environmental_cost.run()
-    # material_heatmap.run()
+
+    dmi_dmc.run()
+    environmental_cost.run()
+    material_heatmap.run()
     benchmark.run()
 
