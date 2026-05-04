@@ -16,7 +16,7 @@ HOUSEHOLD_KG = 72.13 * 10**6
 EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
-OUTPUT_DIR = '../json'
+OUTPUT_DIR = 'json'
 
 # UNITS
 unit = 'Mt' if LEVEL == 'Provincie' else 'kt'

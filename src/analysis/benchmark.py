@@ -20,7 +20,7 @@ def filter_by_area(df):
 
     # import areas
     # import province polygon
-    polygon = utils.import_areas(level=VARS['LEVEL'])
+    polygon = utils.import_areas(level='COROP')
     polygon = polygon[polygon['name'] == VARS['AREA']]
     assert len(polygon) == 1
 
@@ -49,6 +49,7 @@ def import_dataset(path, area_filter=False):
     df['EuralCode'] = df['EuralCode'].astype(str).str.zfill(6)
     if area_filter:
         df = filter_by_area(df)
+        df.to_csv(f'{var.OUTPUT_DIR}/lma_data.csv', index=False)
 
     # aggregate per eural code & process
     groupby = [
@@ -137,7 +138,22 @@ def export_potential(potential):
         'benchmark_group_y': 'alternatieve verwerkingsgroep'
     }
     potential = potential[list(columns.keys())].rename(columns=columns)
-    potential.to_excel('../json/benchmark.xlsx', index=False)
+
+    # Ensure correct sorting (highest rank first)
+    potential = potential.sort_values(
+        by=["eural code", "huidige verwerkingscode", "alternatieve verwerkingsgroep"],
+        ascending=[True, True, False]
+    )
+
+    # Keep only the highest rank per group
+    potential = (
+        potential
+            .drop_duplicates(subset=["eural code", "huidige verwerkingscode"], keep="first")
+    )
+    # Set 'opslag' to empty
+    potential.loc[potential["alternatieve verwerkingsgroep"] == "I Opslag", "alternatieve verwerkingsgroep"] = ""
+
+    potential.to_excel(f'{var.OUTPUT_DIR}/benchmark.xlsx', index=False)
 
 
 def get_eurals(df):
@@ -183,8 +199,8 @@ def run():
 
     # import province dataset
     print(f"\nImport province dataset for {VARS['YEAR']}...")
-    path = f"{VARS['INPUT_DIR']}/{VARS['AREA_DIR']}/LMA/processed"
-    filename = f"{path}/ontvangst_{VARS['AREA'].lower()}_{VARS['YEAR']}_full.csv"
+    path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/LMA/ontvangst/processed"
+    filename = f"{path}/ontvangst_{VARS['YEAR']}_full.csv"
     province_data = get_potential(
         import_dataset(filename, area_filter=True),
         rladder=rladder
@@ -203,11 +219,11 @@ def run():
                          suffixes=['_curr', '_alt'])
 
     # apply exceptions
-    potential = potential[potential['benchmark_group_curr'] != 'I']
+    # potential = potential[potential['benchmark_group_curr'] != 'I']
     potential = exclude_rladder_restrictions(potential)
     potential = exclude_eural_process(potential)
     potential = potential[
-        potential['benchmark_group_curr'] > potential['benchmark_group_alt']
+        potential['benchmark_group_curr'] >= potential['benchmark_group_alt']
     ]
     export_potential(potential)
 

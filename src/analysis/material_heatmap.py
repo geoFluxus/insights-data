@@ -241,8 +241,8 @@ def run():
     viz_data = viz_data[viz_data['row_sum'] != 0]
     viz_data = compute_crm_value(viz_data, criticals)
 
-    return {
-        'highlights': export_highlights(viz_data),
-        'material_overview': export_overview(viz_data),
-        'raw_materials': export_heatmap(viz_data)
-    }
+    # return {
+    #     'highlights': export_highlights(viz_data),
+    #     'material_overview': export_overview(viz_data),
+    #     'raw_materials': export_heatmap(viz_data)
+    # }

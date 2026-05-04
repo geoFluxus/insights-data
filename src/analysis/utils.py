@@ -48,12 +48,13 @@ def import_areas(level=None):
     """
     LEVELS = {
         'Provincie': 'provincies',
-        'Gemeente': 'gemeenten'
+        'Gemeente': 'gemeenten',
+        'COROP': 'coropplus'
     }
     level = LEVELS[level]
 
     # load geometries
-    areas = gpd.read_file(f'{INPUT_DIR}/Database_LockedFiles/GEODATA/areas/{level}/{level}_{var.YEAR}.shp')
+    areas = gpd.read_file(f'{INPUT_DIR}/Database_LockedFiles/GEODATA/areas/{level}/{level}.shp')
     areas['centroid'] = areas['geometry'].centroid
 
     return areas
