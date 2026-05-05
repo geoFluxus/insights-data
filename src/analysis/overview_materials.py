@@ -115,12 +115,12 @@ def visualise_per_province(data, indicator=None):
                 "upper_bound": get_sample(err_bands[0].tolist()),
                 "lower_bound": get_sample(err_bands[1].tolist())
             },
-            **({'goal': {
-                "x1": PROJ_START,
-                "y1": goal_value,
-                "x2": PROJ_END,
-                "y2": goal_value
-            }} if goal == 'abiotic' and indicator in ['DMC'] else {})
+            # **({'goal': {
+            #     "x1": PROJ_START,
+            #     "y1": goal_value,
+            #     "x2": PROJ_END,
+            #     "y2": goal_value
+            # }} if goal == 'abiotic' and indicator in ['DMC'] else {})
         }
 
 
