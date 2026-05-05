@@ -77,5 +77,8 @@ PRODUCTGROEPEN = {
     'Machines': 'Machines',
     'Auto': "Auto's",
     'Meubels': 'Meubels',
-    'Overig': 'Overig'
+    'Overig': 'Overig',
+    'Verpakkingen': 'Verpakkingen',
+    'Restafval': 'Restafval',
+    "Batterijen en Accu's": "Batterijen"
 }
