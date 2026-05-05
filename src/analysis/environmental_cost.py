@@ -98,7 +98,10 @@ def run():
             'Overheid',
             'Productie goederen',
         ],
-        'product': list(dict.fromkeys(var.PRODUCTGROEPEN.values()))
+        'product': list(
+            x for x in dict.fromkeys(var.PRODUCTGROEPEN.values())
+            if x not in var.AFVAL_PRODUCTS
+        )
     }
 
     percentage = {

@@ -82,3 +82,9 @@ PRODUCTGROEPEN = {
     'Restafval': 'Restafval',
     "Batterijen en Accu's": "Batterijen"
 }
+
+AFVAL_PRODUCTS = [
+    'Verpakkingen',
+    'Restafval',
+    "Batterijen"
+]
