@@ -1,6 +1,6 @@
 # VARIABLES
 INPUT_DIR = 'C:/Users/vasil/geoFluxus Dropbox/geoFluxus'
-AREA = 'Zaanstad'
+AREA = 'Deventer'
 LEVEL = 'Gemeente'
 AREA_DIR = f"Monitors/{LEVEL}{AREA}"
 YEAR = 2023
@@ -11,8 +11,8 @@ ACTIONS_YEARS = [_ for _ in range(2018, 2024)]
 QUARTER = 4
 COROP_FILE = f"Tabel Regionale stromen 2015-2023 " \
              f"{'provincie' if LEVEL == 'Provincie' else 'Coropplus'}"
-COROPS = ['Zaanstreek']
-HOUSEHOLD_KG = 72.13 * 10**6
+COROPS = ['Zuidwest-Overijssel']
+HOUSEHOLD_KG = 37.22 * 10**6
 EXCLUDE_HOUSEHOLD = True
 
 POSTCODES = f'postcodes_per_gemeenten_{YEAR}'
@@ -65,9 +65,9 @@ PREFIXES = {
 PRODUCTGROEPEN = {
     'VoedingLandbouw': 'Voeding en landbouw',
     'HoutPapier': 'Hout en Papier',
-    'Fossiel': 'Fossiele Energiedragers',
+    # 'Fossiel': 'Fossiele Energiedragers',
     'Metaalproducten': 'Basismetalen en verwerkte metaalproducten',
-    'ChemieFarmacie': 'Chemie en Farmacie',
+    'ChemieFarmacie': 'Chemische & farmaceutische producten',
     'Bouw': 'B&U en GWW',
     'Textiel': 'Textiel',
     'KunststoffenRubber': 'Kunststoffen en Rubber',
