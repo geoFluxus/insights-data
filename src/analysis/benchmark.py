@@ -149,13 +149,17 @@ def export_potential(potential, province_data):
     # Ensure correct sorting (highest rank first)
     potential = potential.sort_values(
         by=["eural code", "huidige verwerkingscode", "alternatieve verwerkingsgroep"],
-        ascending=[True, True, False]
+        ascending=[True, True, True]
     )
 
     # Keep only the highest rank per group
     potential = (
         potential
-            .drop_duplicates(subset=["eural code", "huidige verwerkingscode"], keep="first")
+            .drop_duplicates(subset=[
+                "eural code",
+                "huidige verwerkingscode",
+                "gewicht (kg)"
+        ], keep="first")
     )
     # Set 'opslag' to empty
     for condition in [

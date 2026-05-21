@@ -7,21 +7,21 @@ import pandas as pd
 
 
 regions = [
-    ("Oost-Groningen", "Oost-Groningen"),
-    ("Delfzijl e.o.", "Delfzijl en omgeving"),
-    ("Overig Groningen", "Overig Groningen"),
-    ("Noord-Friesland", "Noord-Friesland"),
-    ("Zuidwest-Friesland", "Zuidwest-Friesland"),
-    ("Zuidoost-Friesland", "Zuidoost-Friesland"),
-    ("Noord-Drenthe", "Noord-Drenthe"),
-    ("Zuidoost-Drenthe", "Zuidoost-Drenthe"),
-    ("Zuidwest-Drenthe", "Zuidwest-Drenthe"),
-    ("Noord-Overijssel", "Noord-Overijssel"),
-    ("Zuidwest-Overijssel", "Zuidwest-Overijssel"),
-    ("Twente", "Twente"),
-    ("Veluwe", "Veluwe"),
-    ("Achterhoek", "Achterhoek"),
-    ("Aggl. Arnhem/Nijmegen", "Arnhem/Nijmegen"),
+    # ("Oost-Groningen", "Oost-Groningen"),
+    # ("Delfzijl e.o.", "Delfzijl en omgeving"),
+    # ("Overig Groningen", "Overig Groningen"),
+    # ("Noord-Friesland", "Noord-Friesland"),
+    # ("Zuidwest-Friesland", "Zuidwest-Friesland"),
+    # ("Zuidoost-Friesland", "Zuidoost-Friesland"),
+    # ("Noord-Drenthe", "Noord-Drenthe"),
+    # ("Zuidoost-Drenthe", "Zuidoost-Drenthe"),
+    # ("Zuidwest-Drenthe", "Zuidwest-Drenthe"),
+    # ("Noord-Overijssel", "Noord-Overijssel"),
+    # ("Zuidwest-Overijssel", "Zuidwest-Overijssel"),
+    # ("Twente", "Twente"),
+    # ("Veluwe", "Veluwe"),
+    # ("Achterhoek", "Achterhoek"),
+    ("Aggl. Arnhem/Nijmegen", "Arnhem-Nijmegen"),
     ("Zuidwest-Gelderland", "Zuidwest-Gelderland"),
     ("Utrecht-West", "Utrecht-West"),
     ("Stadsgewest Amersfoort", "Stadsgewest Amersfoort"),
@@ -61,8 +61,8 @@ regions = [
     ("Noordoostpolder en Urk", "Noordoostpolder en Urk")
 ]
 
-for corop, area in regions:
-    print(f'PROCESSING {area}...')
+# for corop, area in regions:
+#     print(f'PROCESSING {area}...')
     # path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
     # var.COROPS = [corop]
     # var.AREA = area
@@ -77,103 +77,136 @@ for corop, area in regions:
     #
     # dmi_dmc.run()
     # environmental_cost.run()
-    # # material_heatmap.run()
-    # # benchmark.run()
+    # material_heatmap.run()
+    # benchmark.run()
 
-    # Load all sheets
+    # # Load all sheets
+    # path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
+    # file_path = fr"{path}\all_data.xlsx"
+    # df = pd.read_excel(file_path, sheet_name='ALL')
+    #
+    # # Select relevant columns
+    # df = df.rename(columns={'Goederengroep': 'Goederengroep (kton)'})
+    # df = df[['Goederengroep (kton)', 'Jaar', 'DMI', 'DMC']]
+    #
+    # # ---- DMI (wide) ----
+    # dmi_wide = (
+    #     df.groupby(['Goederengroep (kton)', 'Jaar'])['DMI']
+    #         .sum()
+    #         .unstack(fill_value=0)  # years become columns
+    # )
+    #
+    # # ---- DMC (wide) ----
+    # dmc_wide = (
+    #     df.groupby(['Goederengroep (kton)', 'Jaar'])['DMC']
+    #         .sum()
+    #         .unstack(fill_value=0)
+    # )
+    #
+    # # Optional: sort columns (years)
+    # dmi_wide = dmi_wide.sort_index(axis=1)
+    # dmc_wide = dmc_wide.sort_index(axis=1)
+    #
+    # file_path = fr"{path}\all_raw_material_data.xlsx"
+    # df = pd.read_excel(file_path, sheet_name='ALL')
+    #
+    # # Select relevant columns
+    # df = df.rename(columns={'level_2': 'Grondstofgroep(kton)'})
+    # df = df[['Grondstofgroep(kton)', 'Jaar', 'RMI', 'RMC']]
+    #
+    # # ---- DMI (wide) ----
+    # rmi_wide = (
+    #     df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMI']
+    #         .sum()
+    #         .unstack(fill_value=0)  # years become columns
+    # )
+    #
+    # # ---- DMC (wide) ----
+    # rmc_wide = (
+    #     df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMC']
+    #         .sum()
+    #         .unstack(fill_value=0)
+    # )
+    #
+    # # Optional: sort columns (years)
+    # rmi_wide = rmi_wide.sort_index(axis=1)
+    # rmc_wide = rmc_wide.sort_index(axis=1)
+    #
+    # waste = pd.read_excel(fr"{path}\benchmark.xlsx")
+    #
+    # file_path = fr"{path}\all_impact_data.xlsx"
+    # df = pd.read_excel(file_path)
+    #
+    # # Select relevant columns
+    # df = df[['Goederengroep', 'Jaar', 'CO2 emissions total (kt)', 'MKI total (mln euro)']]
+    #
+    # # ---- DMI (wide) ----
+    # co2 = (
+    #     df.groupby(['Goederengroep', 'Jaar'])['CO2 emissions total (kt)']
+    #         .sum()
+    #         .unstack(fill_value=0)  # years become columns
+    # )
+    #
+    # # ---- DMC (wide) ----
+    # mki = (
+    #     df.groupby(['Goederengroep', 'Jaar'])['MKI total (mln euro)']
+    #         .sum()
+    #         .unstack(fill_value=0)
+    # )
+    # co2 = co2.sort_index(axis=1)
+    # co2 = co2.rename(columns={
+    #     'Goederengroep': 'Goederengroep (kton)'
+    # })
+    # mki = mki.sort_index(axis=1)
+    # mki = mki.rename(columns={
+    #     'Goederengroep': 'Goederengroep (mln euro)'
+    # })
+    #
+    # supply = pd.read_excel(fr"{path}\material_contents.xlsx")
+    # supply = supply.drop(columns=['Unnamed: 0'])
+    #
+    # # Save to Excel
+    # with pd.ExcelWriter(fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\COROPS\{area}.xlsx") as writer:
+    #     dmi_wide.to_excel(writer, sheet_name="DMI")
+    #     dmc_wide.to_excel(writer, sheet_name="DMC")
+    #     rmi_wide.to_excel(writer, sheet_name="RMI")
+    #     rmc_wide.to_excel(writer, sheet_name="RMC")
+    #     waste.to_excel(writer, sheet_name="Afval", index=False)
+    #     co2.to_excel(writer, sheet_name="CO2")
+    #     mki.to_excel(writer, sheet_name="MKI")
+    #     supply.to_excel(writer, sheet_name='Leveringszekerheid', index=False)
+
+data = {
+    'name': [],
+    'total amount (kg)': [],
+    'improved amount (kg)': [],
+    'percentage (%)': []
+}
+
+for corop, area in regions:
+    print(f'PROCESSING {area}...')
+
     path = fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\{area}"
-    file_path = fr"{path}\all_data.xlsx"
-    df = pd.read_excel(file_path, sheet_name='ALL')
 
-    # Select relevant columns
-    df = df.rename(columns={'Goederengroep': 'Goederengroep (kton)'})
-    df = df[['Goederengroep (kton)', 'Jaar', 'DMI', 'DMC']]
+    df = pd.read_excel(fr"{path}\benchmark.xlsx")
 
-    # ---- DMI (wide) ----
-    dmi_wide = (
-        df.groupby(['Goederengroep (kton)', 'Jaar'])['DMI']
-            .sum()
-            .unstack(fill_value=0)  # years become columns
-    )
+    total_sum = df['gewicht (kg)'].sum()
+    improved_sum = df[df['alternatieve verwerkingscode'].notnull()]['gewicht (kg)'].sum()
+    perc = improved_sum / total_sum * 100
 
-    # ---- DMC (wide) ----
-    dmc_wide = (
-        df.groupby(['Goederengroep (kton)', 'Jaar'])['DMC']
-            .sum()
-            .unstack(fill_value=0)
-    )
+    # append results
+    data['name'].append(area)
+    data['total amount (kg)'].append(total_sum)
+    data['improved amount (kg)'].append(improved_sum)
+    data['percentage (%)'].append(perc)
 
-    # Optional: sort columns (years)
-    dmi_wide = dmi_wide.sort_index(axis=1)
-    dmc_wide = dmc_wide.sort_index(axis=1)
+# create dataframe
+result_df = pd.DataFrame(data)
 
-    file_path = fr"{path}\all_raw_material_data.xlsx"
-    df = pd.read_excel(file_path, sheet_name='ALL')
+# export to excel
+output_path = r"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\summary.xlsx"
+result_df.to_excel(output_path, index=False)
 
-    # Select relevant columns
-    df = df.rename(columns={'level_2': 'Grondstofgroep(kton)'})
-    df = df[['Grondstofgroep(kton)', 'Jaar', 'RMI', 'RMC']]
-
-    # ---- DMI (wide) ----
-    rmi_wide = (
-        df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMI']
-            .sum()
-            .unstack(fill_value=0)  # years become columns
-    )
-
-    # ---- DMC (wide) ----
-    rmc_wide = (
-        df.groupby(['Grondstofgroep(kton)', 'Jaar'])['RMC']
-            .sum()
-            .unstack(fill_value=0)
-    )
-
-    # Optional: sort columns (years)
-    rmi_wide = rmi_wide.sort_index(axis=1)
-    rmc_wide = rmc_wide.sort_index(axis=1)
-
-    waste = pd.read_excel(fr"{path}\benchmark.xlsx")
-
-    file_path = fr"{path}\all_impact_data.xlsx"
-    df = pd.read_excel(file_path)
-
-    # Select relevant columns
-    df = df[['Goederengroep', 'Jaar', 'CO2 emissions total (kt)', 'MKI total (mln euro)']]
-
-    # ---- DMI (wide) ----
-    co2 = (
-        df.groupby(['Goederengroep', 'Jaar'])['CO2 emissions total (kt)']
-            .sum()
-            .unstack(fill_value=0)  # years become columns
-    )
-
-    # ---- DMC (wide) ----
-    mki = (
-        df.groupby(['Goederengroep', 'Jaar'])['MKI total (mln euro)']
-            .sum()
-            .unstack(fill_value=0)
-    )
-    co2 = co2.sort_index(axis=1)
-    co2 = co2.rename(columns={
-        'Goederengroep': 'Goederengroep (kton)'
-    })
-    mki = mki.sort_index(axis=1)
-    mki = mki.rename(columns={
-        'Goederengroep': 'Goederengroep (mln euro)'
-    })
-
-    supply = pd.read_excel(fr"{path}\material_contents.xlsx")
-    supply = supply.drop(columns=['Unnamed: 0'])
-
-    # Save to Excel
-    with pd.ExcelWriter(fr"C:\Users\vasil\geoFluxus Dropbox\geoFluxus\Projects\Liepa\COROPS\{area}.xlsx") as writer:
-        dmi_wide.to_excel(writer, sheet_name="DMI")
-        dmc_wide.to_excel(writer, sheet_name="DMC")
-        rmi_wide.to_excel(writer, sheet_name="RMI")
-        rmc_wide.to_excel(writer, sheet_name="RMC")
-        waste.to_excel(writer, sheet_name="Afval", index=False)
-        co2.to_excel(writer, sheet_name="CO2")
-        mki.to_excel(writer, sheet_name="MKI")
-        supply.to_excel(writer, sheet_name='Leveringszekerheid', index=False)
+print(f"Exported results to: {output_path}")
 
 
