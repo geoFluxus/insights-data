@@ -7,60 +7,66 @@ FE_GROUPS = [
     'Steenkool en bruinkool',
     'Ruwe aardolie',
     'Aardgas',
-]
-
-SPLIT_FE = [
     'Cokes en vaste aardolieproducten',
     'Vloeibare aardolieproducten',
     'Gasvormige aardolieproducten',
-    'Chemische basisproducten',
     'Overig afval en secundaire grondstoffen, biomassa',
     'Overig afval en secundaire grondstoffen, fossiel'
 ]
 
-GEBRUIK = [
-    'Consumptie huishoudens',
-    'Dienstverlening bedrijven',
-    'Investeringen vaste activa',
-    'Niet van toepassing',
-    'Overheid',
-    'Productie goederen',
-    'Verandering voorraden'
+SPLIT_FE = [
+    # 'Cokes en vaste aardolieproducten',
+    # 'Vloeibare aardolieproducten',
+    # 'Gasvormige aardolieproducten',
+    # 'Chemische basisproducten',
+    # 'Overig afval en secundaire grondstoffen, biomassa',
+    # 'Overig afval en secundaire grondstoffen, fossiel'
 ]
 
-IS_FE = {
-    'Cokes en vaste aardolieproducten': {
-        'Productie goederen': 50,
-        'Dienstverlening bedrijven': 100,
-        'Overheid': 100,
-        'Consumptie huishoudens': 100,
-    },
-    'Vloeibare aardolieproducten': {
-        'Productie goederen': 50,
-        'Dienstverlening bedrijven': 100,
-        'Overheid': 100,
-        'Consumptie huishoudens': 100,
-    },
-    'Gasvormige aardolieproducten': {
-        'Productie goederen': 50,
-        'Dienstverlening bedrijven': 100,
-        'Overheid': 100,
-        'Consumptie huishoudens': 100,
-    },
-    'Chemische basisproducten': {
-        'Productie goederen': 50,
-        'Dienstverlening bedrijven': 100,
-        'Overheid': 100,
-        'Consumptie huishoudens': 100,
-    },
-    'Overig afval en secundaire grondstoffen, biomassa': {
-        'Productie goederen': 50,
-        'Dienstverlening bedrijven': 50,
-    },
-    'Overig afval en secundaire grondstoffen, fossiel': {
-        'Productie goederen': 50,
-    },
-}
+GEBRUIK = [
+    # 'Consumptie huishoudens',
+    # 'Dienstverlening bedrijven',
+    # 'Investeringen vaste activa',
+    # 'Niet van toepassing',
+    # 'Overheid',
+    # 'Productie goederen',
+    # 'Verandering voorraden'
+]
+
+IS_FE = {}
+# {
+#     'Cokes en vaste aardolieproducten': {
+#         'Productie goederen': 50,
+#         'Dienstverlening bedrijven': 100,
+#         'Overheid': 100,
+#         'Consumptie huishoudens': 100,
+#     },
+#     'Vloeibare aardolieproducten': {
+#         'Productie goederen': 50,
+#         'Dienstverlening bedrijven': 100,
+#         'Overheid': 100,
+#         'Consumptie huishoudens': 100,
+#     },
+#     'Gasvormige aardolieproducten': {
+#         'Productie goederen': 50,
+#         'Dienstverlening bedrijven': 100,
+#         'Overheid': 100,
+#         'Consumptie huishoudens': 100,
+#     },
+#     'Chemische basisproducten': {
+#         'Productie goederen': 50,
+#         'Dienstverlening bedrijven': 100,
+#         'Overheid': 100,
+#         'Consumptie huishoudens': 100,
+#     },
+#     'Overig afval en secundaire grondstoffen, biomassa': {
+#         'Productie goederen': 50,
+#         'Dienstverlening bedrijven': 50,
+#     },
+#     'Overig afval en secundaire grondstoffen, fossiel': {
+#         'Productie goederen': 50,
+#     },
+# }
 
 
 DATA = {}
