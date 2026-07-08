@@ -249,9 +249,10 @@ def behouden_hoeveelheid(df):
 
 
 def behouden_verwerking(df):
-    begin = df[df['MeldPeriodeJAAR'] == BEGIN]
+    zonder_opslag = df[df['Berekening NPCE doelstellingen'] != 'Opslag']
+    begin = zonder_opslag[zonder_opslag['MeldPeriodeJAAR'] == BEGIN]
     begin_total_sum = begin['Gewicht_kt'].sum()
-    huidig = df[df['MeldPeriodeJAAR'] == HUIDIG]
+    huidig = zonder_opslag[zonder_opslag['MeldPeriodeJAAR'] == HUIDIG]
     huidig_total_sum = huidig['Gewicht_kt'].sum()
 
     indicator = {
