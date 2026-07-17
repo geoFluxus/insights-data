@@ -214,6 +214,7 @@ def run():
         print(f"\nLoad {year} flows...")
         flows = get_flows(year=year)
         flows['Gewicht_TN'] = flows['Gewicht_KG'] / 10**3
+        flows['EuralCode'] = flows['EuralCode'].astype(str).str.zfill(6)
         print(f"Total flows: {len(flows)}")
 
         # add areas to roles
@@ -241,18 +242,31 @@ def run():
                      left_on=['VerwerkingsmethodeCode'],
                      right_on=['processing_code'])
 
+    # import process value
+    path = fr"{var.INPUT_DIR}\Database_LockedFiles\DATA\ontology\npce_productgroepen.xlsx"
+    productgroups = pd.read_excel(path, sheet_name='afval')
+    productgroups['ewc'] = productgroups['ewc'].astype(str).str.zfill(6)
+    flows = pd.merge(flows, productgroups,
+                     how='left',
+                     left_on='EuralCode',
+                     right_on='ewc')
+    flows.loc[flows['productgroepen'].isnull(), 'productgroepen'] = 'Overig'
+
     # TRENDS (All amounts in tonnes) -> ONLY PRODUCTION
     on = f'Herkomst_{LEVEL}'
 
     # production graph (amount per quarter & regression)
     print('\nCompute production graph...')
-    for code, name in rladder_names.items():
-        compute_trends(flows,
-                       on=[on, 'benchmark_group'],
-                       values=[[AREA], [code]],
-                       per_months=12,
-                       datatype='production_graph',
-                       prop=code,)
+    for group in (productgroups['productgroepen']
+            .drop_duplicates().to_list()):
+        for code, name in rladder_names.items():
+            prop = f"{group}_{code}"
+            compute_trends(flows,
+                           on=[on, 'productgroepen', 'benchmark_group'],
+                           values=[[AREA], [group], [code]],
+                           per_months=12,
+                           datatype='production_graph',
+                           prop=prop,)
 
     compute_trends(flows,
                    on=[on],
