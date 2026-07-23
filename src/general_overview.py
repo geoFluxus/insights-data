@@ -6,7 +6,7 @@ def pivot_and_write(data, writer, group=None, indicators=[]):
     Pivot indicators and write each into a sheet,
     prefixed to avoid name collisions.
     """
-    group_on_goods = group.lower() == "goederengroup"
+    group_on_goods = group.lower() == "goederengroep"
     extra_columns = ['Gebruiksgroep_naam'] if group_on_goods else []
     for indicator in indicators:
         columns = [
