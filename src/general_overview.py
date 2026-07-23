@@ -1,35 +1,49 @@
 import pandas as pd
 
 
-def pivot_and_write(data, writer, group=None, indicators=[]):
+def pivot_and_write(data, writer, group=None, indicators=None):
     """
-    Pivot indicators and write each into a sheet,
-    prefixed to avoid name collisions.
+    Pivot indicators and write each to a separate sheet.
+
+    When grouping by Goederengroep, values are summed across all
+    Gebruiksgroep_naam values.
     """
+    if indicators is None:
+        indicators = []
+
     group_on_goods = group.lower() == "goederengroep"
-    extra_columns = ['Gebruiksgroep_naam'] if group_on_goods else []
+
     for indicator in indicators:
         columns = [
-            'Regionaam',
+            "Regionaam",
             group,
-            *(extra_columns),
-            'Jaar',
-            indicator
+            "Jaar",
+            indicator,
         ]
+
+        # Don't include Gebruiksgroep_naam so it gets aggregated away
         df_indi = data[columns]
 
         index = [
-            'Regionaam',
+            "Regionaam",
             group,
-            *(extra_columns)
         ]
-        df_pivot = df_indi.pivot_table(
-            index=index,
-            columns='Jaar',
-            values=indicator
-        ).reset_index()
 
-        df_pivot.to_excel(writer, sheet_name=indicator, index=False)
+        df_pivot = (
+            df_indi.pivot_table(
+                index=index,
+                columns="Jaar",
+                values=indicator,
+                aggfunc="sum" if group_on_goods else "mean",
+            )
+            .reset_index()
+        )
+
+        df_pivot.to_excel(
+            writer,
+            sheet_name=indicator[:31],
+            index=False,
+        )
 
 
 if __name__ == '__main__':
