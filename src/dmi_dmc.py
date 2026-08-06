@@ -304,7 +304,7 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
             aggregated = data.copy()
             if raw_materials:
                 eur_aggregated = eur_data.copy()
-
+        
         aggregated['DMI'] = aggregated['Winning'] + aggregated['Invoer_nationaal'] + aggregated['Invoer_internationaal']
         aggregated['DMC'] = aggregated['DMI'] - aggregated['Uitvoer_nationaal'] - aggregated['Uitvoer_internationaal']
         aggregated['National_DMI'] = aggregated['Winning'] + aggregated['Invoer_internationaal']
@@ -392,7 +392,7 @@ def run():
     filename = f"/CBS/{var.COROP_FILE}.csv"
 
     path = f"{FILEPATH}/geofluxus"
-    RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv', delimiter=';')
+    RESOURCE_TYPE = pd.read_csv(f'{path}/cbs_biotisch_abiotisch_2024_final.csv')
 
     # --- NON_FE ---
     dmcs_non, dmis_non, rmcs_non, rmis_non, all_data_non, all_eur_non, all_rm_non = calculate_indicators(

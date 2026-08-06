@@ -4,7 +4,7 @@ from src.analysis import utils
 
 
 DATA = {}
-PRODUCTS = [key for key in var.PRODUCTGROEPEN]
+PRODUCTS = [key for key in var.PRODUCTGROEPEN] + ['Fossiel',]
 RENEWABLES = [
     'hernieuwbaar',
     'secundair',

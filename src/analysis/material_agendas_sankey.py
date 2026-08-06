@@ -123,7 +123,7 @@ def process_cbs():
         'productgroepen': pg,
         'materials': pd.read_csv(
             f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/cbs_materials.csv",
-            low_memory=False, sep=';'
+            low_memory=False
         )
     }
 
