@@ -10,7 +10,7 @@ RENEWABLES = [
     'secundair',
     'niet-hernieuwbaar',
     'gemengd',
-    'fe'
+    # 'fe'
 ]
 UNIT = 'kt'
 

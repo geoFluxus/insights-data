@@ -2,8 +2,14 @@ import pandas as pd
 import numpy as np
 import variables as var
 
+FOSSIL_PRODUCTION = {
+    'Chemische basisproducten': 0.90,
+    'Farmaceutische producten en chemische specialiteiten': 0.50,
+    'Kunststoffen en synthetische rubber in primaire vormen': 0.90,
+    'Producten van rubber of kunststof': 0.50,
+}
 
-FE_GROUPS = [
+FE_AGGS = [
     'Steenkool en bruinkool',
     'Ruwe aardolie',
     'Aardgas',
@@ -11,7 +17,11 @@ FE_GROUPS = [
     'Vloeibare aardolieproducten',
     'Gasvormige aardolieproducten',
     'Overig afval en secundaire grondstoffen, biomassa',
-    'Overig afval en secundaire grondstoffen, fossiel'
+    'Overig afval en secundaire grondstoffen, fossiel',
+    'Fossiele brandstoffen',
+]
+
+FE_GROUPS = [
 ]
 
 SPLIT_FE = [
@@ -93,8 +103,8 @@ def split_fossil(df, is_fossil=False):
     for good in SPLIT_FE:
         for usage in GEBRUIK:
             condition = (
-                (df['Goederengroep_naam'] == good) &
-                (df['Gebruiksgroep_naam'] == usage)
+                    (df['Goederengroep_naam'] == good) &
+                    (df['Gebruiksgroep_naam'] == usage)
             )
             perc = IS_FE[good].get(usage, 0)
             factor = (perc if is_fossil else 100 - perc) / 100
@@ -103,7 +113,42 @@ def split_fossil(df, is_fossil=False):
     return df
 
 
-def compute_local_extraction(data, value=None, lokale_winning_groups=None):
+def add_fossil_production(data):
+    required_cols = ['Invoer_nationaal', 'Aanbod_eigen_regio', 'Uitvoer_nationaal', 'Uitvoer_internationaal']
+    for col in required_cols:
+        if col not in data.columns:
+            data[col] = 0
+
+    fossil_rows = []
+    for good, fraction in FOSSIL_PRODUCTION.items():
+        source = data[data['Goederengroep'] == good].copy()
+        if source.empty:
+            continue
+
+        fossil = source.copy()
+        fossil['Goederengroep'] = 'Fossiel voor productie'
+        fossil_amount = fraction * (
+                source['Aanbod_eigen_regio'] +
+                source['Uitvoer_nationaal'] +
+                source['Uitvoer_internationaal']
+        )
+
+        for col in fossil.select_dtypes(include=[np.number]).columns:
+            fossil[col] = 0
+        fossil['Invoer_nationaal'] = fossil_amount.to_numpy()
+        fossil_rows.append(fossil)
+
+    if fossil_rows:
+        fossil = pd.concat(fossil_rows, ignore_index=True)
+        keys = ['Regionaam', 'Goederengroep', 'Gebruiksgroep_naam']
+        numeric_cols = fossil.select_dtypes(include=[np.number]).columns.tolist()
+        fossil = fossil.groupby(keys, as_index=False)[numeric_cols].sum()
+        data = pd.concat([data, fossil], ignore_index=True)
+
+    return data
+
+
+def compute_local_extraction(data, value=None, lokale_winning_groups=None, add_fossil=False):
     data = pd.pivot_table(
         data,
         values=value,
@@ -119,14 +164,15 @@ def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     ]
     data = data.rename(columns={"Goederengroep_naam": "Goederengroep"})
 
-    for col in ["Uitvoer_nationaal", "Uitvoer_internationaal", "Aanbod_eigen_regio"]:
+    for col in ["Invoer_nationaal", "Invoer_internationaal", "Uitvoer_nationaal", "Uitvoer_internationaal",
+                "Aanbod_eigen_regio"]:
         if col not in data.columns:
             data[col] = 0
 
     # goederen-level winning table (unique per Regionaam+Goederengroep)
     lw = data[data["Goederengroep"].isin(lokale_winning_groups)].copy()
     lw["Winning"] = (
-        lw["Uitvoer_nationaal"] + lw["Uitvoer_internationaal"] + lw["Aanbod_eigen_regio"]
+            lw["Uitvoer_nationaal"] + lw["Uitvoer_internationaal"] + lw["Aanbod_eigen_regio"]
     )
     lw = lw.groupby(["Regionaam", "Goederengroep"], as_index=False)["Winning"].sum()
 
@@ -136,6 +182,9 @@ def compute_local_extraction(data, value=None, lokale_winning_groups=None):
     # ✅ write Winning only once per good (prevents double counting across gebruiksgroep rows)
     first_row = data.groupby(["Regionaam", "Goederengroep"]).cumcount().eq(0)
     data["Winning"] = np.where(first_row, data["Winning"], 0)
+
+    if add_fossil:
+        data = add_fossil_production(data)
 
     # resource types
     data = data.merge(
@@ -239,8 +288,8 @@ def calculate_rmi_rmc(df, eur_df, year, save=False, abiotisch=False):
 
 
 def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False, goal='abiotisch', is_fossil=False):
-    dmcs = pd.DataFrame()
-    dmis = pd.DataFrame()
+    dmcs = pd.DataFrame(columns=['Regionaam', 'DMC', 'Jaar'])
+    dmis = pd.DataFrame(columns=['Regionaam', 'DMI', 'Jaar'])
     all_data = pd.DataFrame()
     all_eur_data = pd.DataFrame()
     all_rm_data = pd.DataFrame()
@@ -256,9 +305,10 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
             (df['Jaar'] == year) &
             (df['Regionaam'].isin(corop)) &
             # (df['Goederengroep_naam'] != 'Huishoudelijk afval en gemeentelijk afval') &
+            (~df['Goederengroep_naam'].isin(FE_AGGS)) &
             (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
             (df['Gebruiksgroep_naam'] != 'Totaal')
-        ].copy()
+            ].copy()
 
         fossil_groups = df_year['Goederengroep_naam'].isin(FE_GROUPS)
         if not is_fossil:
@@ -270,12 +320,19 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
 
         df_year = split_fossil(df_year, is_fossil=is_fossil)
 
+        # FE_GROUPS can be empty. Skip empty years instead of building an
+        # empty pivot and then trying to calculate DMI/DMC from missing columns.
+        if df_year.empty:
+            continue
+
         lokale_winning_groups = RESOURCE_TYPE[RESOURCE_TYPE['Lokale winning'] == 'ja']['Goederengroep'].tolist()
 
-        data = compute_local_extraction(df_year, value="Brutogew", lokale_winning_groups=lokale_winning_groups)
+        data = compute_local_extraction(df_year, value="Brutogew", lokale_winning_groups=lokale_winning_groups,
+                                        add_fossil=not is_fossil)
 
         if raw_materials:
-            eur_data = compute_local_extraction(df_year, value="Waarde", lokale_winning_groups=lokale_winning_groups)
+            eur_data = compute_local_extraction(df_year, value="Waarde", lokale_winning_groups=lokale_winning_groups,
+                                                add_fossil=not is_fossil)
 
         if 'abiotisch' in goal:
             abiotisch = data[data['Grondstof'] == 'abiotisch']
@@ -304,7 +361,7 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
             aggregated = data.copy()
             if raw_materials:
                 eur_aggregated = eur_data.copy()
-        
+
         aggregated['DMI'] = aggregated['Winning'] + aggregated['Invoer_nationaal'] + aggregated['Invoer_internationaal']
         aggregated['DMC'] = aggregated['DMI'] - aggregated['Uitvoer_nationaal'] - aggregated['Uitvoer_internationaal']
         aggregated['National_DMI'] = aggregated['Winning'] + aggregated['Invoer_internationaal']
@@ -332,8 +389,8 @@ def calculate_indicators(path, file_name, corop=var.COROPS, raw_materials=False,
         all_data = pd.concat([all_data, aggregated], ignore_index=True)
 
     if raw_materials:
-        rmcs = all_rm_data[['Regionaam', 'RMC', 'Jaar']].copy()
-        rmis = all_rm_data[['Regionaam', 'RMI', 'Jaar']].copy()
+        rmcs = all_rm_data.reindex(columns=['Regionaam', 'RMC', 'Jaar']).copy()
+        rmis = all_rm_data.reindex(columns=['Regionaam', 'RMI', 'Jaar']).copy()
         return dmcs, dmis, rmcs, rmis, all_data, all_eur_data, all_rm_data
     else:
         return dmcs, dmis
@@ -370,10 +427,9 @@ def _aggregate_no_gebruik(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _write_three_sheets(excel_path: str, non_fe: pd.DataFrame, fe: pd.DataFrame):
-    """
-    Write NON_FE, FE, and ALL.
-    ALL = NON_FE + FE, then aggregate away Gebruiksgroep_naam.
-    """
+    """Write NON_FE, FE, and ALL. ALL is aggregated without Gebruiksgroep_naam."""
+    if fe.empty:
+        fe = fe.reindex(columns=non_fe.columns)
     all_df = pd.concat([non_fe, fe], ignore_index=True)
     all_df = _aggregate_no_gebruik(all_df)
 
