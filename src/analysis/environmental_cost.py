@@ -32,8 +32,13 @@ def get_indicator_per_group(df, on='usage', value_col='CO2 emissions total (kt)'
     # Filter year
     if perc:
         df = df[df['Jaar'] == var.YEAR]
+
+        if on == 'usage':
+            exclude = ['Verandering voorraden', 'Niet van toepassing']
+        elif on == 'product':
+            exclude = []
         df = df[~(
-            df['Gebruiksgroep_naam'].isin(['Verandering voorraden', 'Niet van toepassing'])
+            df['Gebruiksgroep_naam'].isin(exclude)
         )]
 
     if on == 'product':
