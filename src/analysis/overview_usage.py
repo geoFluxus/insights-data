@@ -3,78 +3,102 @@ import pandas as pd
 from src.analysis import utils
 
 
-DATA = {}
-
-
 def run(on_agendas=False):
     unit = var.UNITS['OVERVIEW']['OVERVIEW_USAGE']
 
-    # stromen -> million kg
-    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
-    filename = f"{path}/{var.COROP_FILE}.csv"
+    # Load aggregated dataset
+    file_path = f"{var.OUTPUT_DIR}/all_data.xlsx"
 
-    df = pd.read_csv(filename, low_memory=False, sep=',')
-    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
-    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
+    df = pd.read_excel(
+        file_path,
+        sheet_name="NON_FE"
+    )
 
-    # filter by year & COROPS
-    # exclude afval and total sums
+    # Filter year, region and usage
     df = df[
-        (df['Jaar'] == var.YEAR) &
-        (df['Regionaam'].isin(var.COROPS)) &
-        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
-        (df['Gebruiksgroep_naam'] != 'Totaal')
-    ]
+        (df["Jaar"] == var.YEAR) &
+        (df["Regionaam"].isin(var.COROPS)) &
+        (df["Gebruiksgroep_naam"] != "Niet van toepassing")
+    ].copy()
 
-    # import cbs classifications
-    cbs_classifs = {}
-    for classif in ['productgroepen']:
-        file_path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/ontology/npce_{classif}.xlsx"
-        cbs_classifs[classif] = pd.read_excel(file_path)
+    # Add product group classification
+    classif_path = (
+        f"{var.INPUT_DIR}/Database_LockedFiles/"
+        f"DATA/ontology/npce_productgroepen.xlsx"
+    )
 
-    # add classifications
-    for name, classif in cbs_classifs.items():
-        df = utils.add_classification(df, classif, name=name,
-                                      left_on='Goederengroep_nr',
-                                      right_on='cbs')
+    productgroepen = pd.read_excel(classif_path)
 
-    # SANKEY
+    df = utils.add_classification(
+        df,
+        productgroepen,
+        name="productgroepen",
+        left_on="cbs",
+        right_on="cbs"
+    )
+
     stromen = [
-        'Aanbod_eigen_regio',
-        'Invoer_nationaal',
-        'Invoer_internationaal',
-    ]
-    usages = [
-        'Consumptie huishoudens',
-        'Dienstverlening bedrijven',
-        'Productie goederen',
-        'Overheid',
-        'Investeringen vaste activa',
-        'Verandering voorraden'
+        "Aanbod_eigen_regio",
+        "Invoer_nationaal",
+        "Invoer_internationaal",
     ]
 
-    values = DATA.setdefault("values", {})
+    usages = [
+        "Consumptie huishoudens",
+        "Dienstverlening bedrijven",
+        "Productie goederen",
+        "Overheid",
+        "Investeringen vaste activa",
+        "Verandering voorraden",
+    ]
+
+    values = {}
+
     for usage in usages:
+        values[usage] = []
+
+        usage_df = df[
+            df["Gebruiksgroep_naam"] == usage
+        ].copy()
+
         for stroom in stromen:
-            usage_df = df[
-                (df['Stroom'] == stroom) &
-                (df['Gebruiksgroep_naam'] == usage)
-            ]
-            usage_name = usage.replace('_', ' ')
+            stroom_df = usage_df.copy()
+
+            # NON_FE stream columns are in mln kg.
+            # get_classification_graphs expects Gewicht_KG.
+            stroom_df["Gewicht_KG"] = (
+                pd.to_numeric(
+                    stroom_df[stroom],
+                    errors="coerce"
+                )
+                .fillna(0)
+                * 10 ** 6
+            )
 
             if on_agendas:
-                values.setdefault(usage_name, []).append({
-                    k: v for k, v in utils.get_classification_graphs(
-                        usage_df,
-                        area=var.COROPS,
-                        klass='agendas',
-                        unit=unit
-                    ).items() if k in ["agendas", "values"]
-                })
-            else:
-                values.setdefault(usage_name, []).append(
-                    utils.kg_to_unit(usage_df['Gewicht_KG'].sum(), unit=unit)
+                graph = utils.get_classification_graphs(
+                    stroom_df,
+                    area=var.COROPS,
+                    klass="productgroepen",
+                    unit=unit
                 )
+
+                values[usage].append({
+                    k: v
+                    for k, v in graph.items()
+                    if k in [
+                        "productgroepen",
+                        "values"
+                    ]
+                })
+
+            else:
+                value = utils.kg_to_unit(
+                    stroom_df["Gewicht_KG"].sum(),
+                    unit=unit
+                )
+
+                values[usage].append(value)
 
     return {
         "level": "COROP",
@@ -82,6 +106,9 @@ def run(on_agendas=False):
         "period": var.YEAR,
         "type": "goederen",
         "unit": unit,
-        "usage": [stroom.replace('_', ' ') for stroom in stromen],
-        **DATA
+        "usage": [
+            stroom.replace("_", " ")
+            for stroom in stromen
+        ],
+        "values": values
     }

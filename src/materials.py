@@ -10,7 +10,7 @@ DATA = {}
 if __name__ == '__main__':
     # waste trends (production & processing)
     DATA["overview_sankey"] = overview_sankey.run()
-    DATA["overview_usage"] = overview_usage.run()
+    DATA["overview_usage"] = overview_usage.run(on_agendas=True)
     DATA = dict({
         **DATA,
         **material_agendas_sankey.run()
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     }
 
     # highest usage
-    values = DATA['overview_usage']['values']
+    values = overview_usage.run(on_agendas=False)['values']
     max_key = max(values, key=lambda k: sum(values[k]))
     highlights['highest_usage'] = {
         'name': max_key.replace("_", " ").capitalize()

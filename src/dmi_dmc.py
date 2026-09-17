@@ -148,45 +148,134 @@ def add_fossil_production(data):
     return data
 
 
-def compute_local_extraction(data, value=None, lokale_winning_groups=None, add_fossil=False):
+def compute_local_extraction(
+    data,
+    value=None,
+    lokale_winning_groups=None,
+    add_fossil=False
+):
     data = pd.pivot_table(
         data,
         values=value,
         columns="Stroom",
-        index=["Regionaam", "Goederengroep_naam", "Gebruiksgroep_naam"],
+        index=[
+            "Regionaam",
+            "Goederengroep_naam",
+            "Gebruiksgroep_naam"
+        ],
         aggfunc="sum",
         fill_value=0
     ).reset_index()
 
     data.columns = [
-        c[1] if isinstance(c, tuple) and c[0] == value else (c[0] if isinstance(c, tuple) else c)
+        c[1] if isinstance(c, tuple) and c[0] == value
+        else (c[0] if isinstance(c, tuple) else c)
         for c in data.columns.to_flat_index()
     ]
-    data = data.rename(columns={"Goederengroep_naam": "Goederengroep"})
 
-    for col in ["Invoer_nationaal", "Invoer_internationaal", "Uitvoer_nationaal", "Uitvoer_internationaal",
-                "Aanbod_eigen_regio"]:
+    data = data.rename(
+        columns={"Goederengroep_naam": "Goederengroep"}
+    )
+
+    # Make sure required flow columns always exist
+    required_cols = [
+        "Invoer_nationaal",
+        "Invoer_internationaal",
+        "Uitvoer_nationaal",
+        "Uitvoer_internationaal",
+        "Aanbod_eigen_regio"
+    ]
+
+    for col in required_cols:
         if col not in data.columns:
             data[col] = 0
 
-    # goederen-level winning table (unique per Regionaam+Goederengroep)
-    lw = data[data["Goederengroep"].isin(lokale_winning_groups)].copy()
-    lw["Winning"] = (
-            lw["Uitvoer_nationaal"] + lw["Uitvoer_internationaal"] + lw["Aanbod_eigen_regio"]
-    )
-    lw = lw.groupby(["Regionaam", "Goederengroep"], as_index=False)["Winning"].sum()
+    # ---------------------------------------------------------
+    # CALCULATE TOTAL LOCAL EXTRACTION PER GOOD
+    # ---------------------------------------------------------
 
-    data = data.merge(lw, how="left", on=["Regionaam", "Goederengroep"], validate="m:1")
+    lw = data[
+        data["Goederengroep"].isin(lokale_winning_groups)
+    ].copy()
+
+    lw["Winning"] = (
+        lw["Uitvoer_nationaal"]
+        + lw["Uitvoer_internationaal"]
+        + lw["Aanbod_eigen_regio"]
+    )
+
+    # Total Winning per Regionaam + Goederengroep
+    lw = (
+        lw.groupby(
+            ["Regionaam", "Goederengroep"],
+            as_index=False
+        )["Winning"]
+        .sum()
+    )
+
+    # Merge total Winning back onto all usage-group rows
+    data = data.merge(
+        lw,
+        how="left",
+        on=["Regionaam", "Goederengroep"],
+        validate="m:1"
+    )
+
     data["Winning"] = data["Winning"].fillna(0)
 
-    # ✅ write Winning only once per good (prevents double counting across gebruiksgroep rows)
-    first_row = data.groupby(["Regionaam", "Goederengroep"]).cumcount().eq(0)
-    data["Winning"] = np.where(first_row, data["Winning"], 0)
+    # ---------------------------------------------------------
+    # ASSIGN WINNING TO PRODUCTIE GOEDEREN
+    # ---------------------------------------------------------
+
+    is_production = (
+        data["Gebruiksgroep_naam"] == "Productie goederen"
+    )
+
+    # Check whether Productie goederen exists for each
+    # Regionaam + Goederengroep combination
+    has_production = (
+        is_production
+        .groupby([
+            data["Regionaam"],
+            data["Goederengroep"]
+        ])
+        .transform("any")
+    )
+
+    # Fallback row if Productie goederen does not exist
+    first_row = (
+        data.groupby(
+            ["Regionaam", "Goederengroep"]
+        )
+        .cumcount()
+        .eq(0)
+    )
+
+    # Assign Winning:
+    # 1. to Productie goederen if it exists
+    # 2. otherwise to the first available usage-group row
+    assign_winning = (
+        is_production
+        | (~has_production & first_row)
+    )
+
+    data["Winning"] = np.where(
+        assign_winning,
+        data["Winning"],
+        0
+    )
+
+    # ---------------------------------------------------------
+    # ADD FOSSIL PRODUCTION
+    # ---------------------------------------------------------
 
     if add_fossil:
         data = add_fossil_production(data)
 
-    # resource types
+    # ---------------------------------------------------------
+    # RESOURCE TYPE
+    # ---------------------------------------------------------
+
     data = data.merge(
         RESOURCE_TYPE.drop_duplicates(["Goederengroep"]),
         on="Goederengroep",
