@@ -127,6 +127,7 @@ def add_fossil_production(data):
 
         fossil = source.copy()
         fossil['Goederengroep'] = 'Fossiel voor productie'
+        fossil['Gebruiksgroep_naam'] = 'Productie goederen'
         fossil_amount = fraction * (
                 source['Aanbod_eigen_regio'] +
                 source['Uitvoer_nationaal'] +
