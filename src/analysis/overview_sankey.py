@@ -150,37 +150,36 @@ def process_lma(polygon, ewc_classifs, on_agendas=False):
 
 
 def process_cbs(on_agendas=False):
-    # stromen -> million kg
-    path = f"{var.INPUT_DIR}/Database_LockedFiles/DATA/monitor_data/data/CBS"
-    filename = f"{path}/{VARS['COROP_FILE']}.csv"
+    # All computations come from all_data.xlsx
+    all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
+    df = pd.read_excel(all_data_file)
 
-    df = pd.read_csv(filename, low_memory=False, sep=',')
-    df['Gewicht_KG'] = df['Brutogew'] * 10 ** 6  # mln kg -> kg
-    df['Gewicht_KG'] = df['Gewicht_KG'].astype('int64')
+    # Filter year
+    df = df[df['Jaar'] == var.YEAR].copy()
 
-    # filter by year & COROPS
-    # exclude afval and total sums
-    df = df[
-        (df['Jaar'] == VARS['YEAR']) &
-        (df['Regionaam'].isin(VARS['COROPS'])) &
-        (~df['Goederengroep_naam'].str.contains('afval', case=False, na=False)) &
-        (df['Gebruiksgroep_naam'] != 'Totaal')
-    ]
-
-    # import cbs classifications
+    # Import CBS classifications
     cbs_classifs = {}
     for classif in ['productgroepen']:
-        file_path = f"{VARS['INPUT_DIR']}/Database_LockedFiles/DATA/ontology/npce_{classif}.xlsx"
+        file_path = (
+            f"{VARS['INPUT_DIR']}/Database_LockedFiles/"
+            f"DATA/ontology/npce_{classif}.xlsx"
+        )
         cbs_classifs[classif] = pd.read_excel(file_path)
 
-    # add classifications
+    # Add classifications
     for name, classif in cbs_classifs.items():
-        df = utils.add_classification(df, classif, name=name,
-                                      left_on='Goederengroep_nr',
-                                      right_on='cbs')
+        df = utils.add_classification(
+            df,
+            classif,
+            name=name,
+            left_on='cbs',
+            right_on='cbs'
+        )
 
     # SANKEY
     unit = VARS['OVERVIEW_SANKEY_UNIT']
+    item = DATA.setdefault("flows", {})
+
     stromen = [
         'Aanbod_eigen_regio',
         'Invoer_internationaal',
@@ -188,15 +187,25 @@ def process_cbs(on_agendas=False):
         'Uitvoer_internationaal',
         'Uitvoer_nationaal',
     ]
+
     for stroom in stromen:
-        item = DATA.setdefault("flows", {})
-        key = stroom.lower().replace(' ', '_')
+        key = stroom.lower()
+
+        # all_data values are assumed to be in million kg
+        stroom_df = df.copy()
+        stroom_df['Gewicht_KG'] = stroom_df[stroom] * 10 ** 6
+
         if on_agendas:
-            stroom_df = df[df['Stroom'] == stroom]
-            result = utils.get_classification_graphs(stroom_df,
-                                                     area=VARS['COROPS'],
-                                                     klass='agendas',
-                                                     unit=unit)
+            # Only rows that actually contribute to this flow
+            stroom_df = stroom_df[stroom_df[stroom].fillna(0) != 0]
+
+            result = utils.get_classification_graphs(
+                stroom_df,
+                area=VARS['COROPS'],
+                klass='agendas',
+                unit=unit
+            )
+
             item[key] = {
                 "values": result["values"],
                 "agendas": result["agendas"]
@@ -205,39 +214,38 @@ def process_cbs(on_agendas=False):
             item[key] = {
                 "values": [
                     utils.kg_to_unit(
-                        df[df['Stroom'] == stroom]['Gewicht_KG'].sum(),
+                        stroom_df['Gewicht_KG'].sum(),
                         unit=unit
                     )
                 ]
             }
 
-    # lokale winning
-    all_data_file = f'{var.OUTPUT_DIR}/all_data.xlsx'
-    df = pd.read_excel(all_data_file)
-    df = df[df['Jaar'] == var.YEAR]
-    df['Gewicht_KG'] = df['Winning'] * 10 ** 6
-
-    # add classifications
-    for name, classif in cbs_classifs.items():
-        df = utils.add_classification(df, classif, name=name,
-                                      left_on='cbs',
-                                      right_on='cbs')
+    # Lokale winning
+    winning_df = df.copy()
+    winning_df['Gewicht_KG'] = winning_df['Winning'] * 10 ** 6
 
     if on_agendas:
-        result = utils.get_classification_graphs(df,
-                                                 area=VARS['COROPS'],
-                                                 klass='agendas',
-                                                 unit=unit)
+        winning_df = winning_df[winning_df['Winning'].fillna(0) != 0]
+
+        result = utils.get_classification_graphs(
+            winning_df,
+            area=VARS['COROPS'],
+            klass='agendas',
+            unit=unit
+        )
+
         item['lokale_winning'] = {
             "values": result["values"],
             "agendas": result["agendas"]
         }
     else:
         item['lokale_winning'] = {
-            "values": [utils.kg_to_unit(
-                df['Winning'].sum() * 10 ** 6,
-                unit=VARS['OVERVIEW_SANKEY_UNIT']
-            )]
+            "values": [
+                utils.kg_to_unit(
+                    winning_df['Gewicht_KG'].sum(),
+                    unit=unit
+                )
+            ]
         }
 
 
