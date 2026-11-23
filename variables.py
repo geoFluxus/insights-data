@@ -80,7 +80,8 @@ PRODUCTGROEPEN = {
     'Overig': 'Overig',
     'Verpakkingen': 'Verpakkingen',
     'Restafval': 'Restafval',
-    "Batterijen en Accu's": "Batterijen"
+    "Batterijen en Accu's": "Batterijen",
+    "FossielProductie": "Fossiel voor productie"
 }
 
 AFVAL_PRODUCTS = [
